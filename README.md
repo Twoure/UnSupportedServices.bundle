@@ -34,7 +34,7 @@ I plan to make a few channels that will require this UnSupported Services channe
 - **Vid.ag**
   - The host is down for _"maintenance"_
   - Will see if they come back, not sure
-- **Prompfile** / **Briskfile**
+- **PromptFile** / **Briskfile**
   - The host does not like Kodi parsing them, and has started to implement some obfuscation
   - Currently works, but may be susceptible to breaking later
 - **MightyUpload**
