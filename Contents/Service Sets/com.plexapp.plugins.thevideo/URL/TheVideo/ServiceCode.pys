@@ -1,0 +1,75 @@
+#!/usr/bin/env python
+
+"""TheVideo Service Code"""
+
+####################################################################################################
+def NormalizeURL(url):
+
+    if 'embed-' not in url:
+        r = Regex(r'(https?:\/\/(?:www\.)?thevideo\.(?:[^/]+\/)?)(.*?)(?:\/|\.|$)').search(url)
+        url = r.group(1) + 'embed-' + r.group(2) + '.html'
+
+    return url
+
+####################################################################################################
+def MetadataObjectForURL(url):
+
+    page = HTTP.Request(url).content
+    title = Regex(r'title.?:\s(.*),').search(page)
+    if not title:
+        raise Ex.MediaExpired
+
+    thumb = Regex(r'image.?:\s(.*),').search(page)
+    if thumb:
+        thumb = thumb.group(1).strip('\'\" ')
+    else:
+        thumb = 'http://i.imgur.com/75YO83o.jpg'
+
+    return VideoClipObject(
+        title=title.group(1).strip('\'\" '),
+        thumb=thumb,
+        source_title='TheVideo'
+        )
+
+####################################################################################################
+def MediaObjectsForURL(url):
+
+    mo = []
+    fmt_list = source_dict(url)
+    for item in reversed(sorted(fmt_list, key=lambda k: k['label'])):
+        mo.append(MediaObject(
+            video_resolution=item['label'][:-1],
+            audio_channels=2,
+            optimized_for_streaming=False,
+            parts=[PartObject(key=Callback(PlayVideo, url=url, label=item['label']))]
+            ))
+
+    if len(mo) == 0:
+        raise Ex.MediaNotAvailable
+    else:
+        return mo
+
+####################################################################################################
+@indirect
+def PlayVideo(url, label, **kwargs):
+
+    fmt_list = source_dict(url)
+    for item in fmt_list:
+        if label == item['label']:
+            Log.Debug('* PlayVideo URL  = %s' %item['file'])
+            return IndirectResponse(VideoClipObject, key=item['file'])
+
+    raise Ex.MediaNotAvailable
+
+####################################################################################################
+def source_dict(url):
+
+    page = HTTP.Request(url).content
+    sources = Regex(r'sources:\s(.*),').search(page)
+    if not sources:
+        raise Ex.MediaExpired
+
+    s = sources.group(1)
+    s = s.replace('\'', '\"').replace('label', '\"label\"').replace('file', '\"file\"')
+
+    return JSON.ObjectFromString(s)

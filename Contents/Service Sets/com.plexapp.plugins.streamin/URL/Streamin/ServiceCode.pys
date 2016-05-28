@@ -1,0 +1,83 @@
+#!/usr/bin/env python
+
+"""Streamin Service Code"""
+
+####################################################################################################
+def NormalizeURL(url):
+
+    if 'embed-' in url:
+        r = Regex(r'(https?:\/\/(?:www\.)?streamin\.(?:[^/]+\/)?)embed\-(.+?)(?:\-|\.)').search(url)
+        url = r.group(1) + r.group(2)
+
+    return url
+
+####################################################################################################
+def MetadataObjectForURL(url):
+
+    html = HTML.ElementFromURL(url)
+
+    title = html.xpath('//h2[@style]/text()')
+    if not title:
+        raise Ex.MediaExpired
+    elif 'Watch Watch' in title:
+        title = title[0].replace('Watch Watch', 'Watch')
+    else:
+        title = title[0].lstrip('Watch ')
+
+    turl = get_embed_url(url)
+    page = HTTP.Request(turl).content
+    thumb = Regex(r'image.?:\s(.*),').search(page)
+    if thumb:
+        thumb = thumb.group(1).strip('\'\" ')
+    else:
+        thumb = None
+    duration = Regex(r'duration\:\s?(?:\"|\')(\d+)(?:\"|\')\,').search(page)
+    if duration:
+        duration = int(duration.group(1)) * 1000
+    else:
+        duration = None
+
+    return VideoClipObject(
+        title=title.strip(),
+        thumb=thumb,
+        duration=duration,
+        source_title='Streamin'
+        )
+
+####################################################################################################
+def MediaObjectsForURL(url):
+
+    return [
+        MediaObject(
+            video_codec=VideoCodec.H264,
+            audio_codec=AudioCodec.AAC,
+            container=Container.FLV,
+            video_resolution='sd',
+            audio_channels=2,
+            optimized_for_streaming=False,
+            parts=[PartObject(key=Callback(PlayVideo, url=url))]
+            )
+        ]
+
+####################################################################################################
+@indirect
+def PlayVideo(url):
+
+    url = get_embed_url(url)
+    page = HTTP.Request(url).content
+    vurl = Regex(r'type[^\}]+?html5.+?config.+?file.+?(?:\'|\")([^\s\"\']+)').search(page)
+
+    if vurl:
+        Log.Debug('* PlayVideo URL = \"%s\"' %vurl.group(1).strip())
+        return IndirectResponse(VideoClipObject, key=vurl.group(1).strip())
+    else:
+        raise Ex.MediaNotAvailable
+
+####################################################################################################
+def get_embed_url(url):
+
+    if 'embed-' not in url:
+        r = Regex(r'(https?:\/\/(?:www\.)?streamin\.(?:[^/]+\/)?)(.*?)(?:\/|\.|$)').search(url)
+        url = r.group(1) + 'embed-' + r.group(2) + '.html'
+
+    return url

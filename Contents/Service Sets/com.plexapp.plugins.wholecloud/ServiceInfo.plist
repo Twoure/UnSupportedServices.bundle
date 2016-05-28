@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>URL</key>
+  <dict>
+    <key>WholeCloud</key>
+    <dict>
+      <key>URLPatterns</key>
+      <array>
+        <string>^https?\:\/\/(www\.)?wholecloud\.(?:[^/]+\/).+</string>
+        <string>^https?\:\/\/(www\.)?auroravid\.(?:[^/]+\/).+</string>
+        <string>^https?\:\/\/(www\.)?movshare\.(?:[^/]+\/).+</string>
+        <string>^https?\:\/\/(www\.)?novamov\.(?:[^/]+\/).+</string>
+        <string>^https?\:\/\/(www\.)?videoweed\.(?:[^/]+\/).+</string>
+        <string>^https?\:\/\/(www\.)?bitvid\.(?:[^/]+\/).+</string>
+        <string>^https?\:\/\/(www\.)?cloudtime\.(?:[^/]+\/).+</string>
+        <string>^https?\:\/\/(www\.)?nowvideo\.(?:[^/]+\/).+</string>
+      </array>
+    </dict>
+  </dict>
+</dict>
+</plist>

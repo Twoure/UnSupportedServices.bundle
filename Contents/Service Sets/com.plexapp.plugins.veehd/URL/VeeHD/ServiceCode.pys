@@ -1,0 +1,64 @@
+#!/usr/bin/env python
+
+"""VeeHD service code"""
+
+####################################################################################################
+def NormalizeURL(url):
+
+    return url.split('?')[0]
+
+####################################################################################################
+def MetadataObjectForURL(url):
+
+    html = HTML.ElementFromURL(url)
+
+    title = html.xpath('//meta[@property="og:title"]/@content')
+    if not title:
+        raise Ex.MediaNotAvailable
+
+    thumb = html.xpath('//meta[@property="og:image"]/@content')
+
+    return VideoClipObject(
+        title=title[0],
+        thumb=thumb[0] if thumb else 'http://i.imgur.com/75YO83o.jpg',
+        source_title='VeeHD'
+    )
+
+####################################################################################################
+def MediaObjectsForURL(url):
+
+    return [
+        MediaObject(
+            video_resolution='sd',
+            audio_channels=2,
+            optimized_for_streaming=False,
+            parts=[
+                PartObject(key=Callback(PlayVideo, url=url))
+                ]
+            )
+        ]
+
+####################################################################################################
+@indirect
+def PlayVideo(url, **kwargs):
+
+    video_id = url.split('/video/')[-1].split('_')[0]
+    page = HTTP.Request('http://veehd.com/embed?v=%s' % (video_id), cacheTime=0).content
+
+    embed_url = Regex(r'\"\/(embed\?v=\d+&d=\d+)"').search(page).group(1)
+    embed_url = 'http://veehd.com/%s' % (embed_url)
+
+    html = HTML.ElementFromURL(embed_url, cacheTime=0)
+
+    embed = html.xpath('//embed[@type="video/divx"]/@src')
+    flashvars = html.xpath('//param[@name="flashvars"]/@value')
+
+    if len(embed) > 0:
+        return IndirectResponse(VideoClipObject, key=embed[0])
+    elif len(flashvars) > 0:
+        json = flashvars[0].split('config=')[-1]
+        json_obj = JSON.ObjectFromString(json)
+        video_url = String.Unquote(json_obj['clip']['url'])
+        return IndirectResponse(VideoClipObject, key=video_url)
+    else:
+        raise Ex.MediaNotAvailable

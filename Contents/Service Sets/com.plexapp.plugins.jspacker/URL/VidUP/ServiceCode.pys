@@ -1,0 +1,99 @@
+#!/usr/bin/env python
+
+"""VidUP Service Code"""
+
+from unpacker import unpack as Unpack
+
+####################################################################################################
+def NormalizeURL(url):
+
+    if '/embed-' in url:
+        url = url.replace('/embed-', '/').split('-')[0]
+
+    return url
+
+####################################################################################################
+def MetadataObjectForURL(url):
+
+    html = HTML.ElementFromURL(url)
+
+    title = html.xpath('//meta[@property="og:title"]/@content')
+    thumb = html.xpath('//meta[@property="og:image"]/@content')
+    if not title:
+        raise Ex.MediaNotAvailable
+
+    return VideoClipObject(
+        title=title[0].strip(),
+        thumb=thumb[0].strip() if thumb else 'http://i.imgur.com/75YO83o.jpg',
+        source_title=get_source_title(url)
+        )
+
+####################################################################################################
+def MediaObjectsForURL(url):
+
+    mo = []
+    fmt_list = source_dict(get_embed_url(url))
+    for item in reversed(sorted(fmt_list, key=lambda k: k['label'])):
+        mo.append(MediaObject(
+            video_resolution=item['label'][:-1],
+            audio_channels=2,
+            optimized_for_streaming=False,
+            parts=[PartObject(key=Callback(PlayVideo, url=url, label=item['label']))]
+            ))
+
+    if len(mo) == 0:
+        raise Ex.MediaNotAvailable
+    else:
+        return mo
+
+####################################################################################################
+@indirect
+def PlayVideo(url, label, **kwargs):
+
+    fmt_list = source_dict(get_embed_url(url))
+    for item in fmt_list:
+        if label == item['label']:
+            Log.Debug("* PlayVideo URL  = %s" %item['file'])
+            return IndirectResponse(VideoClipObject, key=item['file'])
+
+    raise Ex.MediaNotAvailable
+
+####################################################################################################
+def get_embed_url(url):
+
+    if 'embed-' not in url:
+        r = Regex(r'(https?:\/\/(?:beta\.)?vidup\.(?:[^/]+\/)?)(.*?)(?:\/|\.|$)').search(url)
+        url = r.group(1) + 'embed-' + r.group(2) + '.html'
+
+    return url
+
+####################################################################################################
+def source_dict(url):
+
+    page = HTTP.Request(url).content
+    data = Regex(r"<script type=.text\/javascript.>(eval\(function\(p,a,c,k,e,.+(?:file).+\.split\('\|'\)\)\))").search(page)
+    if data:
+        data = Unpack(data.group(1))
+        data = data.replace('\\', '')
+    else:
+        raise Ex.MediaNotAvailable
+
+    sources = Regex(r'sources:(.*),sharing').search(data)
+    if not sources:
+        raise Ex.MediaExpired
+
+    s = sources.group(1)
+    s = s.replace('\'', '\"').replace('label', '\"label\"').replace('file', '\"file\"')
+
+    return JSON.ObjectFromString(s)
+
+####################################################################################################
+def get_source_title(url):
+    """get source title from url"""
+
+    stitle = url.split('/')[2]
+    sltitle = stitle.split('.')
+    if len(sltitle) > 2:
+        return sltitle[1].title()+'.'+sltitle[2]
+    else:
+        return sltitle[0].title()+'.'+sltitle[1]

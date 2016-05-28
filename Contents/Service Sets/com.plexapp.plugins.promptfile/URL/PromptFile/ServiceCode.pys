@@ -1,0 +1,75 @@
+#!/usr/bin/env python
+
+"""(Promp, Brisk)file Service Code"""
+
+import urllib2
+HEADERS = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2623.110 Safari/537.36'}
+
+####################################################################################################
+def MetadataObjectForURL(url):
+
+    html = HTML.ElementFromURL(url, headers=HEADERS)
+    if html.xpath('//div[@id="not_found_msg"]'):
+        raise Ex.MediaExpired
+
+    title = html.xpath('//span/@title')[0].strip()
+
+    return VideoClipObject(
+        title=title,
+        thumb='http://i.imgur.com/75YO83o.jpg',
+        source_title=url.split('/')[2].title()
+        )
+
+####################################################################################################
+def MediaObjectsForURL(url):
+
+    return [
+        MediaObject(
+            video_resolution='sd',
+            audio_channels=2,
+            optimized_for_streaming=False,
+            parts=[
+                PartObject(key=Callback(PlayVideo, url=url))
+                ]
+            )
+        ]
+
+####################################################################################################
+@indirect
+def PlayVideo(url, **kwargs):
+
+    html = HTML.ElementFromURL(url, headers=HEADERS)
+    post_values = {}
+    h = {'Content-type': 'application/x-www-form-urlencoded'}
+    h.update(HEADERS)
+
+    for item in html.xpath('//form[@method="post"]'):
+        name = item.xpath('./input/@name')[0]
+        value = item.xpath('./input/@value')[0]
+        chash = value
+        onclick = item.xpath('./button/@onclick')[0]
+        rhash = Regex(r'(\+)?(?:\'|\")([^\'\"\#)]+)(?:\"|\')(\+)?').search(onclick)
+        if rhash:
+            r = rhash.groups()
+            if r[0] == '+':
+                chash = value + r[1]
+            elif r[2] == '+':
+                chash = r[1] + value
+        post_values[name] = chash
+
+    page = HTTP.Request(url, values=post_values, headers=h, method='POST').content
+
+    vurl = Regex(r'url\:\s?[\"\'](http[^\"\']+?)[\"\'],').search(page)
+    if vurl:
+        try:
+            req = urllib2.Request(vurl.group(1), headers=HEADERS)
+            req.get_method = lambda : 'HEAD'
+            resp = urllib2.urlopen(req)
+            vurl = resp.geturl()
+        except Exception as e:
+            Log.Error('* PlayVideo Error: %s' %str(e))
+            vurl = vurl.group(1)
+        Log.Debug('* PlayVideo ULR = %s' %vurl)
+        return IndirectResponse(VideoClipObject, key=vurl)
+    else:
+        raise Ex.MediaNotAvailable

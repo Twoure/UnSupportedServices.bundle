@@ -1,0 +1,97 @@
+#!/usr/bin/env python
+
+"""FileNuke and ShareSix Service Code"""
+
+HTTP_HEADERS = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36'}
+
+####################################################################################################
+def NormalizeURL(url):
+    return url.split('?')[0]
+
+####################################################################################################
+def MetadataObjectForURL(url):
+
+    try:
+        tree = HTML.ElementFromURL(url, headers=HTTP_HEADERS)
+        go_next = tree.xpath('//a[@id="go-next"]/@href')[0]
+    except Exception as e:
+        Log.Error('* MetadataObjectForURL Error: %s' %str(e))
+        raise Ex.MediaNotAvailable
+
+    if not go_next.startswith('/'):
+        raise Ex.MediaExpired
+
+    rurl = url.split('/')[0] + '//' + url.split('/')[2] + go_next
+    try:
+        page = HTTP.Request(rurl).content
+        html = HTML.ElementFromString(page)
+    except:
+        raise Ex.MediaNotAvailable
+
+    file_info = html.xpath('//dl[@class="file-info"]/dd')
+    if not file_info:
+        raise Ex.MediaExpired
+
+    thumb = Regex(r'(?:\"|\')?image(?:\"|\')?(?:\s+)?\:(?:\s+)?(?:\"|\')([^\"\']+)(?:\"|\')').search(page)
+
+    return VideoClipObject(
+        title=file_info[0].text,
+        thumb=thumb.group(1) if thumb else 'http://i.imgur.com/75YO83o.jpg',
+        duration=Datetime.MillisecondsFromString(file_info[2].text.strip()),
+        source_title=get_source_title(url)
+        )
+
+####################################################################################################
+def MediaObjectsForURL(url):
+
+    return [
+        MediaObject(
+            video_resolution='sd',
+            audio_channels=2,
+            optimized_for_streaming=False,
+            parts=[
+                PartObject(key=Callback(PlayVideo, url=url))
+                ]
+            )
+        ]
+
+####################################################################################################
+@indirect
+def PlayVideo(url, **kwargs):
+
+    try:
+        tree = HTML.ElementFromURL(url, headers=HTTP_HEADERS)
+        go_next = tree.xpath('//a[@id="go-next"]/@href')[0]
+    except Exception as e:
+        Log.Error('* PlayVideo Error: %s' %str(e))
+        raise Ex.MediaNotAvailable
+
+    if not go_next.startswith('/'):
+        raise Ex.MediaExpired
+
+    rurl = url.split('/')[0] + '//' + url.split('/')[2] + go_next
+    try:
+        page = HTTP.Request(rurl, headers=HTTP_HEADERS).content
+    except:
+        raise Ex.MediaNotAvailable
+
+    r = Regex(r'(?:\"|\')?file(?:\"|\')?(?:\s)?\:(?:\s)?(?:\"|\')(http[^\"\']+(?<!m3u8|smil))(?:\"|\')').search(page)
+    if not r:
+        r = Regex(r'var.+(?:\s+)?\=(?:\s+)?(?:\"|\')(http[^\"\']+(?<!m3u8|smil))(?:\"|\')').search(page)
+        if not r:
+            Log.Error('* PlayVideo Error: No Video URL found.' %vurl.group(1))
+            raise Ex.MediaNotAvailable
+
+    Log.Debug('* PlayVideo URL = %s' %r.group(1))
+    return IndirectResponse(VideoClipObject, key=r.group(1), http_headers=HTTP_HEADERS)
+
+####################################################################################################
+def get_source_title(url):
+    """get source title from url"""
+
+    stitle = url.split('/')[2]
+    sltitle = stitle.split('.')
+    if len(sltitle) > 2:
+        return sltitle[1].title()+'.'+sltitle[2]
+    else:
+        return sltitle[0].title()+'.'+sltitle[1]

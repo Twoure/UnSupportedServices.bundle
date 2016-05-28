@@ -1,0 +1,78 @@
+#!/usr/bin/env python
+
+"""NeoDrive and CloudZilla Service Code"""
+
+HTTP_HEADERS = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36'}
+
+####################################################################################################
+def NormalizeURL(url):
+
+    if '/embed/' not in url:
+        r = Regex(r'(https?\:\/\/(?:www\.)?\w+\.(?:[^/]+\/)?)(?:\w+[/])?(?:\w+[/])?([^\/\.]+)').search(url)
+        url = r.group(1) + 'embed/' + r.group(2)
+    return url
+
+####################################################################################################
+def MetadataObjectForURL(url):
+
+    try:
+        page = HTTP.Request(url).content
+    except:
+        raise Ex.MediaNotAvailable
+
+    data = get_data(page)
+    if not data:
+        raise Ex.MediaExpired
+
+    return VideoClipObject(
+        title=data['title'],
+        thumb=data['thumbnail'],
+        source_title=get_source_title(url)
+        )
+
+####################################################################################################
+def MediaObjectsForURL(url):
+
+    return [
+        MediaObject(
+            video_resolution='sd',
+            audio_channels=2,
+            optimized_for_streaming=False,
+            parts=[
+                PartObject(key=Callback(PlayVideo, url=url))
+                ]
+            )
+        ]
+
+####################################################################################################
+@indirect
+def PlayVideo(url, **kwargs):
+
+    page = HTTP.Request(url, headers=HTTP_HEADERS).content
+    data = get_data(page)
+    if data:
+        Log.Debug('* PlayVideo URL = \"%s\"' %data['url'])
+        return IndirectResponse(VideoClipObject, key=data['url'], http_headers=HTTP_HEADERS)
+
+    raise Ex.MediaNotAvailable
+
+####################################################################################################
+def get_data(page):
+    keys = ['title', 'thumbnail', 'url']
+    data = {}
+    for k in keys:
+        r = Regex(r'var(?:\s+)?v%s(?:\s+)?\=(?:\s+)?(?:\"|\')(.+)(?:\"|\')' %k).search(page)
+        if r:
+            data.update({k: r.group(1)})
+    return data
+
+####################################################################################################
+def get_source_title(url):
+    """get source title from url"""
+
+    stitle = url.split('/')[2]
+    sltitle = stitle.split('.')
+    if len(sltitle) > 2:
+        return sltitle[1].title()+'.'+sltitle[2]
+    else:
+        return sltitle[0].title()+'.'+sltitle[1]
