@@ -1,19 +1,19 @@
 UnSupported Services
 ====================
 
-This is a plugin that creates a new system _Services_ channel in [Plex Media Server](https://plex.tv/) (PMS) to supplement the current official [Services.bundle](https://github.com/plexinc-plugins/Services.bundle).  The intent of this channel is to keep a centralized list of host available to multiple channels just as the current Services bundle does, with the key difference that this channel updates/installs seperately from the main Services bundle and will be avaialbe outside of PMS releases.
+This is a plugin that creates a new system _Services_ channel in [Plex Media Server](https://plex.tv/) (PMS) to supplement the current official [Services.bundle](https://github.com/plexinc-plugins/Services.bundle).  The intent of this channel is to keep a centralized list of host available to multiple channels just as the current Services bundle does, with the key difference that this channel updates/installs separately from the main Services bundle and will be avaialbe outside of PMS releases.
 
 I plan to make a few channels that will require this UnSupported Services channel.  Since PMS service code is delegated via alphanumeric listing, this will solve the issue created when making channels that require the same video host.
 
-> **Note:** the author of this plugin has no affiliation with any of the video host provieded by this channel nor the owners of the content that they host.
+> **Note:** the author of this plugin has no affiliation with any of the video host provided by this channel nor the owners of the content that they host.
 
 ## Install
 
-### Auto
+#### Auto
 - ~~Install via [WebTools.bundle](https://github.com/dagalufh/WebTools.bundle)~~  _(Not yet added to UASv2)_
-- ~~Restar PMS~~
+- ~~Restart PMS~~
 
-### Manual
+#### Manual
 
 - [Download](https://github.com/Twoure/UnSupportedServices.bundle/archive/master.zip) and install by following the Plex [instructions](https://support.plex.tv/hc/en-us/articles/201187656-How-do-I-manually-install-a-channel-) or the instructions below.
   - Unzip and rename the folder to **UnSupportedServices.bundle**
@@ -26,7 +26,7 @@ I plan to make a few channels that will require this UnSupported Services channe
   - If the Video Thumb is black then the video/thumb host domain is down
   - Basically if the video thumb is not black, then the video should play
 - **Zalaa** / **Uploadc**
-  - Video URL needs `User-Agent` and `Refere` to work.  I have included them in the code, but Plex still cannot play them.
+  - Video URL needs `User-Agent` and `Referer` to work.  I have included them in the code, but Plex still cannot play them.
   - Still looking into, but might have to scrap for now
 - **NeoDrive** / **CloudZilla**
   - Able to parse and download the Video URL, but Plex will not play the stream
