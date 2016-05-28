@@ -36,7 +36,7 @@
     <dict>
       <key>URLPatterns</key>
       <array>
-        <string>^vidzi\:https?\:\/\/(www\.)?vidzi\.(?:[^/]+\/).+</string>
+        <string>^uss\/https?\:\/\/(www\.)?vidzi\.(?:[^/]+\/).+</string>
       </array>
     </dict>
     <key>VShare</key>
@@ -50,18 +50,19 @@
     <dict>
       <key>URLPatterns</key>
       <array>
+        <string>^https?\:\/\/(www\.)?allmyvideos\.(?:[^/]+\/).+</string>
         <string>^https?\:\/\/(www\.)?filehoot\.(?:[^/]+\/).+</string>
-        <string>^https?\:\/\/(www\.)?gorillavid\.(?:[^/]+\/).+</string>
+        <string>^uss\/https?\:\/\/(www\.)?gorillavid\.(?:[^/]+\/).+</string>
         <string>^https?\:\/\/(www\.)?movpod\.(?:[^/]+\/).+</string>
         <string>^https?\:\/\/(www\.)?powerwatch\.(?:[^/]+\/).+</string>
         <string>^https?\:\/\/(www\.)?rapidvideo\.(?:[^/]+\/).+</string>
-        <string>^https?\:\/\/(www\.)?thevideobee\.(?:[^/]+\/).+</string>
         <string>^https?\:\/\/(www\.)?streamin\.(?:[^/]+\/).+</string>
-        <string>^https?\:\/\/(www\.)?vidtodo\.(?:[^/]+\/).+</string>
-        <string>^https?\:\/\/(www\.)?allmyvideos\.(?:[^/]+\/).+</string>
         <string>^https?\:\/\/(www\.)?streamplay\.(?:[^/]+\/).+</string>
-        <string>^https?\:\/\/(www\.)?zstream\.(?:[^/]+\/).+</string>
+        <string>^https?\:\/\/(www\.)?thevideobee\.(?:[^/]+\/).+</string>
+        <string>^https?\:\/\/(www\.)?vidtodo\.(?:[^/]+\/).+</string>
         <string>^https?\:\/\/(www\.)?vidplay\.(?:[^/]+\/).+</string>
+        <string>^uss\/https?\:\/\/(www\.)?vodlocker\.(?:[^/]+\/).+</string>
+        <string>^https?\:\/\/(www\.)?zstream\.(?:[^/]+\/).+</string>
       </array>
     </dict>
   </dict>

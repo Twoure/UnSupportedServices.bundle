@@ -2,10 +2,13 @@
 
 """
 Service Code for:
-    DaClips, FileHoot, GorillaVid, MovPod, PowerWatch
-    Rapidvideo, TheVideoBee, Streamin, Vidtodo, AllMyVideos
+    AllMyVideos, FileHoot, GorillaVid, MovPod, PowerWatch,
+    Rapidvideo, Streamin, StreamPlay, TheVideoBee, Vidtodo,
+    VidPlay, VoDLocker, ZStream
 
 Decided to sepearte out Vidto, because it host multiple resolutions
+
+DaClips is now behind cloudflare anti scrape bot
 """
 
 from unpacker import unpack as Unpack
@@ -22,6 +25,7 @@ def NormalizeURL(url):
 def MetadataObjectForURL(url):
 
     try:
+        url = correct_url(url)
         html = HTML.ElementFromURL(url)
     except:
         raise Ex.MediaNotAvailable
@@ -54,22 +58,37 @@ def MetadataObjectForURL(url):
 ####################################################################################################
 def MediaObjectsForURL(url):
 
-    return [
-        MediaObject(
-            video_resolution='sd',
-            audio_channels=2,
-            optimized_for_streaming=False,
-            parts=[
-                PartObject(key=Callback(PlayVideo, url=url))
-                ]
-            )
-        ]
+    if Regex(r'(?:\.|\/)(vodlocker|gorillavid)\.').search(url):
+        return [
+            MediaObject(
+                container=Container.MP4,
+                video_codec=VideoCodec.H264,
+                video_resolution='sd',
+                audio_codec=AudioCodec.AAC,
+                audio_channels=2,
+                optimized_for_streaming=True,
+                parts=[
+                    PartObject(key=Callback(PlayVideo, url=url))
+                    ]
+                )
+            ]
+    else:
+        return [
+            MediaObject(
+                video_resolution='sd',
+                audio_channels=2,
+                optimized_for_streaming=False,
+                parts=[
+                    PartObject(key=Callback(PlayVideo, url=url))
+                    ]
+                )
+            ]
 
 ####################################################################################################
 @indirect
 def PlayVideo(url, **kwargs):
 
-    url = get_embed_url(url)
+    url = get_embed_url(correct_url(url))
     page = HTTP.Request(url, headers=HTTP_HEADERS).content
     packed = get_packed_data(page)
     if packed:
@@ -90,11 +109,18 @@ def get_packed_data(page):
 
 ####################################################################################################
 def get_embed_url(url, norm=False):
-    r = Regex(r'(https?\:\/\/(?:www\.)?\w+\.(?:[^/]+\/)?)(?:.*?[/])?([^\/\.]+)').search(url)
+    r = Regex(r'(.*?https?\:\/\/(?:www\.)?\w+\.(?:[^/]+\/)?)(?:.*?[/])?([^\/\.]+)').search(url)
     if norm:
         return r
     else:
         return r.group(1) + 'embed-' + r.group(2) + '.html'
+
+####################################################################################################
+def correct_url(url):
+    url_list = ['vodlocker', 'gorillavid']
+    test = [url[4:] for u in url_list if Regex(r'(?:\.|\/)(%s)\.' %u).search(url)]
+    url = test[0] if test else url
+    return url
 
 ####################################################################################################
 def get_source_title(url):

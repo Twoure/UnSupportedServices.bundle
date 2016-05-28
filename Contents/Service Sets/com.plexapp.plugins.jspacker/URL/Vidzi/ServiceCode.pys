@@ -18,7 +18,8 @@ def NormalizeURL(url):
 def MetadataObjectForURL(url):
 
     try:
-        html = HTML.ElementFromURL(url[6:])
+        url = url[4:]
+        html = HTML.ElementFromURL(url)
     except:
         raise Ex.MediaNotAvailable
 
@@ -36,7 +37,7 @@ def MetadataObjectForURL(url):
     return VideoClipObject(
         title=title,
         thumb=thumb[0] if thumb else 'http://i.imgur.com/75YO83o.jpg',
-        source_title=get_source_title(url[6:])
+        source_title=get_source_title(url)
         )
 
 ####################################################################################################
@@ -57,7 +58,7 @@ def MediaObjectsForURL(url):
 @indirect
 def PlayVideo(url, **kwargs):
 
-    page = HTTP.Request(url[6:], headers=HTTP_HEADERS).content
+    page = HTTP.Request(url[4:], headers=HTTP_HEADERS).content
     packed = Regex(r"<script type=.text\/javascript.>(eval\(function\(p,a,c,k,e,.+(?:file).+\.split\('\|'\)\)\))").search(page)
     if packed:
         data = Unpack(packed.group(1))
