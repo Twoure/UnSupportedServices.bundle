@@ -25,14 +25,11 @@ def MetadataObjectForURL(url):
         raise Ex.MediaNotAvailable
 
     image = html.xpath('//meta[@property="og:image"]/@content')
-    thumb = 'http://i.imgur.com/75YO83o.jpg'
-    if image:
-        thumb = thumb[0]
 
     return VideoClipObject(
         title=title[0].strip(),
-        thumb=thumb,
-        source_title=url.split('/')[2].title()
+        thumb=image[0] if image else 'http://i.imgur.com/75YO83o.jpg',
+        source_title='FlashX'
         )
 
 ####################################################################################################
