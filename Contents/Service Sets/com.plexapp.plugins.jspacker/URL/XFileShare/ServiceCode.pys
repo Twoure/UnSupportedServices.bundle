@@ -119,8 +119,7 @@ def get_embed_url(url, norm=False):
 def correct_url(url):
     url_list = ['vodlocker', 'gorillavid']
     test = [url[4:] for u in url_list if Regex(r'(?:\.|\/)(%s)\.' %u).search(url)]
-    url = test[0] if test else url
-    return url
+    return test[0] if test else url
 
 ####################################################################################################
 def get_source_title(url):

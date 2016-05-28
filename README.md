@@ -41,7 +41,7 @@ I plan to make a few channels that will require this UnSupported Services channe
   - The server they use is currently offline so videos cannot load
 - **DaClips**
   - Normally included within XFileShare code, but is now behind cloudflare anit scrape bot
-  - Would need to implement cfscrape and require JavaScript to parse souce
+  - Would need to implement cfscrape and require JavaScript to parse source
 - **GorillaVid**
   - Thumbs redirect to DaClips, but do not exist there either
 
