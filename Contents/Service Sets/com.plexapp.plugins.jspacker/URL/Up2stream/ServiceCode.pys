@@ -64,7 +64,7 @@ def PlayVideo(url, **kwargs):
     except:
         raise Ex.MediaNotAvailable
 
-    packed = get_packed_data(page)
+    packed = Regex(r"(eval\(function\(p,a,c,k,e,.+(?:src).+\.split\('\|'\).*\)\))").search(page)
     if packed:
         data = Unpack(packed.group(1))
         if data:
@@ -74,7 +74,3 @@ def PlayVideo(url, **kwargs):
                 return IndirectResponse(VideoClipObject, key=vurl.group(1), http_headers=HTTP_HEADERS)
 
     raise Ex.MediaNotAvailable
-
-####################################################################################################
-def get_packed_data(page):
-    return Regex(r"(eval\(function\(p,a,c,k,e,.+(?:src).+\.split\('\|'\).*\)\))").search(page)
