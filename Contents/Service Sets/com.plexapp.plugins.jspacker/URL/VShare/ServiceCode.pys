@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-"""VShare.eu Service Code"""
+"""VShare Service Code"""
 
 from unpacker import unpack as Unpack
 
@@ -24,21 +24,21 @@ def MetadataObjectForURL(url):
     if not title:
         raise Ex.MediaNotAvailable
 
-    title = title[0]
     duration = None
+    fallback = 'http://i.imgur.com/75YO83o.jpg'
+    thumb = fallback
     data = source_text(url)
     if data:
         data = Unpack(data.group(1))
-        thumb = Regex(r'(?:\"|\')?image(?:\"|\')?\:(?:\s)?(?:\"|\')([^\"\']+)(?:\"|\')').search(data)
+        rthumb = Regex(r'(?:\"|\')?image(?:\"|\')?\:(?:\s)?(?:\"|\')([^\"\']+)(?:\"|\')').search(data)
+        thumb = rthumb.group(1) if rthumb else fallback
+
         rd = Regex(r'(?:\"|\')?duration(?:\"|\')?(?:\s)?\:(?:\s)?(?:\"|\')(\d+)(?:\"|\')').search(data)
-        if thumb:
-            thumb = thumb.group(1)
-        if rd:
-            duration = int(rd.group(1)) * 1000
+        duration = int(rd.group(1)) * 1000 if rd else None
 
     return VideoClipObject(
-        title=title,
-        thumb=thumb if thumb else 'http://i.imgur.com/75YO83o.jpg',
+        title=title[0],
+        thumb=Resource.ContentsOfURLWithFallback([thumb, fallback]),
         duration=duration,
         source_title='VShare'
         )
