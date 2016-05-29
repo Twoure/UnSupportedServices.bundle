@@ -11,6 +11,13 @@
         <string>^https?\:\/\/(www\.)?flashx\.(?:[^/]+\/).+</string>
       </array>
     </dict>
+    <key>Movdivx</key>
+    <dict>
+      <key>URLPatterns</key>
+      <array>
+        <string>^https?\:\/\/(www\.)?movdivx\.(?:[^/]+\/).+</string>
+      </array>
+    </dict>
     <key>Vid_ag</key>
     <dict>
       <key>URLPatterns</key>
