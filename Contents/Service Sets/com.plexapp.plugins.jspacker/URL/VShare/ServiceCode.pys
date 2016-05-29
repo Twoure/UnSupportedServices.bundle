@@ -40,7 +40,7 @@ def MetadataObjectForURL(url):
         title=title,
         thumb=thumb if thumb else 'http://i.imgur.com/75YO83o.jpg',
         duration=duration,
-        source_title=get_source_title(url)
+        source_title='VShare'
         )
 
 ####################################################################################################
