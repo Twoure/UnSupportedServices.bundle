@@ -8,8 +8,8 @@
     <dict>
       <key>URLPatterns</key>
       <array>
-        <string>^https?\:\/\/(?:www\.)?promptfile\.(?:[^/]+\/).+</string>
-        <string>^https?\:\/\/(?:www\.)?briskfile\.(?:[^/]+\/).+</string>
+        <string>^https?\:\/\/(?:www\.)?promptfile\.(?:[^\/]+\/).+</string>
+        <string>^https?\:\/\/(?:www\.)?briskfile\.(?:[^\/]+\/).+</string>
       </array>
     </dict>
   </dict>

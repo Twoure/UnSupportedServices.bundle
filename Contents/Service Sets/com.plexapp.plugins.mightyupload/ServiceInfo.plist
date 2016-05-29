@@ -8,7 +8,7 @@
     <dict>
       <key>URLPatterns</key>
       <array>
-        <string>^https?\:\/\/(?:www\.)?mightyupload\.(?:[^/]+\/).+</string>
+        <string>^https?\:\/\/(?:www\.)?mightyupload\.(?:[^\/]+\/).+</string>
       </array>
     </dict>
   </dict>

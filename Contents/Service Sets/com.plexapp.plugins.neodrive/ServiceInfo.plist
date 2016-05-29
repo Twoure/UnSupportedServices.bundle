@@ -8,8 +8,8 @@
     <dict>
       <key>URLPatterns</key>
       <array>
-        <string>^https?\:\/\/(?:www\.)?neodrive\.(?:[^/]+\/).+</string>
-        <string>^https?\:\/\/(?:www\.)?cloudzilla\.(?:[^/]+\/).+</string>
+        <string>^https?\:\/\/(?:www\.)?neodrive\.(?:[^\/]+\/).+</string>
+        <string>^https?\:\/\/(?:www\.)?cloudzilla\.(?:[^\/]+\/).+</string>
       </array>
     </dict>
   </dict>
