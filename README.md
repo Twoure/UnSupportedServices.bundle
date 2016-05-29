@@ -23,8 +23,8 @@ I plan to make a few channels that will require this UnSupported Services channe
 ## Issues
 
 - **FileNuke** / **ShareSix**
-  - If the Video Thumb is black then the video/thumb host domain is down
-  - Basically if the video thumb is not black, then the video should play
+  - If the Video Thumb is black or looks like [this](http://i.imgur.com/GEKTJP3.png) then the video/thumb host domain is down
+  - Basically if the video thumb is from the video, then the video should play
 - **Zalaa** / **Uploadc**
   - Video URL needs `User-Agent` and `Referer` to work.  I have included them in the code, but Plex still cannot play them.
   - Still looking into, but might have to scrap for now
@@ -44,5 +44,6 @@ I plan to make a few channels that will require this UnSupported Services channe
   - Would need to implement cfscrape and require JavaScript to parse source
 - **GorillaVid**
   - Thumbs redirect to DaClips, but do not exist there either
+  - Added fallback thumb for now
 
 ## [Changelog](Changelog.md#changelog)
