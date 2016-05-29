@@ -8,14 +8,15 @@
     <dict>
       <key>URLPatterns</key>
       <array>
-        <string>^https?\:\/\/(www\.)?wholecloud\.(?:[^/]+\/).+</string>
         <string>^https?\:\/\/(www\.)?auroravid\.(?:[^/]+\/).+</string>
-        <string>^https?\:\/\/(www\.)?movshare\.(?:[^/]+\/).+</string>
-        <string>^https?\:\/\/(www\.)?novamov\.(?:[^/]+\/).+</string>
-        <string>^https?\:\/\/(www\.)?videoweed\.(?:[^/]+\/).+</string>
         <string>^https?\:\/\/(www\.)?bitvid\.(?:[^/]+\/).+</string>
         <string>^https?\:\/\/(www\.)?cloudtime\.(?:[^/]+\/).+</string>
+        <string>^https?\:\/\/(www\.)?movshare\.(?:[^/]+\/).+</string>
+        <string>^https?\:\/\/(www\.)?novamov\.(?:[^/]+\/).+</string>
         <string>^https?\:\/\/(www\.)?nowvideo\.(?:[^/]+\/).+</string>
+        <string>^https?\:\/\/(www\.)?videoweed\.(?:[^/]+\/).+</string>
+        <string>^https?\:\/\/(www\.)?vidgg\.(?:[^/]+\/).+</string>
+        <string>^https?\:\/\/(www\.)?wholecloud\.(?:[^/]+\/).+</string>
       </array>
     </dict>
   </dict>

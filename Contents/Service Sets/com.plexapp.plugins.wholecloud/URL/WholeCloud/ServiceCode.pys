@@ -5,11 +5,8 @@ New WholeCloud Service Code
 Added new host and simplified code
 better error handling
 Host:
-    movshare == wholecloud
-    novamov == auroravid
-    videoweed == bitvid
-    cloudtime
-    nowvideo
+    movshare | wholecloud, novamov | auroravid, videoweed | bitvid,
+    cloudtime, nowvideo, vidgg
 """
 
 HTTP_HEADERS = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36'}
@@ -41,10 +38,12 @@ def MetadataObjectForURL(url):
     else:
         title = title[0].split('Watch ')[-1].split(' online ')[0].strip()
 
-    if Regex(r'(movshare|wholecloud|novamov|auroravid|videoweed|bitvid|cloudtime|nowvideo)\s-\s(.+)').search(title.lower()):
+    if Regex(r'(movshare|wholecloud|novamov|auroravid|videoweed|bitvid|cloudtime|nowvideo|vidgg)\s-\s(.+)').search(title.lower()):
         title = title.split(' - ')[0]
 
     thumb = html.xpath('//meta[@property="og:image"]/@content')
+    fallback = 'http://i.imgur.com/75YO83o.jpg'
+    thumb = thumb[0] if thumb else fallback
 
     # test if video url returns an error, if so then do not display link
     data = get_video_url(url)
@@ -56,7 +55,7 @@ def MetadataObjectForURL(url):
 
     return VideoClipObject(
       title=title,
-      thumb=thumb[0] if thumb else 'http://i.imgur.com/75YO83o.jpg',
+      thumb=Resource.ContentsOfURLWithFallback([thumb, fallback]),
       source_title=source_title
       )
 
@@ -93,11 +92,16 @@ def PlayVideo(url, **kwargs):
     raise Ex.MediaNotAvailable
 
 ####################################################################################################
-def get_video_url(url):
-    rurl = Regex(r'(https?\:\/\/(?:www\.)?\w+\.(?:[^/]+\/)?)(?:.*?[/])?([^\/\.]+)').search(url)
-    url = rurl.group(1) + 'embed/?v=' + rurl.group(2)
+def get_embed_url(url):
+    if not Regex(r'(?:\.|\/)(vidgg)\.').search(url):
+        rurl = Regex(r'(https?\:\/\/(?:www\.)?\w+\.(?:[^/]+\/)?)(?:.*?[/])?([^\/\.]+)').search(url)
+        url = rurl.group(1) + 'embed/?v=' + rurl.group(2)
+    return url
 
-    page = HTTP.Request(url, headers=HTTP_HEADERS).content
+####################################################################################################
+def get_video_url(url):
+
+    page = HTTP.Request(get_embed_url(url), headers=HTTP_HEADERS).content
 
     keys = ['filekey', 'file', 'domain']
     apid = {}
