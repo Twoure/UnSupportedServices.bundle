@@ -33,10 +33,12 @@ def MetadataObjectForURL(url):
         raise Ex.MediaExpired
 
     thumb = Regex(r'(?:\"|\')?image(?:\"|\')?(?:\s+)?\:(?:\s+)?(?:\"|\')([^\"\']+)(?:\"|\')').search(page)
+    fallback = 'http://i.imgur.com/GEKTJP3.png'
+    thumb = thumb.group(1) if thumb else fallback
 
     return VideoClipObject(
         title=file_info[0].text,
-        thumb=thumb.group(1) if thumb else 'http://i.imgur.com/75YO83o.jpg',
+        thumb=Resource.ContentsOfURLWithFallback([thumb, fallback]),
         duration=Datetime.MillisecondsFromString(file_info[2].text.strip()),
         source_title=get_source_title(url)
         )
