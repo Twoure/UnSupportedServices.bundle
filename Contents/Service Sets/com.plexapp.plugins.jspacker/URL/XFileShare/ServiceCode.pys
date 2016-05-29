@@ -50,7 +50,7 @@ def MetadataObjectForURL(url):
 
     return VideoClipObject(
         title=title[0].strip(),
-        thumb=thumb,
+        thumb=Resource.ContentsOfURLWithFallback([thumb, 'http://i.imgur.com/75YO83o.jpg']),
         duration=duration,
         source_title=get_source_title(url)
         )
