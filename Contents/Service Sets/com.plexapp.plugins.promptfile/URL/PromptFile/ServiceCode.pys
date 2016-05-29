@@ -3,12 +3,14 @@
 """(Promp, Brisk)file Service Code"""
 
 import urllib2
-HEADERS = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2623.110 Safari/537.36'}
+import contextlib
+
+HTTP_HEADERS = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2623.110 Safari/537.36'}
 
 ####################################################################################################
 def MetadataObjectForURL(url):
 
-    html = HTML.ElementFromURL(url, headers=HEADERS)
+    html = HTML.ElementFromURL(url, headers=HTTP_HEADERS)
     if html.xpath('//div[@id="not_found_msg"]'):
         raise Ex.MediaExpired
 
@@ -38,10 +40,10 @@ def MediaObjectsForURL(url):
 @indirect
 def PlayVideo(url, **kwargs):
 
-    html = HTML.ElementFromURL(url, headers=HEADERS)
+    html = HTML.ElementFromURL(url, headers=HTTP_HEADERS)
     post_values = {}
     h = {'Content-type': 'application/x-www-form-urlencoded'}
-    h.update(HEADERS)
+    h.update(HTTP_HEADERS)
 
     for item in html.xpath('//form[@method="post"]'):
         name = item.xpath('./input/@name')[0]
@@ -62,14 +64,15 @@ def PlayVideo(url, **kwargs):
     vurl = Regex(r'url\:\s?[\"\'](http[^\"\']+?)[\"\'],').search(page)
     if vurl:
         try:
-            req = urllib2.Request(vurl.group(1), headers=HEADERS)
+            req = urllib2.Request(vurl.group(1), headers=HTTP_HEADERS)
             req.get_method = lambda : 'HEAD'
-            resp = urllib2.urlopen(req)
-            vurl = resp.geturl()
+            with contextlib.closing(urllib2.urlopen(req)) as resp:
+                vurl = resp.geturl()
         except Exception as e:
             Log.Error('* PlayVideo Error: %s' %str(e))
             vurl = vurl.group(1)
+
         Log.Debug('* PlayVideo ULR = %s' %vurl)
         return IndirectResponse(VideoClipObject, key=vurl)
-    else:
-        raise Ex.MediaNotAvailable
+
+    raise Ex.MediaNotAvailable
