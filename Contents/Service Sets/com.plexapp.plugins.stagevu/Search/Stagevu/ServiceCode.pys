@@ -1,0 +1,34 @@
+#!/usr/bin/env python
+
+"""Stagevu.com Search Code"""
+
+SEARCH_URL = 'http://stagevu.com/search?x=0&y=0&for=%s&in=Videos&perpage=50'
+
+####################################################################################################
+def Search(query):
+
+    oc = ObjectContainer(title1='Stagevu', title2='Search Results')
+    html = HTML.ElementFromURL(SEARCH_URL %String.Quote(query.strip(), usePlus=True))
+
+    if not html.xpath('//div[@class="searcherror"]'):
+        for node in html.xpath('//div[@class="resultcont"]'):
+            title = node.xpath('./h2/a/text()')[0].strip()
+            summary = node.xpath('./p/text()')
+
+            anode = node.xpath('./a')[0]
+            thumb = anode.xpath('./img/@src')[0]
+            url = anode.get('href')
+
+            rduration = Regex(r'Length:\s+([^\;]+)').search(node.xpath('./following-sibling::div[@class="resultinfo"]')[0].text_content().strip())
+            duration = Datetime.MillisecondsFromString(rduration.group(1))
+
+            oc.add(VideoClipObject(
+                title=title,
+                thumb=Resource.ContentsOfURLWithFallback([thumb, 'http://i.imgur.com/75YO83o.jpg']),
+                duration=duration,
+                summary=summary[0].strip() if summary else None,
+                source_title='Stagevu',
+                url=url
+                ))
+
+    return oc
