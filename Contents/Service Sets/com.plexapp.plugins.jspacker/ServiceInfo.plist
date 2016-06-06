@@ -69,7 +69,7 @@
         <string>^uss\/https?\:\/\/(www\.)?gorillavid\.(?:[^\/]+\/).+</string>
         <string>^https?\:\/\/(www\.)?movpod\.(?:[^\/]+\/).+</string>
         <string>^https?\:\/\/(www\.)?powerwatch\.(?:[^\/]+\/).+</string>
-        <string>^https?\:\/\/(www\.)?rapidvideo\.(?:[^\/]+\/).+</string>
+        <string>^https?\:\/\/(www\.)?rapidvideo\.ws\/.+</string>
         <string>^https?\:\/\/(www\.)?streamin\.(?:[^\/]+\/).+</string>
         <string>^https?\:\/\/(www\.)?streamplay\.(?:[^\/]+\/).+</string>
         <string>^https?\:\/\/(www\.)?thevideobee\.(?:[^\/]+\/).+</string>
