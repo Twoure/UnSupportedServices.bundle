@@ -1,0 +1,33 @@
+#!/usr/bin/env python
+
+"""VeeHD Search Code"""
+
+SEARCH_URL = 'http://veehd.com/search?q=%s'
+
+####################################################################################################
+def Search(query):
+
+    oc = ObjectContainer(title1='VeeHD', title2='Search Results')
+    html = HTML.ElementFromURL(SEARCH_URL %String.Quote(query.strip(), usePlus=True))
+
+    for node in html.xpath('//tr'):
+        if not node.xpath('.//div[@class="previewBlockHolder"]'):
+            continue
+
+        ph = node.xpath('.//div[@class="previewHolder"]')[0]
+        href = ph.xpath('./a/@href')[0]
+        thumb = ph.xpath('.//img/@src')[0]
+        duration = Datetime.MillisecondsFromString(ph.xpath('.//span[@class="time"]/text()')[0].strip())
+        title = node.xpath('.//h2/a/text()')[0].strip()
+        summary = node.xpath('.//span[starts-with(@style, "font-size")]/text()')[0].strip()
+
+        oc.add(VideoClipObject(
+            title=title,
+            thumb=Resource.ContentsOfURLWithFallback([thumb, 'http://i.imgur.com/75YO83o.jpg']),
+            duration=duration,
+            summary=summary,
+            source_title='VeeHD',
+            url='http://veehd.com' + href
+            ))
+
+    return oc

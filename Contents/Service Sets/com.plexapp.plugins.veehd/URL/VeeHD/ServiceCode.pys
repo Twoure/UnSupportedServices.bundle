@@ -54,11 +54,13 @@ def PlayVideo(url, **kwargs):
     flashvars = html.xpath('//param[@name="flashvars"]/@value')
 
     if len(embed) > 0:
+        Log.Debug('* PlayVideo URL = %s' %embed[0])
         return IndirectResponse(VideoClipObject, key=embed[0])
     elif len(flashvars) > 0:
         json = flashvars[0].split('config=')[-1]
         json_obj = JSON.ObjectFromString(json)
         video_url = String.Unquote(json_obj['clip']['url'])
+        Log.Debug('* PlayVideo URL = %s' %video_url)
         return IndirectResponse(VideoClipObject, key=video_url)
     else:
         raise Ex.MediaNotAvailable
