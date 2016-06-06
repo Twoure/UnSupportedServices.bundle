@@ -1,0 +1,31 @@
+#!/usr/bin/env python
+
+"""VoDLocker.com Search Code"""
+
+SEARCH_URL = 'http://vodlocker.com/?op=search&k=%s&per_page=50'
+
+####################################################################################################
+def Search(query):
+
+    oc = ObjectContainer(title1='VoDLocker', title2='Search Results')
+    html = HTML.ElementFromURL(SEARCH_URL %String.Quote(query.strip(), usePlus=True))
+
+    for node in html.xpath('//table/tr'):
+        anode = node.xpath('.//a')
+        if not anode:
+            continue
+
+        thumb = Regex(r'(https?\:[^\)]+)').search(anode[0].get('style')).group(1)
+        duration = Datetime.MillisecondsFromString(anode[0].xpath('./span/text()')[0])
+
+        title = node.xpath('.//div[@class="link"]/a/text()')[0].strip()
+
+        oc.add(VideoClipObject(
+            title=title,
+            thumb=Resource.ContentsOfURLWithFallback([thumb, 'http://i.imgur.com/75YO83o.jpg']),
+            duration=duration,
+            source_title='VoDLocker',
+            url='uss/' + anode[0].get('href')
+            ))
+
+    return oc
