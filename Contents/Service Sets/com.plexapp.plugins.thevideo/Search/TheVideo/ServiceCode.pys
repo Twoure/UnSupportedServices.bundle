@@ -1,0 +1,25 @@
+#!/usr/bin/env python
+
+"""TheVideo.me Search Code"""
+
+SEARCH_URL = 'http://thevideo.me/ajax/search?page=1&search_query=%s'
+
+####################################################################################################
+def Search(query):
+
+    oc = ObjectContainer(title1='TheVideo', title2='Search Results')
+    data = JSON.ObjectFromURL(SEARCH_URL %String.Quote(query.strip(), usePlus=True))
+
+    if data['response']['results']:
+        for r in data['response']['results']:
+            if r['file_status'].lower() == 'ok':
+                oc.add(VideoClipObject(
+                    title=r['file_title'],
+                    thumb=Resource.ContentsOfURLWithFallback([r['img_default'], 'http://i.imgur.com/75YO83o.jpg']),
+                    duration=int(r['file_length']) * 1000,
+                    summary=r['file_descr'],
+                    source_title='TheVideo',
+                    url=r['download_link']
+                    ))
+
+    return oc
