@@ -2,7 +2,7 @@
 
 """VoDLocker.com Search Code"""
 
-SEARCH_URL = 'http://vodlocker.com/?op=search&k=%s&per_page=50'
+SEARCH_URL = 'http://vodlocker.com/?op=search&k=%s&per_page=15'
 
 ####################################################################################################
 def Search(query):

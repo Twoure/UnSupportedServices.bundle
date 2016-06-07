@@ -2,7 +2,7 @@
 
 """Stagevu.com Search Code"""
 
-SEARCH_URL = 'http://stagevu.com/search?x=0&y=0&for=%s&in=Videos&perpage=50'
+SEARCH_URL = 'http://stagevu.com/search?x=0&y=0&for=%s&in=Videos&perpage=15'
 
 ####################################################################################################
 def Search(query):

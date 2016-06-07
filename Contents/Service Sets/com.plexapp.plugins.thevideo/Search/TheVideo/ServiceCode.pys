@@ -12,7 +12,9 @@ def Search(query):
 
     if data['response']['results']:
         for r in data['response']['results']:
-            if r['file_status'].lower() == 'ok':
+            count = 0
+            if (r['file_status'].lower() == 'ok') and (count < 15):
+                count += 1
                 oc.add(VideoClipObject(
                     title=r['file_title'],
                     thumb=Resource.ContentsOfURLWithFallback([r['img_default'], 'http://i.imgur.com/75YO83o.jpg']),

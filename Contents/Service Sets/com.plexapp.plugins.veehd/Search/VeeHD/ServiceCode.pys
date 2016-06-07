@@ -9,11 +9,16 @@ def Search(query):
 
     oc = ObjectContainer(title1='VeeHD', title2='Search Results')
     html = HTML.ElementFromURL(SEARCH_URL %String.Quote(query.strip(), usePlus=True))
+    count = 0
 
     for node in html.xpath('//tr'):
         if not node.xpath('.//div[@class="previewBlockHolder"]'):
             continue
 
+        if count > 15:
+            continue
+
+        count += 1
         ph = node.xpath('.//div[@class="previewHolder"]')[0]
         href = ph.xpath('./a/@href')[0]
         thumb = ph.xpath('.//img/@src')[0]
