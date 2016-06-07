@@ -13,7 +13,7 @@ def MetadataObjectForURL(url):
 
     try:
         tree = HTML.ElementFromURL(url, headers=HTTP_HEADERS)
-        go_next = tree.xpath('//a[@id="go-next"]/@href')[0]
+        go_next = get_go_next(tree, url)
     except Exception as e:
         Log.Error('* MetadataObjectForURL Error: %s' %str(e))
         raise Ex.MediaNotAvailable
@@ -32,13 +32,13 @@ def MetadataObjectForURL(url):
     if not file_info:
         raise Ex.MediaExpired
 
-    thumb = Regex(r'(?:\"|\')?image(?:\"|\')?(?:\s+)?\:(?:\s+)?(?:\"|\')([^\"\']+)(?:\"|\')').search(page)
-    fallback = 'http://i.imgur.com/GEKTJP3.png'
-    thumb = thumb.group(1) if thumb else fallback
+    data = get_data(page)
+    if not data['url']:
+        raise Ex.MediaNotAvailable
 
     return VideoClipObject(
         title=file_info[0].text,
-        thumb=Resource.ContentsOfURLWithFallback([thumb, fallback]),
+        thumb=Resource.ContentsOfURLWithFallback([data['thumb'], 'http://i.imgur.com/GEKTJP3.png']),
         duration=Datetime.MillisecondsFromString(file_info[2].text.strip()),
         source_title=get_source_title(url)
         )
@@ -63,7 +63,7 @@ def PlayVideo(url, **kwargs):
 
     try:
         tree = HTML.ElementFromURL(url, headers=HTTP_HEADERS)
-        go_next = tree.xpath('//a[@id="go-next"]/@href')[0]
+        go_next = get_go_next(tree, url)
     except Exception as e:
         Log.Error('* PlayVideo Error: %s' %str(e))
         raise Ex.MediaNotAvailable
@@ -77,15 +77,12 @@ def PlayVideo(url, **kwargs):
     except:
         raise Ex.MediaNotAvailable
 
-    r = Regex(r'(?:\"|\')?file(?:\"|\')?(?:\s)?\:(?:\s)?(?:\"|\')(http[^\"\']+(?<!m3u8|smil))(?:\"|\')').search(page)
-    if not r:
-        r = Regex(r'var.+(?:\s+)?\=(?:\s+)?(?:\"|\')(http[^\"\']+(?<!m3u8|smil))(?:\"|\')').search(page)
-        if not r:
-            Log.Error('* PlayVideo Error: No Video URL found.' %vurl.group(1))
-            raise Ex.MediaNotAvailable
+    data = get_data(page)
+    if data['url']:
+        Log.Debug('* PlayVideo URL = %s' %data['url'])
+        return IndirectResponse(VideoClipObject, key=data['url'], http_headers=HTTP_HEADERS)
 
-    Log.Debug('* PlayVideo URL = %s' %r.group(1))
-    return IndirectResponse(VideoClipObject, key=r.group(1), http_headers=HTTP_HEADERS)
+    raise Ex.MediaNotAvailable
 
 ####################################################################################################
 def get_source_title(url):
@@ -97,3 +94,23 @@ def get_source_title(url):
         return sltitle[1].title()+'.'+sltitle[2]
     else:
         return sltitle[0].title()+'.'+sltitle[1]
+
+####################################################################################################
+def get_go_next(html, url):
+    if Regex(r'(?:\.|\/)(sharesix)\.').search(url):
+        go_next = html.xpath('//td[starts-with(@class, "download")]/a/@href')[0]
+    else:
+        go_next = html.xpath('//a[@id="go-next"]/@href')[0]
+    return go_next
+
+####################################################################################################
+def get_data(page):
+    rthumb = Regex(r'(?:\"|\')?image(?:\"|\')?(?:\s+)?\:(?:\s+)?(?:\"|\')([^\"\']+)(?:\"|\')').search(page)
+    rvurl = Regex(r'(?:\"|\')?file(?:\"|\')?(?:\s)?\:(?:\s)?(?:\"|\')(http[^\"\']+(?<!m3u8|smil))(?:\"|\')').search(page)
+    if not rvurl:
+        rvurl = Regex(r'var.+(?:\s+)?\=(?:\s+)?(?:\"|\')(http[^\"\']+(?<!m3u8|smil))(?:\"|\')').search(page)
+
+    return {
+        'thumb': rthumb.group(1) if rthumb else 'http://i.imgur.com/75YO83o.jpg',
+        'url': rvurl.group(1) if rvurl else False
+        }
