@@ -10,7 +10,10 @@ def NormalizeURL(url):
 ####################################################################################################
 def MetadataObjectForURL(url):
 
-    html = HTML.ElementFromURL(url)
+    try:
+        html = HTML.ElementFromURL(url)
+    except:
+        raise Ex.MediaNotAvailable
 
     embed_node = html.xpath('//embed[@type="video/divx"]')
     if not embed_node:
@@ -43,7 +46,11 @@ def MediaObjectsForURL(url):
 @indirect
 def PlayVideo(url, **kwargs):
 
-    html = HTML.ElementFromURL(url)
+    try:
+        html = HTML.ElementFromURL(url)
+    except:
+        raise Ex.MediaNotAvailable
+
     vurl = html.xpath('//embed[@type="video/divx"]/@src')
     if vurl:
         Log.Debug('* PlayVideo URL  = %s' %vurl[0])
