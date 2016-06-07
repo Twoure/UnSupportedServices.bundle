@@ -27,7 +27,7 @@ def MetadataObjectForURL(url):
     if not title:
         raise Ex.MediaExpired
 
-    title = title[0].strip().replace('_', ' ').replace('.', ' ')
+    title = title[0].strip()
     data = get_data(url)
     if not data['url']:
         raise Ex.MediaNotAvailable
