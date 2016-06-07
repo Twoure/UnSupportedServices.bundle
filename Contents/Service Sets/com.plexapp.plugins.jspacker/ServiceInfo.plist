@@ -29,7 +29,7 @@
     <dict>
       <key>URLPatterns</key>
       <array>
-        <string>^https?\:\/\/(?:www\.)?vid\.(?:[^\/]+\/).+</string>
+        <string>^nahttps?\:\/\/(?:www\.)?vid\.(?:[^\/]+\/).+</string>
       </array>
     </dict>
     <key>Vidto</key>
