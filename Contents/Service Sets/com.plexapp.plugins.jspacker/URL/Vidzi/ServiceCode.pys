@@ -31,13 +31,14 @@ def MetadataObjectForURL(url):
     if len(title) < 1:
         raise Ex.MediaNotAvailable
 
-    title = title[0].strip()
-    thumb = html.xpath('//span[@id="vplayer"]/img/@src')
+    fallback = 'http://i.imgur.com/75YO83o.jpg'
+    nthumb = html.xpath('//span[@id="vplayer"]/img/@src')
+    thumb = nthumb[0] if nthumb else fallback
 
     return VideoClipObject(
-        title=title,
-        thumb=thumb[0] if thumb else 'http://i.imgur.com/75YO83o.jpg',
-        source_title=get_source_title(url)
+        title=title[0].strip(),
+        thumb=Resource.ContentsOfURLWithFallback([thumb, fallback]),
+        source_title='Vidzi'
         )
 
 ####################################################################################################
@@ -68,14 +69,3 @@ def PlayVideo(url, **kwargs):
             return IndirectResponse(VideoClipObject, key=vurl.group(1), http_headers=HTTP_HEADERS)
 
     raise Ex.MediaNotAvailable
-
-####################################################################################################
-def get_source_title(url):
-    """get source title from url"""
-
-    stitle = url.split('/')[2]
-    sltitle = stitle.split('.')
-    if len(sltitle) > 2:
-        return sltitle[1].title()+'.'+sltitle[2]
-    else:
-        return sltitle[0].title()+'.'+sltitle[1]
