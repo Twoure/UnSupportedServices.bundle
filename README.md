@@ -25,24 +25,20 @@ I plan to make a few channels that will require this UnSupported Services channe
 - **FileNuke** / **ShareSix**
   - If the Video Thumb is black or looks like [this](http://i.imgur.com/GEKTJP3.png) then the video/thumb host domain is down
   - Basically if the video thumb is from the video, then the video should play
-- **Zalaa** / **Uploadc**
+- **Zalaa** / **Uploadc** _not active code_
   - Video URL needs `User-Agent` and `Referer` to work.  I have included them in the code, but Plex still cannot play them.
-  - _not active code_
-- **NeoDrive** / **CloudZilla**
+- **NeoDrive** / **CloudZilla** _not active code_
   - Able to parse and download the Video URL, but Plex will not play the stream
   - Think it has to do with a missing header value, not sure
-  - _not active code_
-- **Vid.ag**
+- **Vid.ag** _not active code_
   - The host is down for _"maintenance"_
   - Will see if they come back, not sure
-  - _not active code_
 - **PromptFile** / **Briskfile**
   - The host does not like Kodi parsing them, and has started to implement some obfuscation
   - Currently works, but may be susceptible to breaking later
-- **MightyUpload**
+- **MightyUpload** _not active code_
   - The server they use is currently offline so videos cannot load
-  - _not active code_
-- **DaClips**
+- **DaClips** _not active code_
   - Normally included within XFileShare code, but is now behind cloudflare anit scrape bot
   - Would need to implement cfscrape and require JavaScript to parse source
 - **GorillaVid**
