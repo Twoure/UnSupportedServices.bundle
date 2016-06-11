@@ -9,7 +9,7 @@ from time import sleep
 def NormalizeURL(url):
 
     if '/embed-' in url:
-        url = url.replace('/embed-', '/')
+        url = url.replace('/embed-', '/').split('-')[0]
     return url
 
 ####################################################################################################
@@ -24,11 +24,13 @@ def MetadataObjectForURL(url):
     if not title:
         raise Ex.MediaNotAvailable
 
+    fallback = 'http://i.imgur.com/75YO83o.jpg'
     image = html.xpath('//meta[@property="og:image"]/@content')
+    thumb = image[0] if image else fallback
 
     return VideoClipObject(
         title=title[0].strip(),
-        thumb=image[0] if image else 'http://i.imgur.com/75YO83o.jpg',
+        thumb=Resource.ContentsOfURLWithFallback([thumb, fallback]),
         source_title='FlashX'
         )
 
