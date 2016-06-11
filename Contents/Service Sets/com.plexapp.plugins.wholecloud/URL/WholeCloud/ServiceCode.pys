@@ -117,7 +117,8 @@ def get_video_url(url):
             value = r.group(1)
         apid.update({k: value})
 
-    data_url = '%s/api/player.api.php?key=%s&file=%s' %(apid['domain'], apid['filekey'], apid['file'])
+    domain = apid['domain'][:-1] if apid['domain'].endswith('/') else apid['domain']
+    data_url = '%s/api/player.api.php?key=%s&file=%s' %(domain, apid['filekey'], apid['file'])
     return HTTP.Request(data_url, headers=HTTP_HEADERS).content
 
 ####################################################################################################
