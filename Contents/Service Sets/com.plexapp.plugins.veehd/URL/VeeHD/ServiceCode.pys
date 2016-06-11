@@ -10,57 +10,134 @@ def NormalizeURL(url):
 ####################################################################################################
 def MetadataObjectForURL(url):
 
-    html = HTML.ElementFromURL(url)
+    try:
+        page = HTTP.Request(url).content
+        html = HTML.ElementFromString(page)
+    except Exception as e:
+        Log.Error('* MetadataObjectForURL Error: %s' %str(e))
+        raise Ex.MediaNotAvailable
 
     title = html.xpath('//meta[@property="og:title"]/@content')
     if not title:
         raise Ex.MediaNotAvailable
 
+    fallback = 'http://i.imgur.com/75YO83o.jpg'
     thumb = html.xpath('//meta[@property="og:image"]/@content')
+    thumb = thumb[0] if thumb else fallbacik
+
+    data = get_data(page)
+    if not 'vpi' in data.keys():
+        raise Ex.MediaExpired
+
+    duration = None
+    if 'duration' in data.keys():
+        duration = Datetime.MillisecondsFromString(data['duration'])
+
+    summary = html.xpath('//td[@class="infodropdown"]//div')
+    summary = summary[0].text_content().strip().split('\n')[0] if summary else None
 
     return VideoClipObject(
-        title=title[0],
-        thumb=thumb[0] if thumb else 'http://i.imgur.com/75YO83o.jpg',
+        title=title[0].strip(),
+        thumb=Resource.ContentsOfURLWithFallback([thumb, fallback]),
+        duration=duration,
+        summary=summary,
         source_title='VeeHD'
-    )
+        )
 
 ####################################################################################################
 def MediaObjectsForURL(url):
 
-    return [
-        MediaObject(
-            video_resolution='sd',
-            audio_channels=2,
-            optimized_for_streaming=False,
-            parts=[
-                PartObject(key=Callback(PlayVideo, url=url))
+    data = get_data(HTTP.Request(url).content)
+    if ('res' in data.keys()) and ('bitrate' in data.keys()) and ('type' in data.keys()):
+        if data['type'].lower() == 'flash':
+            return [
+                MediaObject(
+                    container='mp4',
+                    bitrate=int(data['bitrate']),
+                    video_resolution=data['res'],
+                    audio_channels=2,
+                    optimized_for_streaming=True,
+                    parts=[
+                        PartObject(key=Callback(PlayVideo, url=url))
+                        ]
+                    )
                 ]
-            )
-        ]
+        else:
+            return [
+                MediaObject(
+                    container='avi',
+                    video_codec='divx',
+                    bitrate=int(data['bitrate']),
+                    video_resolution=data['res'],
+                    audio_channels=2,
+                    optimized_for_streaming=False,
+                    parts=[
+                        PartObject(key=Callback(PlayVideo, url=url))
+                        ]
+                    )
+                ]
+
+    raise Ex.MediaNotAvailable
 
 ####################################################################################################
 @indirect
 def PlayVideo(url, **kwargs):
 
-    video_id = url.split('/video/')[-1].split('_')[0]
-    page = HTTP.Request('http://veehd.com/embed?v=%s' % (video_id), cacheTime=0).content
-
-    embed_url = Regex(r'\"\/(embed\?v=\d+&d=\d+)"').search(page).group(1)
-    embed_url = 'http://veehd.com/%s' % (embed_url)
-
-    html = HTML.ElementFromURL(embed_url, cacheTime=0)
-
-    embed = html.xpath('//embed[@type="video/divx"]/@src')
-    flashvars = html.xpath('//param[@name="flashvars"]/@value')
-
-    if len(embed) > 0:
-        Log.Debug('* PlayVideo URL = %s' %embed[0])
-        return IndirectResponse(VideoClipObject, key=embed[0])
-    elif len(flashvars) > 0:
-        json = flashvars[0].split('config=')[-1]
-        json_obj = JSON.ObjectFromString(json)
-        video_url = String.Unquote(json_obj['clip']['url'])
-        Log.Debug('* PlayVideo URL = %s' %video_url)
-        return IndirectResponse(VideoClipObject, key=video_url)
-    else:
+    try:
+        page = HTTP.Request(url).content
+    except Exception as e:
+        Log.Error('* PlayVideo Error1: %s' %str(e))
         raise Ex.MediaNotAvailable
+
+    rvpi = Regex(r'(\/vpi\?[^\'\"]+)').search(page)
+    if rvpi:
+        base_url = Regex(r'(^https?\:\/\/(?:www\.)?veehd\.\w+)').search(url)
+
+        try:
+            html = HTML.ElementFromURL(base_url.group(1) + rvpi.group(1))
+        except Exception as e:
+            Log.Error('* PlayVideo Error2: %s' %str(e))
+            raise Ex.MediaNotAvailable
+
+        embed = html.xpath('//embed[@type="video/divx"]/@src')
+        flashvars = html.xpath('//param[@name="flashvars"]/@value')
+
+        if embed:
+            if len(embed) != 0:
+                Log.Debug('* PlayVideo URL = %s' %embed[0])
+                return IndirectResponse(VideoClipObject, key=embed[0])
+        elif flashvars:
+            if len(flashvars) != 0:
+                json = flashvars[0].split('config=')[-1]
+                json_obj = JSON.ObjectFromString(json)
+                video_url = String.Unquote(json_obj['clip']['url'])
+                Log.Debug('* PlayVideo URL = %s' %video_url)
+                return IndirectResponse(VideoClipObject, key=video_url)
+
+    raise Ex.MediaNotAvailable
+
+####################################################################################################
+def get_data(page):
+    info = {}
+
+    rvpi = Regex(r'(\/vpi\?[^\'\"]+)').search(page)
+    if rvpi:
+        info.update({'vpi': rvpi.group(1)})
+
+    rd = Regex(r'(?i)duration\s*?\:\s*?([0-9\:]+)').search(page)
+    if rd:
+        info.update({'duration': rd.group(1)})
+
+    rres = Regex(r'(?i)resolution\s*?\:\s*?([0-9x]+)').search(page)
+    if rres:
+        info.update({'res': rres.group(1).split('x')[-1]})
+
+    rbit = Regex(r'(?i)bitrate\s*?\:\s*?([0-9]+)').search(page)
+    if rbit:
+        info.update({'bitrate': rbit.group(1)})
+
+    rtype = Regex(r'(?i)type\s*?\:\s*?(flash|divx)').search(page)
+    if rtype:
+        info.update({'type': rtype.group(1)})
+
+    return info
