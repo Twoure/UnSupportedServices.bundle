@@ -1,0 +1,61 @@
+#!/usr/bin/env python
+
+"""MP4Upload.com Service Code"""
+
+####################################################################################################
+def NormalizeURL(url):
+
+    if '/embed-' in url:
+        url = url.replace('/embed-', '/')
+    return url
+
+####################################################################################################
+def MetadataObjectForURL(url):
+
+    try:
+        html = HTML.ElementFromURL(url)
+    except:
+        raise Ex.MediaNotAvailable
+
+    title = html.xpath('//span[@class="dfilename"]/text()')
+    if not title:
+        raise Ex.MediaExpired
+
+    fallback = 'http://i.imgur.com/75YO83o.jpg'
+    thumb = html.xpath('//span[@class="snap"]/following-sibling::span/img/@src')
+    thumb = thumb[0] if thumb else fallback
+
+    return VideoClipObject(
+        title=title[0].strip(),
+        thumb=Resource.ContentsOfURLWithFallback([thumb, fallback]),
+        source_title='MP4Upload'
+        )
+
+####################################################################################################
+def MediaObjectsForURL(url):
+
+    return [
+        MediaObject(
+            video_resolution='sd',
+            audio_channels=2,
+            optimized_for_streaming=False,
+            parts=[
+                PartObject(key=Callback(PlayVideo, url=url))
+                ]
+            )
+        ]
+
+####################################################################################################
+@indirect
+def PlayVideo(url):
+
+    eurl = Regex(r'(https?\:\/\/(?:www\.)?mp4upload\.(?:[^/]+\/))([^\/\.]+)').search(url)
+    url = rurl.group(1) + 'embed-' + rurl.group(2) + '.html'
+    page = HTTP.Request(url).content
+
+    r = Regex(r'[\"\']?file[\"\']?\s*?\:\s*?[\"\'](http[^\"\']+(?<!m3u8|smil))[\"\']').search(page)
+    if r:
+        Log.Debug('* PlayVideo URL = \"%s\"' %r.group(1))
+        return IndirectResponse(VideoClipObject, key=r.group(1))
+
+    raise Ex.MediaNotAvailable
