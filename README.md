@@ -10,15 +10,24 @@ I plan to make a few channels that will require this UnSupported Services channe
 ## Install
 
 #### Auto
-- ~~Install via [WebTools.bundle](https://github.com/dagalufh/WebTools.bundle)~~  _(Not yet added to UASv2)_
-- ~~Restart PMS~~
+- ~~Install via [UnSupportedServicesTools.bundle](https://github.com/Twoure/UnSupportedServicesTools.bundle)~~  _(Not yet on GitHub)_
 
 #### Manual
 
-- [Download](https://github.com/Twoure/UnSupportedServices.bundle/archive/master.zip) and install by following the Plex [instructions](https://support.plex.tv/hc/en-us/articles/201187656-How-do-I-manually-install-a-channel-) or the instructions below.
+- [Download](https://github.com/Twoure/UnSupportedServices.bundle/releases) the latests release and install by following the Plex [instructions](https://support.plex.tv/hc/en-us/articles/201187656-How-do-I-manually-install-a-channel-) or the instructions below.
   - Unzip and rename the folder to **UnSupportedServices.bundle**
   - Copy **UnSupportedServices.bundle** into the PMS [Plug-ins](https://support.plex.tv/hc/en-us/articles/201106098-How-do-I-find-the-Plug-Ins-folder-) directory
   - Restart PMS
+
+## Upgrade
+
+#### Auto
+- Use the ~~[UnSupportedServicesTools.bundle](https://github.com/Twoure/UnSupportedServicesTools.bundle)~~ to upgrade the **UnSupportedServices.bundle**.
+
+#### Manual
+- Delete current **UnSupportedServices.bundle** from PMS [Plug-ins](https://support.plex.tv/hc/en-us/articles/201106098-How-do-I-find-the-Plug-Ins-folder-) directory
+- Continue by following the [Manual Install](#manual) directions
+- **Important:** make sure to restart PMS after manually installing
 
 ## Issues
 
