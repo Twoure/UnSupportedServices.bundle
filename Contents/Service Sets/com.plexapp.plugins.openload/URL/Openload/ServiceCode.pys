@@ -72,10 +72,8 @@ def get_openload_url(ourl, count=0):
     """
 
     try:
-        base = Regex(r'(https?:\/\/openload\.\w+)\/\w+\/([^\/]+)').search(ourl)
-        eurl = base.group(1) + '/embed/' + base.group(2)
-        h = HTTP_HEADERS.update({'Referer': eurl})
-        s = HTTP.Request(eurl, encoding=('utf-8'), headers=h).content
+        h = HTTP_HEADERS.update({'Referer': ourl})
+        s = HTTP.Request(ourl, encoding=('utf-8'), headers=h).content
 
         title = Regex(r'og\:title\"\s*?content\=\"([^\"]+)').search(s)
         title = String.Quote(title.group(1), usePlus=True) if title else None
@@ -96,7 +94,7 @@ def get_openload_url(ourl, count=0):
             else:
                 count += 1
                 Log.Warn('* Openload Warn: try %i faild to get Video URL, trying again' %count)
-                return get_openload_url(eurl, count=count)
+                return get_openload_url(ourl, count=count)
     except Exception as e:
         Log.Error('* Openload Error: Something went wrong, cannot access %s' %ourl)
         Log.Error('* Openload Error: %s' %str(e))
