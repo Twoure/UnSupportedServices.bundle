@@ -2,13 +2,11 @@
 
 """
 Service Code for:
-    AllMyVideos, FileHoot, GorillaVid, MovPod, PowerWatch,
+    AllMyVideos, DaClips, FileHoot, GorillaVid, MovPod, PowerWatch,
     Rapidvideo, Streamin, StreamPlay, TheVideoBee, Vidtodo,
     VidPlay, VoDLocker, ZStream
 
 Decided to sepearte out Vidto, because it host multiple resolutions
-
-DaClips is now behind cloudflare anti scrape bot
 """
 
 from unpacker import unpack as Unpack
@@ -26,13 +24,21 @@ def MetadataObjectForURL(url):
 
     try:
         url = correct_url(url)
-        html = HTML.ElementFromURL(url)
+        page = HTTP.Request(url).content
+        html = HTML.ElementFromString(page)
     except:
         raise Ex.MediaNotAvailable
 
-    title = html.xpath('//input[@name="fname"]/@value')
-    if not title:
-        raise Ex.MediaExpired
+    vid = Regex(r'https?\:\/\/(?:www\.)?\w+\.(?:[^/]+\/)?(?:.*?[/])?([^\/\.]+)').search(url).group(1)
+    title = Regex(r'%s\](.+?)\-\s\d+(?:\.\d+)?\sMB' %vid).search(page)
+    if title:
+        title = title.group(1).strip()
+    else:
+        title = html.xpath('//input[@name="fname"]/@value')
+        if title:
+            title = title[0].strip()
+        else:
+            raise Ex.MediaExpired
 
     tpage = HTTP.Request(get_embed_url(url)).content
     packed = get_packed_data(tpage)
@@ -49,7 +55,7 @@ def MetadataObjectForURL(url):
         duration = int(rd.group(1)) * 1000
 
     return VideoClipObject(
-        title=title[0].strip(),
+        title=title,
         thumb=Resource.ContentsOfURLWithFallback([thumb, 'http://i.imgur.com/75YO83o.jpg']),
         duration=duration,
         source_title=get_source_title(url)

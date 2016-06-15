@@ -1,0 +1,44 @@
+#!/usr/bin/env python
+
+"""XVIDSTAGE.com Search Code"""
+
+SEARCH_URL = 'http://xvidstage.com/?op=catalogue&k=%s'
+
+####################################################################################################
+def Search(query):
+
+    oc = ObjectContainer(title1='XVIDSTAGE', title2='Search Results')
+    try:
+        html = HTML.ElementFromURL(SEARCH_URL %String.Quote(query.strip(), usePlus=True))
+    except Exception as e:
+        Log.Error('* XVIDSTAGE Search Error: %s' %str(e))
+        return oc
+
+    count = 0
+    for item in html.xpath('//td'):
+        if not item.xpath('.//div[@class="link"]'):
+            continue
+
+        if count >= 15:
+            continue
+
+        count += 1
+        try:
+            anode = item.xpath('.//div[@class="link"]/a')[0]
+            title = anode.text
+            url = anode.get('href')
+
+            fallback = 'http://i.imgur.com/75YO83o.jpg'
+            thumb = item.xpath('.//img/@src')
+            thumb = thumb[0] if thumb else fallback
+
+            oc.add(VideoClipObject(
+                title=title,
+                thumb=Resource.ContentsOfURLWithFallback([thumb, fallback]),
+                source_title='XVIDSTAGE',
+                url=url
+                ))
+        except:
+            pass
+
+    return oc

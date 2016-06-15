@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-"""Movdivx Service Code"""
+"""Movdivx.com, xvidstage.com Service Code"""
 
 from unpacker import unpack as Unpack
 import urllib2
@@ -32,10 +32,20 @@ def MetadataObjectForURL(url):
     if not data['url']:
         raise Ex.MediaNotAvailable
 
+    duration = None
+    if data['duration']:
+        duration = Datetime.MillisecondsFromString(data['duration'])
+
+    st = Regex(r'https?\:\/\/(?:www\.)?(\w+)\.\w+').search(url)
+    source_title = 'Movdivx'
+    if st:
+        source_title = st.group(1).title()
+
     return VideoClipObject(
         title=title,
         thumb=Resource.ContentsOfURLWithFallback([data['thumb'], 'http://i.imgur.com/75YO83o.jpg']),
-        source_title='Movdivx'
+        duration=duration,
+        source_title=source_title
         )
 
 ####################################################################################################
@@ -68,9 +78,11 @@ def get_data(url):
     data = {}
     thumb = 'http://i.imgur.com/75YO83o.jpg'
     vurl = False
+    duration = False
 
     page = HTTP.Request(get_embed_url(url), headers=HTTP_HEADERS).content
     packed = Regex(r"<script type=.text\/javascript.>(eval\(function\(p,a,c,k,e,.+(?:src).+\.split\('\|'\)\)\))").search(page)
+    fpacked = Regex(r"<script type=.text\/javascript.>(eval\(function\(p,a,c,k,e,.+(?:file).+\.split\('\|'\)\)\))").search(page)
 
     if packed:
         pdata = Unpack(packed.group(1))
@@ -92,11 +104,23 @@ def get_data(url):
                             vurl = hurl[0]
                     except Exception as e:
                         Log.Error('* get_data Error: %s' %str(e))
+    elif fpacked:
+        fpdata = Unpack(fpacked.group(1))
+        if fpdata:
+            rurl = Regex(r'[\"\'\\]*?file[\"\'\\]*?\s*?\,\s*?[\"\'\\]*?(http[^\"\'\\]+(?<!m3u8|smil))[\"\'\\]*?').search(fpdata)
+            if rurl:
+                vurl = rurl.group(1)
+            rthumb = Regex(r'[\"\'\\]*?image[\"\'\\]*?\s*?\,\s*?[\"\'\\]*?(http[^\"\'\\]+)[\"\'\\]*?').search(fpdata)
+            if rthumb:
+                thumb = rthumb.group(1)
+            rduration = Regex(r'[\"\'\\]*?duration[\"\'\\]*?\s*?\,\s*?[\"\'\\]*?(\d+)[\"\'\\]*?').search(fpdata)
+            if rduration:
+                duration = rduration.group(1)
 
-    data.update({'url': vurl, 'thumb': thumb})
+    data.update({'url': vurl, 'thumb': thumb, 'duration': duration})
     return data
 
 ####################################################################################################
 def get_embed_url(url):
-    r = Regex(r'(https?:\/\/(?:www\.)?movdivx\.(?:[^/]+\/)?)(.*?)(?:\/|\.|$)').search(url)
+    r = Regex(r'(https?:\/\/(?:www\.)?\w+\.(?:[^/]+\/)?)(.*?)(?:\/|\.|$)').search(url)
     return r.group(1) + 'embed-' + r.group(2) + '.html'

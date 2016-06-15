@@ -16,6 +16,7 @@
       <key>URLPatterns</key>
       <array>
         <string>^https?\:\/\/(www\.)?movdivx\.(?:[^\/]+\/).+</string>
+        <string>^https?\:\/\/(www\.)?xvidstage\.(?:[^\/]+\/).+</string>
       </array>
     </dict>
     <key>Up2stream</key>
@@ -65,6 +66,7 @@
       <key>URLPatterns</key>
       <array>
         <string>^https?\:\/\/(www\.)?allmyvideos\.(?:[^\/]+\/).+</string>
+        <string>^https?\:\/\/(www\.)?daclips\.(?:[^\/]+\/).+</string>
         <string>^https?\:\/\/(www\.)?filehoot\.(?:[^\/]+\/).+</string>
         <string>^uss\/https?\:\/\/(www\.)?gorillavid\.(?:[^\/]+\/).+</string>
         <string>^https?\:\/\/(www\.)?movpod\.(?:[^\/]+\/).+</string>
