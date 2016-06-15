@@ -3,6 +3,7 @@
 """Openload service code"""
 
 from openload import decode_openload
+from urllib import quote_plus
 import contextlib
 import urllib2
 
@@ -12,8 +13,8 @@ HTTP_HEADERS = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.3
 def NormalizeURL(url):
 
     if not '/embed/' in url:
-        r = Regex(r'(https?\:\/\/(?:www\.)?\w+\.(?:[^/]+\/)?)(?:.*?[/])?([^\/\.]+)').search(url)
-        url = r.group(1) + 'embed/' + r.group(2)
+        r = Regex(r'(https?:\/\/openload\.\w+)\/\w+\/([^\/]+)').search(url)
+        url = r.group(1) + '/embed/' + r.group(2)
 
     return url
 
@@ -29,12 +30,13 @@ def MetadataObjectForURL(url):
     if not title:
         raise Ex.MediaNotAvailable
 
+    fallback = 'http://i.imgur.com/75YO83o.jpg'
     nthumb = html.xpath('//meta[@name="og:image"]/@content')
-    thumb = nthumb[0] if nthumb else 'http://i.imgur.com/75YO83o.jpg'
+    thumb = nthumb[0] if nthumb else fallback
 
     return VideoClipObject(
         title=title[0],
-        thumb=thumb,
+        thumb=Resource.ContentsOfURLWithFallback([thumb, fallback]),
         source_title='Openload'
         )
 
@@ -61,10 +63,18 @@ def PlayVideo(url, **kwargs):
     except:
         raise Ex.MediaNotAvailable
 
-    vurl = get_url_redirect(decode_openload(page))
-    Log.Debug('* PlayVideo URL  = %s' %vurl)
+    title = Regex(r'og\:title\"\s*?content\=\"([^\"]+)').search(s)
+    title = quote_plus(title.group(1)) if title else None
 
-    return IndirectResponse(VideoClipObject, key=vurl)
+    urls = get_url_redirect(decode_openload(page))
+    if urls:
+        for u in urls:
+            rurl = get_url_redirect(u)
+            if title == rurl.rsplit('/', 1)[1].split('?mime=')[0]:
+                Log.Debug('* PlayVideo URL  = %s' %rurl)
+                return IndirectResponse(VideoClipObject, key=rurl)
+
+    raise Ex.MediaNotAvailable
 
 ####################################################################################################
 def get_url_redirect(url):

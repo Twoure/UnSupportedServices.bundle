@@ -6,14 +6,27 @@
 # http://blog.tvalacarta.info/plugin-xbmc/pelisalacarta/
 # Fix imported by DrZ3r0, credits to mortael, Fr33m1nd, anton40
 # ------------------------------------------------------------
-# 03/12/2016 Edited by Twoure for use with Plex Media Server
+# Edited by Twoure for Plex Media Server
+# Date: 06/15/2016
+# ------------------------------------------------------------
+# https://github.com/Zanzibar82/plugin.video.streamondemand/blob/968a28114b2f7b3b0638c872afe1c9f7f8479dcb/servers/openload.py
+
 
 import re
 
-def decode_openload(html):
-    aastring = re.search(r"<video(?:.|\s)*?<script\s[^>]*?>((?:.|\s)*?)</script", html,
-                         re.DOTALL | re.IGNORECASE).group(1)
+def decode_openload(text):
+    text_encode = re.findall(r'<script type="text/javascript">(ﾟωﾟ.*?)</script>', text, re.DOTALL)
 
+    urls = []
+    for t in text_encode:
+        try:
+            urls.append(get_url(t))
+        except:
+            pass
+
+    return urls
+
+def get_url(aastring):
     aastring = aastring.replace(
         "(\xef\xbe\x9f\xd0\x94\xef\xbe\x9f)[\xef\xbe\x9f\xce\xb5\xef\xbe\x9f]+(o\xef\xbe\x9f\xef\xbd\xb0\xef\xbe\x9fo)+ ((c^_^o)-(c^_^o))+ (-~0)+ (\xef\xbe\x9f\xd0\x94\xef\xbe\x9f) ['c']+ (-~-~1)+",
         "")
