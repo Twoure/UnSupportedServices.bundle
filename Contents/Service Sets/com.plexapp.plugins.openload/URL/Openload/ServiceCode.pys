@@ -57,29 +57,59 @@ def MediaObjectsForURL(url):
 @indirect
 def PlayVideo(url, **kwargs):
 
-    try:
-        page = HTTP.Request(url, headers=HTTP_HEADERS, encoding=('utf-8')).content
-    except:
-        raise Ex.MediaNotAvailable
-
-    title = Regex(r'og\:title\"\s*?content\=\"([^\"]+)').search(s)
-    title = String.Quote(title.group(1), usePlus=True) if title else None
-
-    urls = get_url_redirect(decode_openload(page))
-    if urls:
-        for u in urls:
-            rurl = get_url_redirect(u)
-            if title == rurl.rsplit('/', 1)[1].split('?mime=')[0]:
-                Log.Debug('* PlayVideo URL  = %s' %rurl)
-                return IndirectResponse(VideoClipObject, key=rurl)
+    ourl = get_openload_url(url)
+    if ourl:
+        Log.Debug('* PlayVideo URL  = %s' %ourl)
+        return IndirectResponse(VideoClipObject, key=ourl)
 
     raise Ex.MediaNotAvailable
 
 ####################################################################################################
-def get_url_redirect(url):
+def get_openload_url(ourl, count=0):
+    """
+    Get Openload video URL
+    Sometimes the page has no video url, so try again up to 3 times
+    """
 
     try:
-        req = urllib2.Request(url, headers=HTTP_HEADERS)
+        base = Regex(r'(https?:\/\/openload\.\w+)\/\w+\/([^\/]+)').search(ourl)
+        eurl = base.group(1) + '/embed/' + base.group(2)
+        h = HTTP_HEADERS.update({'Referer': eurl})
+        s = HTTP.Request(eurl, encoding=('utf-8'), headers=h).content
+
+        title = Regex(r'og\:title\"\s*?content\=\"([^\"]+)').search(s)
+        title = String.Quote(title.group(1), usePlus=True) if title else None
+        Log.Debug('* Openload video title = %s' %title)
+
+        url = False
+        urls = decode_openload(s)
+        if urls:
+            for u in urls:
+                rurl = get_url_redirect_v2(u)
+                if title == rurl.rsplit('/', 1)[1].split('?mime=')[0]:
+                    url = rurl
+
+        if not url:
+            if (count == 2):
+                Log.Error('* Openload Error: Tried 3 times to get Video URL, but Failed')
+                return False
+            else:
+                count += 1
+                Log.Warn('* Openload Warn: try %i faild to get Video URL, trying again' %count)
+                return get_openload_url(eurl, count=count)
+    except Exception as e:
+        Log.Error('* Openload Error: Something went wrong, cannot access %s' %ourl)
+        Log.Error('* Openload Error: %s' %str(e))
+        url = False
+
+    return url
+
+####################################################################################################
+def get_url_redirect(url):
+
+    h = HTTP_HEADERS.update({'Referer': url})
+    try:
+        req = urllib2.Request(url, headers=h)
         req.get_method = lambda : 'HEAD'
         with contextlib.closing(urllib2.urlopen(req)) as resp:
             url = resp.geturl()
