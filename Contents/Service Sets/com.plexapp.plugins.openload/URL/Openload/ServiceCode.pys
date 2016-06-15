@@ -3,7 +3,6 @@
 """Openload service code"""
 
 from openload import decode_openload
-from urllib import quote_plus
 import contextlib
 import urllib2
 
@@ -64,7 +63,7 @@ def PlayVideo(url, **kwargs):
         raise Ex.MediaNotAvailable
 
     title = Regex(r'og\:title\"\s*?content\=\"([^\"]+)').search(s)
-    title = quote_plus(title.group(1)) if title else None
+    title = String.Quote(title.group(1), usePlus=True) if title else None
 
     urls = get_url_redirect(decode_openload(page))
     if urls:
