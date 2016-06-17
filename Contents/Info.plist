@@ -5,7 +5,7 @@
   <key>CFBundleIdentifier</key>
   <string>com.plexapp.system.unsupportedservices</string>
   <key>CFBundleVersion</key>
-  <string>1.0.0</string>
+  <string>1.0.1</string>
   <key>PlexPluginVersionUrl</key>
   <string>https://api.github.com/repos/Twoure/UnSupportedServices.bundle/releases/latest</string>
   <key>PlexFrameworkVersion</key>
