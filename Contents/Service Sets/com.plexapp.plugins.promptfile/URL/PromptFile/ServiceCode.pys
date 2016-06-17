@@ -12,7 +12,11 @@ def MetadataObjectForURL(url):
 
     html = HTML.ElementFromURL(url, headers=HTTP_HEADERS)
     if html.xpath('//div[@id="not_found_msg"]'):
-        raise Ex.MediaExpired
+        message = html.xpath('//div[@id="not_found_msg"]/text()')[0]
+        if 'maintenance' in message:
+            Log.Warn('* %s' %message)
+        else:
+            raise Ex.MediaExpired
 
     title = html.xpath('//span/@title')[0].strip()
 
