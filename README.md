@@ -10,7 +10,7 @@ I plan to make a few channels that will require this UnSupported Services channe
 ## Install
 
 #### Auto
-- ~~Install via [UnSupportedServicesTools.bundle](https://github.com/Twoure/UnSupportedServicesTools.bundle)~~  _(Not yet on GitHub)_
+- Install via [UnSupportedServicesTools.bundle](https://github.com/Twoure/UnSupportedServicesTools.bundle)
 
 #### Manual
 
@@ -22,7 +22,7 @@ I plan to make a few channels that will require this UnSupported Services channe
 ## Upgrade
 
 #### Auto
-- Use the ~~[UnSupportedServicesTools.bundle](https://github.com/Twoure/UnSupportedServicesTools.bundle)~~ to upgrade the **UnSupportedServices.bundle**.
+- Use the [UnSupportedServicesTools.bundle](https://github.com/Twoure/UnSupportedServicesTools.bundle) to upgrade the **UnSupportedServices.bundle**
 
 #### Manual
 - Delete current **UnSupportedServices.bundle** from PMS [Plug-ins](https://support.plex.tv/hc/en-us/articles/201106098-How-do-I-find-the-Plug-Ins-folder-) directory
