@@ -49,7 +49,7 @@ def MediaObjectsForURL(url):
 @indirect
 def PlayVideo(url):
 
-    eurl = Regex(r'(https?\:\/\/(?:www\.)?mp4upload\.(?:[^/]+\/))([^\/\.]+)').search(url)
+    rurl = Regex(r'(https?\:\/\/(?:www\.)?mp4upload\.(?:[^/]+\/))([^\/\.]+)').search(url)
     url = rurl.group(1) + 'embed-' + rurl.group(2) + '.html'
     page = HTTP.Request(url).content
 
@@ -57,7 +57,7 @@ def PlayVideo(url):
     if r:
         for u in r:
             if ('blank.mp4' not in u) and ('error.mp4' not in u):
-                Log.Debug('* PlayVideo URL = \"%s\"' %r)
-                return IndirectResponse(VideoClipObject, key=r)
+                Log.Debug('* PlayVideo URL = \"%s\"' %u)
+                return IndirectResponse(VideoClipObject, key=u)
 
     raise Ex.MediaNotAvailable
