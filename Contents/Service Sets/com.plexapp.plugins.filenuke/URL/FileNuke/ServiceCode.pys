@@ -97,10 +97,12 @@ def get_source_title(url):
 
 ####################################################################################################
 def get_go_next(html, url):
+    """
     if Regex(r'(?:\.|\/)(sharesix)\.').search(url):
         go_next = html.xpath('//td[starts-with(@class, "download")]/a/@href')[0]
     else:
-        go_next = html.xpath('//a[@id="go-next"]/@href')[0]
+    """
+    go_next = html.xpath('//a[@id="go-next"]/@href')[0]
     return go_next
 
 ####################################################################################################
