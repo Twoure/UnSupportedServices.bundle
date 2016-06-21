@@ -14,7 +14,7 @@ HTTP_HEADERS = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.3
 ####################################################################################################
 def NormalizeURL(url):
     if '/embed/' in url:
-        r = Regex(r'(https?\:\/\/(?:www\.)?\w+\.\w+)\/\w+\/(?:\?\w+\=)?([0-9a-z]+)').search(url)
+        r = Regex(r'(?i)(https?\:\/\/(?:www\.)?\w+\.\w+)\/\w+\/(?:\?\w+\=)?([0-9a-z]+)').search(url)
         url = r.group(1) + '/video/' + r.group(2)
 
     return url.replace('nowvideo.eu', 'nowvideo.li')
@@ -96,7 +96,7 @@ def PlayVideo(url, **kwargs):
 ####################################################################################################
 def get_embed_url(url):
     if '/embed/' not in url:
-        r = Regex(r'(https?\:\/\/(?:www\.)?(\w+)\.\w+)\/\w+\/(?:\?\w+\=)?([0-9a-z]+)').search(url)
+        r = Regex(r'(?i)(https?\:\/\/(?:www\.)?(\w+)\.\w+)\/\w+\/(?:\?\w+\=)?([0-9a-z]+)').search(url)
         url = r.group(1) + '/embed/?%s=' %('id' if r.group(2) == 'vidgg' else 'v') + r.group(3)
     return url
 
