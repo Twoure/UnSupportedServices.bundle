@@ -53,9 +53,11 @@ def PlayVideo(url):
     url = rurl.group(1) + 'embed-' + rurl.group(2) + '.html'
     page = HTTP.Request(url).content
 
-    r = Regex(r'[\"\']?file[\"\']?\s*?\:\s*?[\"\'](http[^\"\']+(?<!m3u8|smil))[\"\']').search(page)
+    r = Regex(r'[\"\']?file[\"\']?\s*?\:\s*?[\"\'](http[^\"\']+(?<!m3u8|smil))[\"\']').findall(page)
     if r:
-        Log.Debug('* PlayVideo URL = \"%s\"' %r.group(1))
-        return IndirectResponse(VideoClipObject, key=r.group(1))
+        for u in r:
+            if ('blank.mp4' not in u) and ('error.mp4' not in u):
+                Log.Debug('* PlayVideo URL = \"%s\"' %r)
+                return IndirectResponse(VideoClipObject, key=r)
 
     raise Ex.MediaNotAvailable
