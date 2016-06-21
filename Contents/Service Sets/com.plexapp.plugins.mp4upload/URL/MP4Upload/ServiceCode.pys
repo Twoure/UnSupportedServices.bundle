@@ -47,7 +47,7 @@ def MediaObjectsForURL(url):
 
 ####################################################################################################
 @indirect
-def PlayVideo(url):
+def PlayVideo(url, **kwargs):
 
     rurl = Regex(r'(https?\:\/\/(?:www\.)?mp4upload\.(?:[^/]+\/))([^\/\.]+)').search(url)
     url = rurl.group(1) + 'embed-' + rurl.group(2) + '.html'
