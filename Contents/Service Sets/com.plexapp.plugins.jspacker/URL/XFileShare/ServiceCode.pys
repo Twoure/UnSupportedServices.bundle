@@ -26,8 +26,12 @@ def MetadataObjectForURL(url):
         url = correct_url(url)
         page = HTTP.Request(url).content
         html = HTML.ElementFromString(page)
-    except:
+    except Exception as e:
+        Log(str(e))
         raise Ex.MediaNotAvailable
+
+    if html.xpath('//title/text()')[0] == '404 - Not Found':
+        raise Ex.MediaExpired
 
     vid = Regex(r'https?\:\/\/(?:www\.)?\w+\.(?:[^/]+\/)?(?:.*?[/])?([^\/\.]+)').search(url).group(1)
     title = Regex(r'%s\](.+?)\-\s\d+(?:\.\d+)?\sMB' %vid).search(page)
