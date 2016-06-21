@@ -1,0 +1,99 @@
+#!/usr/bin/env python
+
+"""VidWatch.me Service Code"""
+
+####################################################################################################
+def NormalizeURL(url):
+    if '/embed-' in url:
+        url = url.replace('/embed-', '/').replace('.hmtl', '').strip()
+    return url
+
+####################################################################################################
+def MetadataObjectForURL(url):
+
+    try:
+        page = HTTP.Request(url).content
+        html = HTML.ElementFromString(page)
+    except:
+        raise Ex.MediaNotAvailable
+
+    title = html.xpath('//h2/text()')
+    if not title:
+        vid = Regex(r'(?i)https?\:\/\/(?:www\.)?\w+\.\w+\/([a-z0-9]+)').search(url)
+        title = Regex(r'%s\](.+?)\-\s\d+(?:\.\d+)?\sMB' %vid.group(1)).search(url)
+        if title:
+            title = title.group(1).strip()
+        else:
+            raise Ex.MediaExpired
+    else:
+        title = title[0].strip()
+
+    data = get_data(page)
+    if not data:
+        raise Ex.MediaNotAvailable
+
+    fallback = 'http://i.imgur.com/75YO83o.jpg'
+    thumb = data['thumb'] if 'thumb' in data.keys() else fallback
+    duration = Datetime.MillisecondsFromString(data['duration']) if 'duration' in data.keys() else None
+
+    return VideoClipObject(
+        title=title,
+        duration=duration,
+        thumb=Resource.ContentsOfURLWithFallback([thumb, fallback]),
+        source_title='VidWatch'
+        )
+
+####################################################################################################
+def MediaObjectsForURL(url):
+
+    return [
+        MediaObject(
+            video_resolution='sd',
+            audio_channels=2,
+            optimized_for_streaming=False,
+            parts=[
+                PartObject(key=Callback(PlayVideo, url=url))
+                ]
+            )
+        ]
+
+####################################################################################################
+@indirect
+def PlayVideo(url, **kwargs):
+
+    try:
+        page = HTTP.Request(get_embed_url(url)).content
+    except:
+        raise Ex.MediaNotAvailable
+
+    data = get_data(page)
+    if data:
+        if 'url' in data.keys():
+            Log.Debug('* PlayVideo URL = \"%s\"' %data['url'])
+            return IndirectResponse(VideoClipObject, key=data['url'])
+
+    raise Ex.MediaNotAvailable
+
+####################################################################################################
+def get_embed_url(url):
+    if '/embed-' not in url:
+        r = Regex(r'(?i)(https?\:\/\/(?:www\.)?\w+\.\w+\/)([a-z0-9]+)').search(url)
+        url = r.group(1) + 'embed-' + r.group(2) + '.html'
+    return url
+
+####################################################################################################
+def get_data(page):
+    data = dict()
+    v = Regex(r'[\"\']?file[\"\']?\s*?\:\s*?[\"\'](http[^\"\']+(?<!m3u8|smil))[\"\']').search(page)
+    if v:
+        data.update({'url': v.group(1)})
+
+    t = Regex(r'[\"\']?image[\"\']?\s*?\:\s*?[\"\'](http[^\"\']+)').search(page)
+    if t:
+        data.update({'thumb': t.group(1)})
+
+    d = Regex(r'[\"\']?duration[\"\']?\s*?\:\s*?[\"\'](\d+)[\"\']').search(page)
+    if d:
+        data.update({'duration': d.group(1)})
+
+    return data
