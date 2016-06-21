@@ -13,9 +13,11 @@ HTTP_HEADERS = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.3
 
 ####################################################################################################
 def NormalizeURL(url):
+    if '/embed/' in url:
+        r = Regex(r'(https?\:\/\/(?:www\.)?\w+\.\w+)\/\w+\/(?:\?\w+\=)?([0-9a-z]+)').search(url)
+        url = r.group(1) + '/video/' + r.group(2)
 
-   url =  url.split('?')[0].replace('nowvideo.eu', 'nowvideo.li')
-   return url
+    return url.replace('nowvideo.eu', 'nowvideo.li')
 
 ####################################################################################################
 def MetadataObjectForURL(url):
@@ -38,7 +40,7 @@ def MetadataObjectForURL(url):
     else:
         title = title[0].split('Watch ')[-1].split(' online ')[0].strip()
 
-    if Regex(r'(movshare|wholecloud|novamov|auroravid|videoweed|bitvid|cloudtime|nowvideo|vidgg)\s-\s(.+)').search(title.lower()):
+    if Regex(r'(auroravid|bitvid|cloudtime|movshare|novamov|nowvideo|videoweed|vidgg|wholecloud)\s-\s(.+)').search(title.lower()):
         title = title.split(' - ')[0]
 
     thumb = html.xpath('//meta[@property="og:image"]/@content')
@@ -93,9 +95,9 @@ def PlayVideo(url, **kwargs):
 
 ####################################################################################################
 def get_embed_url(url):
-    if not Regex(r'(?:\.|\/)(vidgg)\.').search(url):
-        rurl = Regex(r'(https?\:\/\/(?:www\.)?\w+\.(?:[^/]+\/)?)(?:.*?[/])?([^\/\.]+)').search(url)
-        url = rurl.group(1) + 'embed/?v=' + rurl.group(2)
+    if '/embed/' not in url:
+        r = Regex(r'(https?\:\/\/(?:www\.)?(\w+)\.\w+)\/\w+\/(?:\?\w+\=)?([0-9a-z]+)').search(url)
+        url = r.group(1) + '/embed/?%s=' %('id' if r.group(2) == 'vidgg' else 'v') + r.group(3)
     return url
 
 ####################################################################################################
