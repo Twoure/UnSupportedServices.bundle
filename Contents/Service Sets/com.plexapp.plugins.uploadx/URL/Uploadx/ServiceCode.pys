@@ -1,0 +1,69 @@
+#!/usr/bin/env python
+
+"""Uploadx.org Service Code"""
+
+from urllib import  urlencode
+
+HTTP_HEADERS = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36'}
+
+####################################################################################################
+def MetadataObjectForURL(url):
+
+    try:
+        html = HTML.ElementFromURL(url)
+    except:
+        raise Ex.MediaNotAvailable
+
+    title = html.xpath('//input[@name="fname"]/@value')
+    if not title:
+        raise Ex.MediaExpired
+
+    return VideoClipObject(
+        title=title[0].strip(),
+        thumb='http://i.imgur.com/75YO83o.jpg',
+        source_title='Uploadx'
+        )
+
+####################################################################################################
+def MediaObjectsForURL(url):
+
+    return [
+        MediaObject(
+            video_resolution='sd',
+            audio_channels=2,
+            optimized_for_streaming=False,
+            parts=[
+                PartObject(key=Callback(PlayVideo, url=url))
+                ]
+            )
+        ]
+
+####################################################################################################
+@indirect
+def PlayVideo(url, **kwargs):
+
+    try:
+        base_html = HTML.ElementFromURL(url, headers=HTTP_HEADERS)
+    except:
+        raise Ex.MediaNotAvailable
+
+    html = get_post_html(url, base_html)
+    if (len(html) is not None):
+        for node in html.xpath('//span[@id="direct_link"]/a'):
+            Log.Debug('* PlayVideo URL = \"%s\"' %node.get('href'))
+            return IndirectResponse(VideoClipObject, key=node.get('href'))
+
+    raise Ex.MediaNotAvailable
+
+####################################################################################################
+def get_post_html(url, html):
+    data = dict()
+    for item in html.xpath('//input'):
+        data.update({item.get('name'): item.get('value')})
+
+    if bool(data):
+        return get_post_html(url, HTML.ElementFromString(HTTP.Request(url, headers=HTTP_HEADERS, data=urlencode(data)).content))
+    else:
+        return html
+
+    return False
