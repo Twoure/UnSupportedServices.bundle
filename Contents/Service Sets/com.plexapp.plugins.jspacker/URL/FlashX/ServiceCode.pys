@@ -59,7 +59,7 @@ def PlayVideo(url, **kwargs):
         raise Ex.MediaExpired
 
     for item in html.xpath('//form[@method="POST"]/input'):
-        post_values.update({item.get('name'), item.get('value')})
+        post_values.update({item.get('name'): item.get('value')})
 
     sleep(5)
     res = HTTP.Request(action_url[0], values=post_values).content
