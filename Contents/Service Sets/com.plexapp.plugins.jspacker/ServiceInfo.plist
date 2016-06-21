@@ -19,6 +19,14 @@
         <string>^https?\:\/\/(www\.)?xvidstage\.(?:[^\/]+\/).+</string>
       </array>
     </dict>
+    <key>NeoDrive</key>
+    <dict>
+      <key>URLPatterns</key>
+      <array>
+        <string>^https?\:\/\/(?:www\.)?neodrive\.(?:[^\/]+\/).+</string>
+        <string>^https?\:\/\/(?:www\.)?cloudzilla\.(?:[^\/]+\/).+</string>
+      </array>
+    </dict>
     <key>Up2stream</key>
     <dict>
       <key>URLPatterns</key>
@@ -30,7 +38,7 @@
     <dict>
       <key>URLPatterns</key>
       <array>
-        <string>^nahttps?\:\/\/(?:www\.)?vid\.(?:[^\/]+\/).+</string>
+        <string>^nahttps?\:\/\/(?:www\.)?vid\.ag\/.+</string>
       </array>
     </dict>
     <key>Vidto</key>
@@ -44,7 +52,7 @@
     <dict>
       <key>URLPatterns</key>
       <array>
-        <string>^https?\:\/\/(?:www\.|beta\.)?vidup\.(?:[^\/]+\/).+</string>
+        <string>^https?\:\/\/(?:www\.|beta\.)?vidup\.(?:[^\/]+(?&lt;!org)\/).+</string>
       </array>
     </dict>
     <key>Vidzi</key>
@@ -74,7 +82,8 @@
         <string>^https?\:\/\/(www\.)?rapidvideo\.ws\/.+</string>
         <string>^https?\:\/\/(www\.)?streamin\.(?:[^\/]+\/).+</string>
         <string>^https?\:\/\/(www\.)?streamplay\.(?:[^\/]+\/).+</string>
-        <string>^https?\:\/\/(www\.)?thevideobee\.(?:[^\/]+\/).+</string>
+        <string>^nahttps?\:\/\/(www\.)?thevideobee\.(?:[^\/]+\/).+</string>
+        <string>^https?\:\/\/(www\.)?videonest\.\w+\/.+</string>
         <string>^https?\:\/\/(www\.)?vidtodo\.(?:[^\/]+\/).+</string>
         <string>^https?\:\/\/(www\.)?vidplay\.(?:[^\/]+\/).+</string>
         <string>^uss\/https?\:\/\/(www\.)?vodlocker\.(?:[^\/]+\/).+</string>
