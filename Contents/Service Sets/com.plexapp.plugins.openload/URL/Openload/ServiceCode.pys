@@ -1,19 +1,19 @@
 #!/usr/bin/env python
 
-"""Openload service code"""
+"""Openload.co service code"""
 
 from openload import decode_openload
 import contextlib
 import urllib2
 
-HTTP_HEADERS = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36'}
+USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36'
 
 ####################################################################################################
 def NormalizeURL(url):
 
     if not '/embed/' in url:
-        r = Regex(r'(https?:\/\/openload\.\w+)\/\w+\/([^\/]+)').search(url)
-        url = r.group(1) + '/embed/' + r.group(2)
+        base = Regex(r'(https?:\/\/openload\.\w+)\/\w+\/([^\/]+)(\/.+)?').search(url)
+        url = base.group(1) + '/embed/' + base.group(2) + (base.group(3) if base.group(3) else '')
 
     return url
 
@@ -72,19 +72,27 @@ def get_openload_url(ourl, count=0):
     """
 
     try:
-        h = HTTP_HEADERS.update({'Referer': ourl})
-        s = HTTP.Request(ourl, encoding=('utf-8'), headers=h).content
+        base = Regex(r'(https?:\/\/openload\.\w+)\/\w+\/([^\/]+)(\/.+)?').search(ourl)
+        eurl = base.group(1) + '/embed/' + base.group(2) + (base.group(3) if base.group(3) else '')
 
-        title = Regex(r'og\:title\"\s*?content\=\"([^\"]+)').search(s)
-        title = String.Quote(title.group(1), usePlus=True) if title else None
+        h = {'User-Agent': USER_AGENT, 'Referer': eurl}
+        s = HTTP.Request(eurl, encoding=('utf-8'), headers=h).content
+
+        if base.group(3):
+            title = base.group(3)[1:]
+        else:
+            title = Regex(r'og\:title\"\s*?content\=\"([^\"]+)').search(s)
+            title = String.Quote(title.group(1), usePlus=True) if title else None
         Log.Debug('* Openload video title = %s' %title)
 
         url = False
         urls = decode_openload(s)
         if urls:
             for u in urls:
-                rurl = get_url_redirect_v2(u)
-                if title == rurl.rsplit('/', 1)[1].split('?mime=')[0]:
+                rurl = get_url_redirect(u)
+                if title and title == rurl.rsplit('/', 1)[1].split('?mime=')[0]:
+                    url = rurl
+                elif 'Komp+1.mp4' != rurl.rsplit('/', 1)[1].split('?mime=')[0]:
                     url = rurl
 
         if not url:
@@ -97,21 +105,19 @@ def get_openload_url(ourl, count=0):
                 return get_openload_url(ourl, count=count)
     except Exception as e:
         Log.Error('* Openload Error: Something went wrong, cannot access %s' %ourl)
-        Log.Error('* Openload Error: %s' %str(e))
+        Log.Critical('* Openload Error: %s' %str(e))
         url = False
 
     return url
 
 ####################################################################################################
 def get_url_redirect(url):
-
-    h = HTTP_HEADERS.update({'Referer': url})
     try:
-        req = urllib2.Request(url, headers=h)
+        req = urllib2.Request(url, headers={'User-Agent': USER_AGENT, 'Referer': url})
         req.get_method = lambda : 'HEAD'
         with contextlib.closing(urllib2.urlopen(req)) as resp:
             url = resp.geturl()
     except Exception as e:
-        Log.Error('* get_url_redirect Error: %s' %str(e))
+        Log.Critical('* get_url_redirect Error: %s' %str(e))
 
     return url
