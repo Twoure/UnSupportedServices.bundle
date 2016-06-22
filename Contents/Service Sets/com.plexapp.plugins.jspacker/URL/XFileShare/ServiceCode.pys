@@ -68,10 +68,10 @@ def MetadataObjectForURL(url):
 ####################################################################################################
 def MediaObjectsForURL(url):
 
-    if Regex(r'(?:\.|\/)(vodlocker|gorillavid)\.').search(url):
+    if Regex(r'(?:\.|\/)(allmyvideos|daclips|gorillavid|movpod|vodlocker)\.').search(url):
         return [
             MediaObject(
-                container=Container.MP4,
+                container=Container.FLV if 'movpod' in url else Container.MP4,
                 video_codec=VideoCodec.H264,
                 video_resolution='sd',
                 audio_codec=AudioCodec.AAC,
