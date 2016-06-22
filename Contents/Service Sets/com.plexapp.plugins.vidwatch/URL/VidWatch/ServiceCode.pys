@@ -34,7 +34,7 @@ def MetadataObjectForURL(url):
 
     fallback = 'http://i.imgur.com/75YO83o.jpg'
     thumb = data['thumb'] if 'thumb' in data.keys() else fallback
-    duration = Datetime.MillisecondsFromString(data['duration']) if 'duration' in data.keys() else None
+    duration = int(data['duration']) * 1000 if 'duration' in data.keys() else None
 
     return VideoClipObject(
         title=title,
