@@ -3,6 +3,11 @@
 """VShare Service Code"""
 
 from unpacker import unpack as Unpack
+from urllib import  urlencode
+import contextlib
+import urllib2
+
+USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36'
 
 ####################################################################################################
 def NormalizeURL(url):
@@ -20,6 +25,9 @@ def MetadataObjectForURL(url):
     except:
         raise Ex.MediaNotAvailable
 
+    if '404 Not Found' in html.xpath('//title/text()'):
+        raise Ex.MediaExpired
+
     title = html.xpath('//input[@name="fname"]/@value')
     if not title:
         raise Ex.MediaNotAvailable
@@ -29,11 +37,10 @@ def MetadataObjectForURL(url):
     thumb = fallback
     data = source_text(url)
     if data:
-        data = Unpack(data.group(1))
-        rthumb = Regex(r'(?:\"|\')?image(?:\"|\')?\:(?:\s)?(?:\"|\')([^\"\']+)(?:\"|\')').search(data)
+        rthumb = Regex(r'[\"\']?image[\"\']?\:\s*?[\"\']([^\"\']+)[\"\']').search(data)
         thumb = rthumb.group(1) if rthumb else fallback
 
-        rd = Regex(r'(?:\"|\')?duration(?:\"|\')?(?:\s)?\:(?:\s)?(?:\"|\')(\d+)(?:\"|\')').search(data)
+        rd = Regex(r'[\"\']?duration[\"\']?\s*?\:\s*?[\"\'](\d+)[\"\']').search(data)
         duration = int(rd.group(1)) * 1000 if rd else None
 
     return VideoClipObject(
@@ -63,11 +70,23 @@ def PlayVideo(url, **kwargs):
 
     data = source_text(url)
     if data:
-        data = Unpack(data.group(1))
-        vurl = Regex(r'(?:\"|\')?file(?:\"|\')?(?:\s)?\:(?:\s)?(?:\"|\')(http[^\"\']+(?<!m3u8|smil))(?:\"|\')').search(data)
+        vurl = Regex(r'[\"\']?file[\"\']?\s*?\:\s*?[\"\'](http[^\"\']+(?<!m3u8|smil))[\"\']').search(data)
         if vurl:
-            Log.Debug('* PlayVideo URL  = %s' %vurl.group(1))
-            return IndirectResponse(VideoClipObject, key=vurl.group(1))
+            video_url = vurl.group(1)
+            if not check_url(video_url, get_embed_url(url)):
+                html = HTML.ElementFromURL(url)
+                pdata = dict()
+                for item in html.xpath('//input'):
+                    pdata.update({item.get('name'): item.get('value')})
+
+                if bool(pdata):
+                    page = HTTP.Request(url, headers={'User-Agent': USER_AGENT, 'Referer': url}, data=urlencode(pdata)).content
+                    vurl2 = Regex(r'[\"\']?file[\"\']?\s*?\:\s*?[\"\'](http[^\"\']+(?<!m3u8|smil))[\"\']').search(page)
+                    if vurl2:
+                        video_url = vurl2.group(1)
+
+            Log.Debug('* PlayVideo URL  = %s' %video_url)
+            return IndirectResponse(VideoClipObject, key=video_url)
 
     raise Ex.MediaNotAvailable
 
@@ -82,7 +101,24 @@ def get_embed_url(url):
 ####################################################################################################
 def source_text(url):
 
-    page = HTTP.Request(get_embed_url(url)).content
+    page = HTTP.Request(get_embed_url(url), headers={'User-Agent': USER_AGENT, 'Referer': url}).content
     data = Regex(r"<script type=.text\/javascript.>(eval\(function\(p,a,c,k,e,.+(?:file).+\.split\('\|'\)\)\))").search(page)
 
-    return data
+    return Unpack(data.group(1)) if data else page
+
+####################################################################################################
+def check_url(url, ref_url):
+
+    try:
+        req = urllib2.Request(url, headers={'User-Agent': USER_AGENT, 'Referer': ref_url})
+        req.get_method = lambda : 'HEAD'
+        try:
+            with contextlib.closing(urllib2.urlopen(req)) as resp:
+                h = resp.info()
+            return True
+        except urllib2.HTTPError, e:
+            Log.Error('* check_url: %s' %str(e))
+    except Exception as er:
+        Log.Critical('* check_url: %s' %str(er))
+
+    return False
