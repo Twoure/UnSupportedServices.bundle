@@ -1,0 +1,81 @@
+#!/usr/bin/env python
+
+"""Stream.moe Service Code"""
+
+####################################################################################################
+def NormalizeURL(url):
+
+    if '/embed' not in url:
+        r = Regex(r'(?i)(https?:\/\/(?:www\.)?\w+\.\w+\/)([a-z0-9]+)').search(url)
+        url = r.group(1) + 'embed/' + r.group(2)
+    return url
+
+####################################################################################################
+def MetadataObjectForURL(url):
+
+    try:
+        page = HTTP.Request(url).content
+        html = HTML.ElementFromString(page)
+    except:
+        raise Ex.MediaNotAvailable
+
+    title = html.xpath('//title/text()')
+    if not title:
+        raise Ex.MediaExpired
+
+    atob_html = atob(page)
+    if (atob_html is not None):
+        fallback = 'http://i.imgur.com/75YO83o.jpg'
+        poster = atob_html.xpath('//video/@poster')
+        thumb = poster[0] if poster else fallback
+
+        return VideoClipObject(
+            title=title[0].split(' - Stream.moe')[0].strip(),
+            thumb=Resource.ContentsOfURLWithFallback([thumb, fallback]),
+            source_title='StreamMoe'
+            )
+
+    raise Ex.MediaNotAvailable
+
+####################################################################################################
+def MediaObjectsForURL(url):
+
+    return [
+        MediaObject(
+            video_resolution='sd',
+            audio_channels=2,
+            optimized_for_streaming=False,
+            parts=[
+                PartObject(key=Callback(PlayVideo, url=url))
+                ]
+            )
+        ]
+
+####################################################################################################
+@indirect
+def PlayVideo(url, **kwargs):
+
+    try:
+        page = HTTP.Request(url).content
+    except:
+        raise Ex.MediaNotAvailable
+
+    html = atob(page)
+    if (html is not None):
+        vurl = html.xpath('//source/@src')
+        if vurl:
+            Log.Debug('* PlayVideo URL = \"%s\"' %vurl[0])
+            return IndirectResponse(VideoClipObject, key=vurl[0])
+
+    raise Ex.MediaNotAvailable
+
+####################################################################################################
+def atob(page):
+    r = Regex(r'contents\s*?\=\s*?atob\([\'\"]([^\'\"]+)').search(page)
+    if r:
+        try:
+            htext = String.Base64Decode(r.group(1))
+            return HTML.ElementFromString(htext)
+        except Exception as e:
+            Log.Error('* StreamMoe Decoding Error: %s' %str(e))
+    return False
