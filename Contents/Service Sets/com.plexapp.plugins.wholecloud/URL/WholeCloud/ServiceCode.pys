@@ -9,7 +9,11 @@ Host:
     cloudtime, nowvideo, vidgg
 """
 
-HTTP_HEADERS = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36'}
+from urllib import quote
+import urllib2
+import contextlib
+
+USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36'
 
 ####################################################################################################
 def NormalizeURL(url):
@@ -48,11 +52,10 @@ def MetadataObjectForURL(url):
     thumb = thumb[0] if thumb else fallback
 
     # test if video url returns an error, if so then do not display link
-    data = get_video_url(url)
-    if 'error=' in data:
-        Log.Error('* MetadataObjectForURL Error: %s' %str(data))
-        if data.split('error_msg=')[1] == 'The video no longer exists':
-            raise Ex.MediaExpired
+    vurl = setup_playvideo(url)
+    if vurl == "This media has expired.":
+        raise Ex.MediaExpired
+    elif not vurl:
         raise Ex.MediaNotAvailable
 
     return VideoClipObject(
@@ -79,19 +82,14 @@ def MediaObjectsForURL(url):
 @indirect
 def PlayVideo(url, **kwargs):
 
-    data = get_video_url(url)
-    if 'error=' in data:
-        Log.Error('* PlayVideo Error: %s' %str(data))
-        if data.split('error_msg=')[1] == 'The video no longer exists':
-            raise Ex.MediaExpired
-    elif 'url' in data:
-        vurl = data.split('url=')[1].split('&')[0]
-        Log.Debug('* PlayVideo URL = %s' %vurl)
-        return IndirectResponse(VideoClipObject, key=vurl)
-    else:
-        Log.Critical('* PlayVideo Error: No video source was found')
+    vurl = setup_playvideo(url)
+    if vurl == "This media has expired.":
+        raise Ex.MediaExpired
+    elif not vurl:
+        raise Ex.MediaNotAvailable
 
-    raise Ex.MediaNotAvailable
+    Log.Debug('* PlayVideo URL = %s' %vurl)
+    return IndirectResponse(VideoClipObject, key=vurl)
 
 ####################################################################################################
 def get_embed_url(url):
@@ -101,9 +99,9 @@ def get_embed_url(url):
     return url
 
 ####################################################################################################
-def get_video_url(url):
+def setup_playvideo(url):
 
-    page = HTTP.Request(get_embed_url(url), headers=HTTP_HEADERS).content
+    page = HTTP.Request(get_embed_url(url), headers={'User-Agent': USER_AGENT}).content
 
     keys = ['filekey', 'file', 'domain']
     apid = {}
@@ -112,16 +110,58 @@ def get_video_url(url):
         if k == 'filekey':
             fkr = Regex(r'var\s%s\=\s?(?:\'|\")?([^\"\']+)(?:\'|\")?\;' %r.group(1)).search(page)
             if fkr:
-                value = fkr.group(1).replace('.', '%2E')
+                value = fkr.group(1).replace('.', '%2E').replace('-', '%2D')
             else:
-                value = r.group(1).replace('.', '%2E')
+                value = r.group(1).replace('.', '%2E').replace('-', '%2D')
         else:
             value = r.group(1)
         apid.update({k: value})
 
     domain = apid['domain'][:-1] if apid['domain'].endswith('/') else apid['domain']
     data_url = '%s/api/player.api.php?key=%s&file=%s' %(domain, apid['filekey'], apid['file'])
-    return HTTP.Request(data_url, headers=HTTP_HEADERS).content
+    vurl = get_video_url(data_url)
+
+    return vurl if vurl else False
+
+####################################################################################################
+def url_check(url):
+    try:
+        req = urllib2.Request(url, headers={'User-Agent': USER_AGENT})
+        req.get_method = lambda : 'HEAD'
+        try:
+            with contextlib.closing(urllib2.urlopen(req)) as resp:
+                h = resp.info()
+            return True
+        except urllib2.HTTPError, e:
+            Log.Error('* check_url: %s' %str(e))
+    except Exception as er:
+        Log.Critical('* check_url: %s' %str(er))
+    return False
+
+####################################################################################################
+def get_video_url(url, count=0):
+    match = True
+    while match or (count <= 3):
+        count += 1
+        data = HTTP.Request(url, headers={'User-Agent': USER_AGENT}).content
+        if 'error' in data:
+            Log.Error('* PlayVideo Error: %s' %str(data))
+            if data.split('error_msg=')[1] == 'The video no longer exists':
+                return "This media has expired."
+            match = False
+        elif 'url' in data:
+            vurl = data.split('url=')[1].split('&')[0]
+            if (count == 1) and not url_check(vurl):
+                nurl = url + '&errorCode=404&errorUrl=' + quote(vurl, '').replace('.', '%2E')
+                Log.Warn('* Video URL %i faild. Sending Error URL to WholeCloud API to get corrected URL' %count)
+                Log.Warn('* New API URL = %s' %nurl)
+                return get_video_url(nurl, count)
+            return vurl
+        else:
+            match = False
+
+    Log.Critical('* No video source was found')
+    return False
 
 ####################################################################################################
 def get_source_title(url):
