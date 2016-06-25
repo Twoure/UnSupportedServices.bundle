@@ -1,9 +1,8 @@
 #!/usr/bin/env python
 
-"""FlashX Service Code"""
+"""FlashX.tv Service Code"""
 
 from unpacker import unpack as Unpack
-from time import sleep
 
 ####################################################################################################
 def NormalizeURL(url):
@@ -51,7 +50,7 @@ def MediaObjectsForURL(url):
 ####################################################################################################
 @indirect
 def PlayVideo(url, **kwargs):
-    html = HTML.ElementFromURL(url)
+    html = HTML.ElementFromURL(url, sleep=5)
 
     post_values = {}
     action_url = html.xpath('//form[@method="POST"]/@action')
@@ -61,12 +60,11 @@ def PlayVideo(url, **kwargs):
     for item in html.xpath('//form[@method="POST"]/input'):
         post_values.update({item.get('name'): item.get('value')})
 
-    sleep(5)
     res = HTTP.Request(action_url[0], values=post_values).content
     packed = Regex(r"<script type=.text\/javascript.>(eval\(function\(p,a,c,k,e,.+(?:file).+\.split\('\|'\)\)\))").search(res)
     if packed:
         data = Unpack(packed.group(1))
-        vurl = Regex(r'(?:\"|\')?file(?:\"|\')?(?:\s)?\:(?:\s)?(?:\"|\')(http[^\"\']+(?<!m3u8|smil))(?:\"|\')').search(data)
+        vurl = Regex(r'[\"\']?file[\"\']?\s*?\:\s*?[\"\'](http[^\"\']+(?<!m3u8|smil))[\"\']').search(data)
         if vurl:
             Log.Debug('* PlayVideo URL  = %s' %vurl.group(1))
             return IndirectResponse(VideoClipObject, key=vurl.group(1))
