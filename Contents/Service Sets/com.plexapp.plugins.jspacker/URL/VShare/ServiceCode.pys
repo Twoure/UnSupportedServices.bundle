@@ -3,7 +3,6 @@
 """VShare Service Code"""
 
 from unpacker import unpack as Unpack
-from urllib import  urlencode
 import contextlib
 import urllib2
 
@@ -80,7 +79,7 @@ def PlayVideo(url, **kwargs):
                     pdata.update({item.get('name'): item.get('value')})
 
                 if bool(pdata):
-                    page = HTTP.Request(url, headers={'User-Agent': USER_AGENT, 'Referer': url}, data=urlencode(pdata)).content
+                    page = HTTP.Request(url, headers={'User-Agent': USER_AGENT, 'Referer': url}, values=pdata).content
                     vurl2 = Regex(r'[\"\']?file[\"\']?\s*?\:\s*?[\"\'](http[^\"\']+(?<!m3u8|smil))[\"\']').search(page)
                     if vurl2:
                         video_url = vurl2.group(1)
@@ -114,8 +113,7 @@ def check_url(url, ref_url):
         req.get_method = lambda : 'HEAD'
         try:
             with contextlib.closing(urllib2.urlopen(req)) as resp:
-                h = resp.info()
-            return True
+                return True
         except urllib2.HTTPError, e:
             Log.Error('* check_url: %s' %str(e))
     except Exception as er:
