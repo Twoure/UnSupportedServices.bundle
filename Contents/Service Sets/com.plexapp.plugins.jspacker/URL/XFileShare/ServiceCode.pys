@@ -49,18 +49,16 @@ def MetadataObjectForURL(url):
     if packed:
         tpage = Unpack(packed.group(1))
 
-    rt = Regex(r'(?:\"|\')?image(?:\"|\')?\:(?:\s)?(?:\"|\')([^\"\']+)(?:\"|\')').search(tpage)
-    rd = Regex(r'(?:\"|\')?duration(?:\"|\')?(?:\s)?\:(?:\s)?(?:\"|\')(\d+)(?:\"|\')').search(tpage)
-    thumb = 'http://i.imgur.com/75YO83o.jpg'
-    duration = None
-    if rt:
-        thumb = rt.group(1)
-    if rd:
-        duration = int(rd.group(1)) * 1000
+    rt = Regex(r'[\"\']?image[\"\']?\s*?\:\s*?[\"\']([^\"\']+)[\"\']').search(tpage)
+    rd = Regex(r'[\"\']?duration[\"\']?\s*?\:\s*?[\"\'](\d+)[\"\']').search(tpage)
+
+    fallback = 'http://i.imgur.com/75YO83o.jpg'
+    thumb = rt.group(1) if rt else fallback
+    duration = int(rd.group(1)) * 1000 if rd else None
 
     return VideoClipObject(
         title=title,
-        thumb=Resource.ContentsOfURLWithFallback([thumb, 'http://i.imgur.com/75YO83o.jpg']),
+        thumb=Resource.ContentsOfURLWithFallback([thumb, fallback]),
         duration=duration,
         source_title=get_source_title(url)
         )
@@ -104,7 +102,7 @@ def PlayVideo(url, **kwargs):
     if packed:
         page = Unpack(packed.group(1))
 
-    r = Regex(r'(?:\"|\')?file(?:\"|\')?(?:\s)?\:(?:\s)?(?:\"|\')(http[^\"\']+(?<!m3u8|smil))(?:\"|\')').search(page)
+    r = Regex(r'[\"\']?file[\"\']?\s*?\:\s*?[\"\'](http[^\"\']+(?<!m3u8|smil))[\"\']').search(page)
 
     if r:
         vurl = r.group(1) + '&direct=false&ua=true' if 'allmyvideos' in url else r.group(1)
@@ -120,10 +118,7 @@ def get_packed_data(page):
 ####################################################################################################
 def get_embed_url(url, norm=False):
     r = Regex(r'(.*?https?:\/\/(?:www\.)?\w+\.\w+\/)(?:embed\-|\w+\/)?([^\/\.]+)').search(url)
-    if norm:
-        return r
-    else:
-        return r.group(1) + 'embed-' + r.group(2).split('-')[0] + '.html'
+    return r if norm else r.group(1) + 'embed-' + r.group(2).split('-')[0] + '.html'
 
 ####################################################################################################
 def correct_url(url):
