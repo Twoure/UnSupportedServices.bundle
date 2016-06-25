@@ -16,6 +16,7 @@
       <key>URLPatterns</key>
       <array>
         <string>^https?\:\/\/(www\.)?movdivx\.(?:[^\/]+\/).+</string>
+        <string>^https?\:\/\/(www\.)?tusfiles\.(?:[^\/]+\/).+</string>
         <string>^https?\:\/\/(www\.)?xvidstage\.(?:[^\/]+\/).+</string>
       </array>
     </dict>
