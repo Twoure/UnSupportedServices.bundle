@@ -15,7 +15,7 @@
         <string>^https?\:\/\/(www\.)?novamov\.(?:[^\/]+\/).+</string>
         <string>^https?\:\/\/(www\.)?nowvideo\.(?:[^\/]+\/).+</string>
         <string>^https?\:\/\/(www\.)?videoweed\.(?:[^\/]+\/).+</string>
-        <string>^https?\:\/\/(www\.)?vidgg\.(?:[^\/]+\/).+</string>
+        <string>^https?\:\/\/(www\.)?vid(?:gg\.\w+|\.gg)\/.+</string>
         <string>^https?\:\/\/(www\.)?wholecloud\.(?:[^\/]+\/).+</string>
       </array>
     </dict>

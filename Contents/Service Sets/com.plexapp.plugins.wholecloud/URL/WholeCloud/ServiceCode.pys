@@ -17,11 +17,13 @@ USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Ge
 
 ####################################################################################################
 def NormalizeURL(url):
+
+    url = url_check(url.replace('nowvideo.eu', 'nowvideo.li'), geturl=True)
     if '/embed/' in url:
         r = Regex(r'(?i)(https?\:\/\/(?:www\.)?\w+\.\w+)\/\w+\/(?:\?\w+\=)?([0-9a-z]+)').search(url)
         url = r.group(1) + '/video/' + r.group(2)
 
-    return url.replace('nowvideo.eu', 'nowvideo.li')
+    return url
 
 ####################################################################################################
 def MetadataObjectForURL(url):
@@ -124,14 +126,13 @@ def setup_playvideo(url):
     return vurl if vurl else False
 
 ####################################################################################################
-def url_check(url):
+def url_check(url, geturl=False):
     try:
         req = urllib2.Request(url, headers={'User-Agent': USER_AGENT})
         req.get_method = lambda : 'HEAD'
         try:
             with contextlib.closing(urllib2.urlopen(req)) as resp:
-                h = resp.info()
-            return True
+                return resp.geturl() if geturl else True
         except urllib2.HTTPError, e:
             Log.Error('* check_url: %s' %str(e))
     except Exception as er:
