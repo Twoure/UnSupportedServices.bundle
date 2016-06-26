@@ -6,7 +6,7 @@
 def NormalizeURL(url):
 
     if '/embed-' in url:
-        url = url.replace('/embed-', '/')
+        url = url.replace('/embed-', '/').split('-')[0]
     return url
 
 ####################################################################################################
