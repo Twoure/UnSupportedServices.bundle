@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-"""VeeHD service code"""
+"""VeeHD.com service code"""
 
 ####################################################################################################
 def NormalizeURL(url):
@@ -52,7 +52,7 @@ def MediaObjectsForURL(url):
         if data['type'].lower() == 'flash':
             return [
                 MediaObject(
-                    container='mp4',
+                    container=Container.MP4,
                     bitrate=int(data['bitrate']),
                     video_resolution=data['res'],
                     audio_channels=2,
@@ -65,8 +65,8 @@ def MediaObjectsForURL(url):
         else:
             return [
                 MediaObject(
-                    container='avi',
-                    video_codec='divx',
+                    container=Container.AVI,
+                    video_codec=VideoCodec.DIVX,
                     bitrate=int(data['bitrate']),
                     video_resolution=data['res'],
                     audio_channels=2,
@@ -104,14 +104,14 @@ def PlayVideo(url, **kwargs):
 
         if embed:
             if len(embed) != 0:
-                Log.Debug('* PlayVideo URL = %s' %embed[0])
+                Log.Debug('* PlayVideo DIVX URL = %s' %embed[0])
                 return IndirectResponse(VideoClipObject, key=embed[0])
         elif flashvars:
             if len(flashvars) != 0:
                 json = flashvars[0].split('config=')[-1]
                 json_obj = JSON.ObjectFromString(json)
                 video_url = String.Unquote(json_obj['clip']['url'])
-                Log.Debug('* PlayVideo URL = %s' %video_url)
+                Log.Debug('* PlayVideo Flash URL = %s' %video_url)
                 return IndirectResponse(VideoClipObject, key=video_url)
 
     raise Ex.MediaNotAvailable
