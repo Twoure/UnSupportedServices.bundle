@@ -29,18 +29,13 @@ def MetadataObjectForURL(url):
     if not 'vpi' in data.keys():
         raise Ex.MediaExpired
 
-    duration = None
-    if 'duration' in data.keys():
-        duration = Datetime.MillisecondsFromString(data['duration'])
-
     summary = html.xpath('//td[@class="infodropdown"]//div')
-    summary = summary[0].text_content().strip().split('\n')[0] if summary else None
 
     return VideoClipObject(
         title=title[0].strip(),
         thumb=Resource.ContentsOfURLWithFallback([thumb, fallback]),
-        duration=duration,
-        summary=summary,
+        duration=Datetime.MillisecondsFromString(data['duration']) if 'duration' in data.keys() else None,
+        summary=summary[0].text_content().strip().split('\n')[0] if summary else None,
         source_title='VeeHD'
         )
 
