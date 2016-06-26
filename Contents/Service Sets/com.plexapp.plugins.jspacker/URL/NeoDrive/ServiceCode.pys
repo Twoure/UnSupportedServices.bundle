@@ -26,9 +26,6 @@ def MetadataObjectForURL(url):
         raise Ex.MediaExpired
 
     st = Regex(r'https?\:\/\/(?:www\.)?(\w+)\.\w+').search(url)
-    source_title = 'Neodrive'
-    if st:
-        source_title = st.group(1).title()
 
     packed_data = get_packed_data(page)
     if packed_data:
@@ -39,7 +36,7 @@ def MetadataObjectForURL(url):
         return VideoClipObject(
             title=data['title'],
             thumb=data['thumbnail'],
-            source_title=source_title
+            source_title=st.group(1).title() if st else 'Neodrive'
             )
 
     raise Ex.MediaNotAvailable

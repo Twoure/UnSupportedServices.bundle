@@ -36,9 +36,6 @@ I plan to make a few channels that will require this UnSupported Services channe
   - Basically if the video thumb is from the video, then the video should play
 - **Zalaa** / **Uploadc** _not active code_
   - Video URL needs `User-Agent` and `Referer` to work.  I have included them in the code, but Plex still cannot play them.
-- **NeoDrive** / **CloudZilla** _not active code_
-  - Able to parse and download the Video URL, but Plex will not play the stream
-  - Think it has to do with a missing header value, not sure
 - **Vid.ag** _not active code_
   - The host is down for _"maintenance"_
   - Will see if they come back, not sure
