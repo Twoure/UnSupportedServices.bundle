@@ -1,8 +1,18 @@
 #!/usr/bin/env python
 
-"""Zalaa and Uploadc Service Code"""
+"""
+Zalaa.com and Uploadc.(ch|com) Service Code
 
-HTTP_HEADERS = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36'}
+Final video URL requires the Referer and User-Agent set in the HTTP Headers,
+but Plex Framework does not allow for the Referer to be set.
+
+For now this ServiceCode will be disabled until either the site changes or Plex Framework changes.
+"""
+
+import urllib2
+import contextlib
+
+USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36'
 
 ####################################################################################################
 def NormalizeURL(url):
@@ -11,7 +21,7 @@ def NormalizeURL(url):
         url = Regex(r'(uploadc\.)(\w+)').sub(r'\1ch', url)
 
     if not '/embed-' in url:
-        r = Regex(r'(https?\:\/\/(?:www\.)?\w+\.(?:[^/]+\/)?)([^\/\.]+)').search(url)
+        r = Regex(r'(?i)(https?\:\/\/(?:www\.)?\w+\.\w+\/)([a-z0-9]+)').search(url)
         url = r.group(1) + 'embed-' + r.group(2) + '.html'
 
     return url
@@ -24,21 +34,25 @@ def MetadataObjectForURL(url):
     except:
         raise Ex.MediaNotAvailable
 
-    rtitle = Regex(r'(?:\"|\')?title(?:\"|\')?(?:\s)?\,(?:\s)?(?:\"|\')([^\"\']+)(?:\"|\')').search(page)
-    rt = Regex(r'(?:\"|\')?image(?:\"|\')?\,(?:\s)?(?:\"|\')([^\"\']+)(?:\"|\')').search(page)
-    rd = Regex(r'(?:\"|\')?duration(?:\"|\')?(?:\s)?\,(?:\s)?(?:\"|\')(\d+)(?:\"|\')').search(page)
-    thumb = 'http://i.imgur.com/75YO83o.jpg'
-    duration = None
-    if rt:
-        thumb = rt.group(1)
-    if rd:
-        duration = int(rd.group(1)) * 1000
+    ru = Regex(r'[\"\']?file[\"\']?\s*?\,\s*?[\"\'](http[^\"\']+(?<!m3u8|smil))[\"\']').search(page)
+    if not check_url(ru.group(1) if ru else None, url):
+        raise Ex.MediaExpired
+
+    rtitle = Regex(r'[\"\']?title[\"\']?\s*?\,\s*?[\"\']([^\"\']+)[\"\']').search(page)
+    rt = Regex(r'[\"\']?image[\"\']?\,\s*?[\"\'](http[^\"\']+)[\"\']').search(page)
+    rd = Regex(r'[\"\']?duration[\"\']?\s*?\,\s*?[\"\'](\d+)[\"\']').search(page)
+    st = Regex(r'https?\:\/\/(?:www\.)?(\w+)\.\w+').search(url)
+
+    fallback = 'http://i.imgur.com/75YO83o.jpg'
+    thumb = rt.group(1) if rt else fallback
+    duration = int(rd.group(1)) * 1000 if rd else None
+    source_title = st.group(1).title() if st else 'Zalaa'
 
     return VideoClipObject(
-        title=rtitle.group(1) if rtitle else get_source_title(url),
-        thumb=thumb,
+        title=rtitle.group(1) if rtitle else source_title,
+        thumb=Resource.ContentsOfURLWithFallback([thumb, fallback]),
         duration=duration,
-        source_title=get_source_title(url)
+        source_title=source_title
         )
 
 ####################################################################################################
@@ -59,27 +73,41 @@ def MediaObjectsForURL(url):
 @indirect
 def PlayVideo(url, **kwargs):
 
+    http_headers = dict()
+    http_headers['User-Agent'] = USER_AGENT
+
     try:
-        page = HTTP.Request(url, headers=HTTP_HEADERS).content
+        page = HTTP.Request(url, headers=http_headers).content
     except:
         raise Ex.MediaNotAvailable
 
-    r = Regex(r'(?:\"|\')?file(?:\"|\')?(?:\s)?\,(?:\s)?(?:\"|\')(http[^\"\']+(?<!m3u8|smil))(?:\"|\')').search(page)
+    r = Regex(r'[\"\']?file[\"\']?\s*?\,\s*?[\"\'](http[^\"\']+(?<!m3u8|smil))[\"\']').search(page)
 
     if r:
-        Log.Debug('* PlayVideo URL = \"%s\"' %r.group(1))
-        HTTP_HEADERS.update({'Referer': url})
-        return IndirectResponse(VideoClipObject, key=r.group(1), http_headers=HTTP_HEADERS)
+        http_headers.update({'Referer': url})
+        vurl = r.group(1).replace(' ', '%20')
+        Log.Debug('* PlayVideo URL = \"%s\"' %vurl)
+        return IndirectResponse(VideoClipObject, key=vurl, http_headers=http_headers)
 
     raise Ex.MediaNotAvailable
 
 ####################################################################################################
-def get_source_title(url):
-    """get source title from url"""
+def check_url(url, ref_url=None, geturl=False):
+    Log('* Checking Response for %s' %url)
+    http_headers = dict()
+    http_headers['User-Agent'] = USER_AGENT
+    if ref_url:
+        http_headers.update({'Referer': ref_url})
 
-    stitle = url.split('/')[2]
-    sltitle = stitle.split('.')
-    if len(sltitle) > 2:
-        return sltitle[1].title()+'.'+sltitle[2]
-    else:
-        return sltitle[0].title()+'.'+sltitle[1]
+    try:
+        req = urllib2.Request(url, headers=http_headers)
+        req.get_method = lambda : 'HEAD'
+        try:
+            with contextlib.closing(urllib2.urlopen(req)) as resp:
+                Log('* URL Passed with no Errors')
+                return resp.geturl() if geturl else True
+        except urllib2.HTTPError, e:
+            Log.Error('* check_url: %s' %str(e))
+    except Exception as er:
+        Log.Critical('* check_url: %s' %str(er))
+    return False
