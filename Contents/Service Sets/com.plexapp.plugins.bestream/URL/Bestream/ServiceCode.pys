@@ -22,14 +22,14 @@ def MetadataObjectForURL(url):
     if not title:
         title = html.xpath('//meta[@property="og:title"]/@content')
         if title:
-            html.xpath('//meta[@property="og:title"]/@content')
+            title = (title[0].replace('Watch Watch', 'Watch') if title[0].startswith('Watch Watch') else title[0].lstrip('Watch')).strip()
         else:
             raise Ex.MediaExpired
     else:
         title = title[0].strip()
 
     data = get_data(HTTP.Request(get_embed_url(url)).content)
-    if not data:
+    if 'url' not in data.keys():
         raise Ex.MediaNotAvailable
 
     fallback = 'http://i.imgur.com/75YO83o.jpg'
@@ -65,10 +65,9 @@ def PlayVideo(url, **kwargs):
         raise Ex.MediaNotAvailable
 
     data = get_data(page)
-    if data:
-        if 'url' in data.keys():
-            Log.Debug('* PlayVideo URL = \"%s\"' %data['url'])
-            return IndirectResponse(VideoClipObject, key=data['url'])
+    if 'url' in data.keys():
+        Log.Debug('* PlayVideo URL = \"%s\"' %data['url'])
+        return IndirectResponse(VideoClipObject, key=data['url'])
 
     raise Ex.MediaNotAvailable
 
