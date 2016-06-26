@@ -24,7 +24,7 @@ def MetadataObjectForURL(url):
 
     return VideoClipObject(
         title=String.Unquote(title),
-        thumb=thumb,
+        thumb=Resource.ContentsOfURLWithFallback([thumb, 'http://i.imgur.com/75YO83o.jpg']),
         source_title='Stagevu'
         )
 
