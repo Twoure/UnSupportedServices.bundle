@@ -51,6 +51,7 @@ def MetadataObjectForURL(url):
 
     rt = Regex(r'[\"\']?image[\"\']?\s*?\:\s*?[\"\']([^\"\']+)[\"\']').search(tpage)
     rd = Regex(r'[\"\']?duration[\"\']?\s*?\:\s*?[\"\'](\d+)[\"\']').search(tpage)
+    st = Regex(r'https?\:\/\/(?:www\.)?(\w+)\.\w+').search(url)
 
     fallback = 'http://i.imgur.com/75YO83o.jpg'
     thumb = rt.group(1) if rt else fallback
@@ -60,7 +61,7 @@ def MetadataObjectForURL(url):
         title=title,
         thumb=Resource.ContentsOfURLWithFallback([thumb, fallback]),
         duration=duration,
-        source_title=get_source_title(url)
+        source_title=st.group(1).title() if st else 'XFileShare'
         )
 
 ####################################################################################################
@@ -117,22 +118,11 @@ def get_packed_data(page):
 
 ####################################################################################################
 def get_embed_url(url, norm=False):
-    r = Regex(r'(.*?https?:\/\/(?:www\.)?\w+\.\w+\/)(?:embed\-|\w+\/)?([^\/\.]+)').search(url)
-    return r if norm else r.group(1) + 'embed-' + r.group(2).split('-')[0] + '.html'
+    r = Regex(r'(?i)(.*?https?:\/\/(?:www\.)?\w+\.\w+\/)(?:embed\-|\w+\/)?([a-z0-9]+)').search(url)
+    return r if norm else r.group(1) + 'embed-' + r.group(2) + '.html'
 
 ####################################################################################################
 def correct_url(url):
     url_list = ['vodlocker', 'gorillavid']
     test = [url[4:] for u in url_list if Regex(r'(?:\.|\/)(%s)\.' %u).search(url)]
     return test[0] if test else url
-
-####################################################################################################
-def get_source_title(url):
-    """get source title from url"""
-
-    stitle = url.split('/')[2]
-    sltitle = stitle.split('.')
-    if len(sltitle) > 2:
-        return sltitle[1].title()+'.'+sltitle[2]
-    else:
-        return sltitle[0].title()+'.'+sltitle[1]
