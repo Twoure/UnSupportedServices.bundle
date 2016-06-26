@@ -52,5 +52,8 @@ I plan to make a few channels that will require this UnSupported Services channe
   - Added fallback thumb for now
 - **Openload**
   - Started kodi anti-scrape measures.  Works for now, kinda.
+- Refer to **Notes** within the [Host List](https://github.com/Twoure/UnSupportedServices.bundle/wiki/Host-list) for further issues and details.
+
+## [Host List](https://github.com/Twoure/UnSupportedServices.bundle/wiki/Host-list)
 
 ## [Changelog](Changelog.md#changelog)
