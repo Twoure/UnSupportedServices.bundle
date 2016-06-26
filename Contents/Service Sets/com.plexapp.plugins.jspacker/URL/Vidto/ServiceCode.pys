@@ -1,13 +1,16 @@
 #!/usr/bin/env python
 
-"""Vidto service code"""
+"""Vidto.me service code"""
 
 from unpacker import unpack as Unpack
 
 ####################################################################################################
 def NormalizeURL(url):
 
-    return url.split('?')[0]
+    if '/embed-' in url:
+        url = url.replace('/embed-', '/').split('-')[0]
+
+    return url
 
 ####################################################################################################
 def MetadataObjectForURL(url):
@@ -21,24 +24,24 @@ def MetadataObjectForURL(url):
     if not title:
         raise Ex.MediaNotAvailable
 
-    thumb = 'http://i.imgur.com/75YO83o.jpg'
+    fallback = 'http://i.imgur.com/75YO83o.jpg'
     duration = None
+    thumb = ''
 
     packed = get_packed_data(HTTP.Request(get_embed_url(url)).content)
     if packed:
         data = Unpack(packed.group(1))
-        rt = Regex(r'(?:\"|\')?image(?:\"|\')?\:(?:\s|\\)?(?:\"|\')([^\"\']+)(?:\"|\')').search(data)
-        rd = Regex(r'(?:\"|\')?duration(?:\"|\')?(?:\s)?\:(?:\s)?(?:\"|\')(\d+)(?:\"|\')').search(data)
-        if rt:
-            thumb = rt.group(1).strip('\\')
-        if rd:
-            duration = int(rd.group(1)) * 1000
+        rt = Regex(r'[\"\']?image[\"\']?\:(?:\s|\\)?[\"\']([^\"\']+)[\"\']').search(data)
+        rd = Regex(r'[\"\']?duration[\"\']?\s*?\:\s*?[\"\'](\d+)[\"\']').search(data)
+
+        thumb = rt.group(1).strip('\\') if rt else fallback
+        duration = int(rd.group(1)) * 1000 if rd else None
 
     return VideoClipObject(
         title=title[0].strip(),
-        thumb=thumb,
+        thumb=Resource.ContentsOfURLWithFallback([thumb, fallback]),
         duration=duration,
-        source_title=get_source_title(url)
+        source_title='Vidto'
         )
 
 ####################################################################################################
@@ -83,20 +86,9 @@ def get_packed_data(page):
 
 ####################################################################################################
 def get_fmt_list(page):
-    return Regex(r'(?:\"|\')?label(?:\"|\')?(?:\s)?\:(?:\s)?(?:\"|\')(\d+p)(?:\"|\')?\,(?:\s)?(?:\"|\')?file(?:\"|\')?(?:\s)?\:(?:\s)?(?:\"|\')(http[^\"\']+(?<!m3u8|smil))(?:\"|\')').findall(page)
+    return Regex(r'[\"\']?label[\"\']?\s*?\:\s*?[\"\'](\d+p)[\"\']?\,\s*?[\"\']?file[\"\']?\s*?\:\s*?[\"\'](http[^\"\']+(?<!m3u8|smil))[\"\']').findall(page)
 
 ####################################################################################################
 def get_embed_url(url):
-    rurl = Regex(r'(https?\:\/\/(?:www\.)?\w+\.(?:[^/]+\/)?)(?:.*?[/])?([^\/\.]+)').search(url)
+    rurl = Regex(r'(?i)(https?\:\/\/(?:www\.)?\w+\.\w+\/)([a-z0-9]+)').search(url)
     return rurl.group(1) + 'embed-' + rurl.group(2) + '.html'
-
-####################################################################################################
-def get_source_title(url):
-    """get source title from url"""
-
-    stitle = url.split('/')[2]
-    sltitle = stitle.split('.')
-    if len(sltitle) > 2:
-        return sltitle[1].title()+'.'+sltitle[2]
-    else:
-        return sltitle[0].title()+'.'+sltitle[1]
