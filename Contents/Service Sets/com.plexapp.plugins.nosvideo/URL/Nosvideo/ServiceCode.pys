@@ -2,7 +2,7 @@
 
 """Nosvideo.com Service Code"""
 
-HTTP_HEADERS = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2623.110 Safari/537.36'}
+USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2623.110 Safari/537.36'
 
 ####################################################################################################
 def MetadataObjectForURL(url):
@@ -16,6 +16,14 @@ def MetadataObjectForURL(url):
     if not title:
         raise Ex.MediaExpired
 
+    err = html.xpath('//font[@class="err"]/text()')
+    if err:
+        if 'site maintenance' in err[0].lower():
+            Log.Warn('* Nosvideo Warning: %s' %err[0])
+        else:
+            Log.Error('* Nosvideo Error: %s' %err[0])
+        raise Ex.MediaNotAvailable
+
     return VideoClipObject(
         title=title[0].split(' - Nosvideo')[0].strip(),
         thumb='http://i.imgur.com/75YO83o.jpg',
@@ -27,7 +35,6 @@ def MediaObjectsForURL(url):
 
     return [
         MediaObject(
-            container=Container.MP4,
             video_resolution='sd',
             audio_channels=2,
             optimized_for_streaming=False,
@@ -44,8 +51,11 @@ def PlayVideo(url, **kwargs):
     reurl = Regex(r'(https?\:\/\/\w+\.\w+\/)([a-z0-9]+)').search(url)
     url = reurl.group(1) + 'vj/video.php?u=' + reurl.group(2)
 
+    headers = dict()
+    headers['User-Agnet'] = USER_AGENT
+
     try:
-        page = HTTP.Request(url, headers=HTTP_HEADERS).content
+        page = HTTP.Request(url, headers=headers).content
     except:
         raise Ex.MediaNotAvailable
 
@@ -53,11 +63,8 @@ def PlayVideo(url, **kwargs):
     if r:
         vurl = String.Base64Decode(r.group(1))
         Log.Debug('* PlayVideo URL = \"%s\"' %vurl)
-        h = {
-            'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2623.110 Safari/537.36',
-            'Range': 'bytes=0-', 'Referer': url
-            }
-        Log(h)
-        return IndirectResponse(VideoClipObject, key=vurl, http_headers=HTTP_HEADERS)
+        headers.update({'Range': 'bytes=0-', 'Referer': url})
+        Log(headers)
+        return IndirectResponse(VideoClipObject, key=vurl, http_headers=headers)
 
     raise Ex.MediaNotAvailable
