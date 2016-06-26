@@ -33,7 +33,6 @@ def MetadataObjectForURL(url):
     except:
         raise Ex.MediaNotAvailable
 
-    source_title = get_source_title(url)
     title = html.xpath('//meta[@property="og:title"]/@content')
     if not title:
         title = html.xpath('//meta[@name="title"]/@content')
@@ -60,10 +59,12 @@ def MetadataObjectForURL(url):
     elif not vurl:
         raise Ex.MediaNotAvailable
 
+    st = Regex(r'https?\:\/\/(?:www\.)?(\w+)\.\w+').search(url)
+
     return VideoClipObject(
       title=title,
       thumb=Resource.ContentsOfURLWithFallback([thumb, fallback]),
-      source_title=source_title
+      source_title=st.group(1).title() if st else 'WholeCloud'
       )
 
 ####################################################################################################
@@ -161,16 +162,5 @@ def get_video_url(url, count=0):
         else:
             match = False
 
-    Log.Critical('* No video source was found')
+    Log.Critical('* No video source found for %s' %url)
     return False
-
-####################################################################################################
-def get_source_title(url):
-    """get source title from url"""
-
-    stitle = url.split('/')[2]
-    sltitle = stitle.split('.')
-    if len(sltitle) > 2:
-        return sltitle[1].title()+'.'+sltitle[2]
-    else:
-        return sltitle[0].title()+'.'+sltitle[1]
