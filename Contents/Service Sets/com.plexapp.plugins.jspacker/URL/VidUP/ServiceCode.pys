@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-"""VidUP Service Code"""
+"""beat.VidUP.me Service Code"""
 
 from unpacker import unpack as Unpack
 
@@ -22,10 +22,13 @@ def MetadataObjectForURL(url):
     if not title:
         raise Ex.MediaNotAvailable
 
+    fallback = 'http://i.imgur.com/75YO83o.jpg'
+    thumb = thumb[0].strip() if thumb else fallback
+
     return VideoClipObject(
         title=title[0].strip(),
-        thumb=thumb[0].strip() if thumb else 'http://i.imgur.com/75YO83o.jpg',
-        source_title=get_source_title(url)
+        thumb=Resource.ContentsOfURLWithFallback([thumb, fallback]),
+        source_title='VidUp'
         )
 
 ####################################################################################################
@@ -62,7 +65,7 @@ def PlayVideo(url, label, **kwargs):
 def get_embed_url(url):
 
     if 'embed-' not in url:
-        r = Regex(r'(https?:\/\/(?:beta\.)?vidup\.(?:[^/]+\/)?)(.*?)(?:\/|\.|$)').search(url)
+        r = Regex(r'(?i)(https?:\/\/(?:beta\.|www\.)?vidup\.\w+\/)([a-z0-9]+)').search(url)
         url = r.group(1) + 'embed-' + r.group(2) + '.html'
 
     return url
@@ -86,14 +89,3 @@ def source_dict(url):
     s = s.replace('\'', '\"').replace('label', '\"label\"').replace('file', '\"file\"')
 
     return JSON.ObjectFromString(s)
-
-####################################################################################################
-def get_source_title(url):
-    """get source title from url"""
-
-    stitle = url.split('/')[2]
-    sltitle = stitle.split('.')
-    if len(sltitle) > 2:
-        return sltitle[1].title()+'.'+sltitle[2]
-    else:
-        return sltitle[0].title()+'.'+sltitle[1]
