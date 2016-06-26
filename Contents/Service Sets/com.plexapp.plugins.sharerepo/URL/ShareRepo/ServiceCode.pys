@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
-"""ShareRepo Service Code"""
+"""ShareRepo.com Service Code"""
 
-HTTP_HEADERS = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36'}
+USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36'
 
 ####################################################################################################
 def NormalizeURL(url):
@@ -24,15 +24,14 @@ def MetadataObjectForURL(url):
     if not title:
         raise Ex.MediaExpired
 
-    thumb = 'http://i.imgur.com/75YO83o.jpg'
-    rt = Regex(r'(?:\"|\')?image(?:\"|\')?\:(?:\s)?(?:\"|\')([^\"\']+)(?:\"|\')').search(page)
-    if rt:
-        thumb = rt.group(1)
+    fallback = 'http://i.imgur.com/75YO83o.jpg'
+    rt = Regex(r'[\"\']?image[\"\']?\:\s*?[\"\']([^\"\']+)[\"\']').search(page)
+    thumb = rt.group(1) if rt else fallback
 
     return VideoClipObject(
         title=title[0].strip(),
-        thumb=thumb,
-        source_title=get_source_title(url)
+        thumb=Resource.ContentsOfURLWithFallback([thumb, fallback]),
+        source_title='ShareRepo'
         )
 
 ####################################################################################################
@@ -53,22 +52,15 @@ def MediaObjectsForURL(url):
 @indirect
 def PlayVideo(url, **kwargs):
 
-    page = HTTP.Request(url, headers=HTTP_HEADERS).content
+    http_headers = dict()
+    http_headers['User-Agent'] = USER_AGENT
 
-    r = Regex(r'file\:(?:\s)?(?:\"|\')(http[^\"\']+(?<!m3u8|smil))(?:\"|\')').search(page)
+    page = HTTP.Request(url, headers=http_headers).content
+
+    r = Regex(r'file\:\s*?[\"\'](http[^\"\']+(?<!m3u8|smil))[\"\']').search(page)
     if r:
+        http_headers.update({'Referer': url})
         Log.Debug('* PlayVideo URL = \"%s\"' %r.group(1))
-        return IndirectResponse(VideoClipObject, key=r.group(1), http_headers=HTTP_HEADERS)
+        return IndirectResponse(VideoClipObject, key=r.group(1), http_headers=http_headers)
 
     raise Ex.MediaNotAvailable
-
-####################################################################################################
-def get_source_title(url):
-    """get source title from url"""
-
-    stitle = url.split('/')[2]
-    sltitle = stitle.split('.')
-    if len(sltitle) > 2:
-        return sltitle[1].title()+'.'+sltitle[2]
-    else:
-        return sltitle[0].title()+'.'+sltitle[1]
