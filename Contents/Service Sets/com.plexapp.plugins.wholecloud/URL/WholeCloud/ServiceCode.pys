@@ -18,7 +18,9 @@ USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Ge
 ####################################################################################################
 def NormalizeURL(url):
 
-    url = url_check(url.replace('nowvideo.eu', 'nowvideo.li'), geturl=True)
+    rurl = url_check(url.replace('nowvideo.eu', 'nowvideo.li'), geturl=True)
+    url = rurl if rurl != bool() else url
+
     if '/embed/' in url:
         r = Regex(r'(?i)(https?\:\/\/(?:www\.)?\w+\.\w+)\/(?:\w+\/|embed\.php)?(?:\?\w+\=)?([0-9a-z]+)').search(url)
         v = '/v/' if Regex(r'(cloudy|videoraj)').search(r.group(1)) else '/video/'
@@ -33,6 +35,9 @@ def MetadataObjectForURL(url):
         html = HTML.ElementFromURL(url)
     except:
         raise Ex.MediaNotAvailable
+
+    st = Regex(r'https?\:\/\/(?:www\.)?(\w+)\.\w+').search(url)
+    source_title = st.group(1).title() if st else 'WholeCloud'
 
     title = html.xpath('//meta[@property="og:title"]/@content')
     if not title:
@@ -62,12 +67,10 @@ def MetadataObjectForURL(url):
     elif not vurl:
         raise Ex.MediaNotAvailable
 
-    st = Regex(r'https?\:\/\/(?:www\.)?(\w+)\.\w+').search(url)
-
     return VideoClipObject(
       title=title,
       thumb=Resource.ContentsOfURLWithFallback([thumb, fallback]),
-      source_title=st.group(1).title() if st else 'WholeCloud'
+      source_title=source_title
       )
 
 ####################################################################################################
@@ -99,7 +102,7 @@ def PlayVideo(url, **kwargs):
 
 ####################################################################################################
 def get_embed_url(url):
-    if '/embed/' not in url:
+    if not Regex(r'(\/embed[\/|\.])').search(url):
         r = Regex(r'(?i)(https?\:\/\/(?:www\.)?(\w+)\.\w+)\/\w+\/(?:\?\w+\=)?([0-9a-z]+)').search(url)
         v = 'id' if Regex(r'(vidgg|cloudy|videoraj)').search(r.group(2)) else 'v'
         e = 'embed.php' if Regex(r'(cloudy|videoraj)').search(r.group(2)) else 'embed/'
@@ -156,6 +159,8 @@ def url_check(url, geturl=False):
             Log.Error('* check_url: %s' %str(e))
     except Exception as er:
         Log.Critical('* check_url: %s' %str(er))
+        if url.startswith('https') and 'ssl' in str(er):
+            return url_check(url.replace('https:', 'http:'), geturl)
     return False
 
 ####################################################################################################
