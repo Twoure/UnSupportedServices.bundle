@@ -6,10 +6,10 @@ Added new host and simplified code
 better error handling
 Host:
     movshare | wholecloud, novamov | auroravid, videoweed | bitvid,
-    cloudtime, nowvideo, vidgg
+    cloudtime, nowvideo, vidgg, cloudy.ec | videoraj.to
 """
 
-from urllib import quote
+from urllib import quote, unquote
 import urllib2
 import contextlib
 
@@ -20,8 +20,9 @@ def NormalizeURL(url):
 
     url = url_check(url.replace('nowvideo.eu', 'nowvideo.li'), geturl=True)
     if '/embed/' in url:
-        r = Regex(r'(?i)(https?\:\/\/(?:www\.)?\w+\.\w+)\/\w+\/(?:\?\w+\=)?([0-9a-z]+)').search(url)
-        url = r.group(1) + '/video/' + r.group(2)
+        r = Regex(r'(?i)(https?\:\/\/(?:www\.)?\w+\.\w+)\/(?:\w+\/|embed\.php)?(?:\?\w+\=)?([0-9a-z]+)').search(url)
+        v = '/v/' if Regex(r'(cloudy|videoraj)').search(r.group(1)) else '/video/'
+        url = r.group(1) + v + r.group(2)
 
     return url
 
@@ -45,8 +46,10 @@ def MetadataObjectForURL(url):
     else:
         title = title[0].split('Watch ')[-1].split(' online ')[0].strip()
 
-    if Regex(r'(auroravid|bitvid|cloudtime|movshare|novamov|nowvideo|videoweed|vidgg|wholecloud)\s-\s(.+)').search(title.lower()):
-        title = title.split(' - ')[0]
+    if Regex(r'(?i)(auroravid|bitvid|cloudtime|movshare|novamov|nowvideo|videoweed|vidgg|wholecloud)\s-\s(.+)').search(title):
+        title = title.split(' - ')[0].strip()
+    elif Regex(r'(?i)\s*?\|\s*?(cloudy|videoraj)').search(title):
+        title = Regex(r'(?i)(.+?)\s*?\|\s*?(?:cloudy|videoraj)').search(title).group(1).strip()
 
     thumb = html.xpath('//meta[@property="og:image"]/@content')
     fallback = 'http://i.imgur.com/75YO83o.jpg'
@@ -98,7 +101,9 @@ def PlayVideo(url, **kwargs):
 def get_embed_url(url):
     if '/embed/' not in url:
         r = Regex(r'(?i)(https?\:\/\/(?:www\.)?(\w+)\.\w+)\/\w+\/(?:\?\w+\=)?([0-9a-z]+)').search(url)
-        url = r.group(1) + '/embed/?%s=' %('id' if r.group(2) == 'vidgg' else 'v') + r.group(3)
+        v = 'id' if Regex(r'(vidgg|cloudy|videoraj)').search(r.group(2)) else 'v'
+        e = 'embed.php' if Regex(r'(cloudy|videoraj)').search(r.group(2)) else 'embed/'
+        url = r.group(1) + '/%s?%s=' %(e, v) + r.group(3)
     return url
 
 ####################################################################################################
@@ -109,16 +114,29 @@ def setup_playvideo(url):
     keys = ['filekey', 'file', 'domain']
     apid = {}
     for k in keys:
-        r = Regex(r'flashvars\.%s\=\s?(?:\'|\")?([^\"\']+)?(?:\'|\")?\;' %k).search(page)
-        if k == 'filekey':
-            fkr = Regex(r'var\s%s\=\s?(?:\'|\")?([^\"\']+)(?:\'|\")?\;' %r.group(1)).search(page)
-            if fkr:
-                value = fkr.group(1).replace('.', '%2E').replace('-', '%2D')
+        value = None
+        r = Regex(r'flashvars\.%s\=\s*?[\'\"]?([^\"\']+)[\'\"]?\;' %k).search(page)
+        r2 = Regex(r'%s\s*?\:\s*?[\'\"]?([^\'\"]+)[\'\"]?\,' %('key' if k == 'filekey' else k)).search(page)
+        if r:
+            if k == 'filekey':
+                fkr = Regex(r'var\s%s\=\s*?[\'\"]?([^\"\']+)[\'\"]?\;' %r.group(1)).search(page)
+                if fkr:
+                    value = fkr.group(1).replace('.', '%2E').replace('-', '%2D')
+                else:
+                    value = r.group(1).replace('.', '%2E').replace('-', '%2D')
             else:
-                value = r.group(1).replace('.', '%2E').replace('-', '%2D')
-        else:
-            value = r.group(1)
-        apid.update({k: value})
+                value = r.group(1)
+        elif r2:
+            if k == 'key':
+                value = r2.group(1).replace('.', '%2E').replace('-', '%2D')
+            else:
+                value = r2.group(1)
+
+        if value:
+            apid.update({k: value.strip(';')})
+
+    if len(apid.keys()) != 3:
+        raise Ex.MediaNotAvailable
 
     domain = apid['domain'][:-1] if apid['domain'].endswith('/') else apid['domain']
     data_url = '%s/api/player.api.php?key=%s&file=%s' %(domain, apid['filekey'], apid['file'])
@@ -153,6 +171,7 @@ def get_video_url(url, count=0):
             match = False
         elif 'url' in data:
             vurl = data.split('url=')[1].split('&')[0]
+            vurl = unquote(vurl) if Regex(r'(cloudy|videoraj)').search(url) else vurl
             if (count == 1) and not url_check(vurl):
                 nurl = url + '&errorCode=404&errorUrl=' + quote(vurl, '').replace('.', '%2E')
                 Log.Warn('* Video URL %i faild. Sending Error URL to WholeCloud API to get corrected URL' %count)
