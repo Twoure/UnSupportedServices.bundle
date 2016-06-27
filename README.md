@@ -31,11 +31,12 @@ I plan to make a few channels that will require this UnSupported Services channe
 
 ## Issues
 
-- **FileNuke** / **ShareSix**
+- **FileNuke** _not active code_ / **ShareSix** _active code_
   - If the Video Thumb is black or looks like [this](http://i.imgur.com/GEKTJP3.png) then the video/thumb host domain is down
   - Basically if the video thumb is from the video, then the video should play
+  - FileNuke site currently offline, may not come back
 - **Zalaa** / **Uploadc** _not active code_
-  - Video URL needs `User-Agent` and `Referer` to work.  I have included them in the code, but Plex still cannot play them.
+  - Video URL needs `User-Agent` and `Referer` to work. Plex Framework only supports `User-Agent` and `Cookie` values for video URLs.
 - **Vid.ag** _not active code_
   - The host is down for _"maintenance"_
   - Will see if they come back, not sure
@@ -49,6 +50,8 @@ I plan to make a few channels that will require this UnSupported Services channe
   - Added fallback thumb for now
 - **Openload**
   - Started kodi anti-scrape measures.  Works for now, kinda.
+- **beta.vidup.me**
+  - Host connection issues due to timeouts
 - Refer to **Notes** within the [Host List](https://github.com/Twoure/UnSupportedServices.bundle/wiki/Host-list) for further issues and details.
 
 ## [Host List](https://github.com/Twoure/UnSupportedServices.bundle/wiki/Host-list)
