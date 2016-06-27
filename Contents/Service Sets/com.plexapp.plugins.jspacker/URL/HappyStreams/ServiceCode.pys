@@ -48,7 +48,6 @@ def MediaObjectsForURL(url):
 
     return [
         MediaObject(
-            container=Container.MP4,
             video_codec=VideoCodec.H264,
             audio_codec=AudioCodec.AAC,
             video_resolution='sd',
