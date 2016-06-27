@@ -1,0 +1,90 @@
+#!/usr/bin/env python
+
+"""HappyStreams.net Service Code"""
+
+from unpacker import unpack as Unpack
+#import urllib2
+#import contextlib
+
+#USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2623.110 Safari/537.36'
+
+####################################################################################################
+def NormalizeURL(url):
+
+    if '/embed-' in url:
+        url = url.replace('/embed-', '/').split('-')[0]
+    return url
+
+####################################################################################################
+def MetadataObjectForURL(url):
+
+    try:
+        html = HTML.ElementFromURL(url)
+    except:
+        raise Ex.MediaNotAvailable
+
+    title = html.xpath('//h2/text()')
+    if title:
+        title = Regex(r'Watch\s(.+?)$').search(title[0]).group(1).strip()
+    else:
+        title = html.xpath('//title/text()')
+        if title:
+            title = Regex(r'Watch\s(.+?)(?:flv|mp4|avi|mkv|webm|divx|xvid)?$').search(title[0]).group(1).strip()
+        else:
+            title = html.xpath('//input[@name="fname"]/@value')
+            if title:
+                title = title[0].replace('_', ' ').strip().replace('  ', ' ').strip().rsplit('.', 1)[0]
+            else:
+                raise Ex.MediaExpired
+
+    return VideoClipObject(
+        title=title,
+        thumb='http://i.imgur.com/75YO83o.jpg',
+        source_title='HappyStreams'
+        )
+
+####################################################################################################
+def MediaObjectsForURL(url):
+
+    return [
+        MediaObject(
+            container=Container.MP4,
+            video_codec=VideoCodec.H264,
+            audio_codec=AudioCodec.AAC,
+            video_resolution='sd',
+            audio_channels=2,
+            optimized_for_streaming=True,
+            parts=[
+                PartObject(key=Callback(PlayVideo, url=url))
+                ]
+            )
+        ]
+
+####################################################################################################
+@indirect
+def PlayVideo(url, **kwargs):
+
+    try:
+        html = HTML.ElementFromURL(url)
+    except:
+        raise Ex.MediaNotAvailable
+
+    values = dict()
+    action_url = html.xpath('//form[@method="POST"]/@action')
+    for item in html.xpath('//input'):
+        values.update({item.get('name'): item.get('value')})
+
+    if not values or not action_url:
+        raise Ex.MediaExpired
+
+    page = HTTP.Request(action_url[0], values=values).content
+
+    packed = Regex(r"<script type=.text\/javascript.>(eval\(function\(p,a,c,k,e,.+(?:src).+\.split\('\|'\)\)\))").search(page)
+    if packed:
+        data = Unpack(packed.group(1))
+        r = Regex(r'[\"\']?file[\"\']?\s*?\:\s*?[\"\'](http[^\"\']+(?<!m3u8|smil))[\"\']').search(data)
+        if r:
+            Log.Debug('* PlayVideo ULR = %s' %r.group(1))
+            return IndirectResponse(VideoClipObject, key=r.group(1))
+
+    raise Ex.MediaNotAvailable
