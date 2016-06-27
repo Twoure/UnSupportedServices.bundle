@@ -15,7 +15,10 @@ def NormalizeURL(url):
 ####################################################################################################
 def MetadataObjectForURL(url):
 
-    html = HTML.ElementFromURL(url)
+    try:
+        html = HTML.ElementFromURL(url)
+    except:
+        raise Ex.MediaNotAvailable
 
     title = html.xpath('//meta[@property="og:title"]/@content')
     thumb = html.xpath('//meta[@property="og:image"]/@content')
@@ -44,10 +47,10 @@ def MediaObjectsForURL(url):
             parts=[PartObject(key=Callback(PlayVideo, url=url, label=item['label']))]
             ))
 
-    if len(mo) == 0:
-        raise Ex.MediaNotAvailable
-    else:
+    if len(mo) != 0:
         return mo
+
+    raise Ex.MediaNotAvailable
 
 ####################################################################################################
 @indirect
@@ -73,13 +76,17 @@ def get_embed_url(url):
 ####################################################################################################
 def source_dict(url):
 
-    page = HTTP.Request(url).content
-    data = Regex(r"<script type=.text\/javascript.>(eval\(function\(p,a,c,k,e,.+(?:file).+\.split\('\|'\)\)\))").search(page)
-    if data:
-        data = Unpack(data.group(1))
-        data = data.replace('\\', '')
-    else:
+    try:
+        page = HTTP.Request(url).content
+    except:
         raise Ex.MediaNotAvailable
+
+    data = Regex(r"<script type=.text\/javascript.>(eval\(function\(p,a,c,k,e,.+(?:file).+\.split\('\|'\)\)\))").search(page)
+    if not data:
+        raise Ex.MediaNotAvailable
+
+    data = Unpack(data.group(1))
+    data = data.replace('\\', '')
 
     sources = Regex(r'sources:(.*),sharing').search(data)
     if not sources:
