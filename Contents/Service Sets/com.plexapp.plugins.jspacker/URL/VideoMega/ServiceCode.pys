@@ -1,0 +1,87 @@
+#!/usr/bin/env python
+
+"""VideoMega.tv Service Code"""
+
+from unpacker import unpack as Unpack
+#import urllib2
+#import contextlib
+
+USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36'
+
+####################################################################################################
+def NormalizeURL(url):
+
+    r = Regex(r'(https?\:\/\/(?:www\.)?videomega\.\w+\/)(?:(?:view|iframe|cdn)\.php)?\?ref\=([A-Za-z0-9]+)').search(url)
+    return r.group(1) + '?ref=' + r.group(2)
+
+####################################################################################################
+def MetadataObjectForURL(url):
+
+    http_headers = {'User-Agent': USER_AGENT, 'Referer': url}
+    url = norm_url(url, True)
+
+    try:
+        html = HTML.ElementFromURL(url)
+    except:
+        raise Ex.MediaNotAvailable
+
+    title = html.xpath('//title/text()')
+    if not title:
+        raise Ex.MediaExpired
+
+    source_title = 'VideoMega'
+    title = Regex(r'(?i)(?:^videomega\.\w+\s*?\-\s*?|\s*?\-\s*?videomega\.\w+$)').sub(r'', title[0]).strip()
+    title = title if title is not '' else source_title
+
+    fallback = 'http://i.imgur.com/75YO83o.jpg'
+    thumb = html.xpath('//video/@poster')
+    thumb = thumb[0] if thumb else fallback
+
+    return VideoClipObject(
+        title=title,
+        thumb=Resource.ContentsOfURLWithFallback([thumb, fallback]),
+        source_title=source_title
+        )
+
+####################################################################################################
+def MediaObjectsForURL(url):
+
+    return [
+        MediaObject(
+            video_codec=VideoCodec.H264,
+            audio_codec=AudioCodec.AAC,
+            video_resolution='sd',
+            audio_channels=2,
+            optimized_for_streaming=True,
+            parts=[
+                PartObject(key=Callback(PlayVideo, url=url))
+                ]
+            )
+        ]
+
+####################################################################################################
+@indirect
+def PlayVideo(url, **kwargs):
+
+    http_headers = {'User-Agent': USER_AGENT, 'Referer': url, 'Cookie': 'noadvtday=0'}
+    url = norm_url(url)
+
+    try:
+        page = HTTP.Request(url, headers=http_headers).content
+    except:
+        raise Ex.MediaNotAvailable
+
+    packed = Regex(r"(eval\(function\(p,a,c,k,e,.+(?:src).+\.split\('\|'\).*?\)\))").search(page)
+    if packed:
+        data = Unpack(packed.group(1))
+        vurl = Regex(r'"src"\s*,\s*"([^"]+)"').search(data)
+        if vurl:
+            Log.Debug('* PlayVideo ULR = %s' %vurl.group(1))
+            return IndirectResponse(VideoClipObject, key=vurl.group(1))
+
+    raise Ex.MediaNotAvailable
+
+####################################################################################################
+def norm_url(url, view=False):
+    r = Regex(r'(https?\:\/\/(?:www\.)?videomega\.\w+\/)(?:(?:view|iframe|cdn)\.php)?\?ref\=([A-Za-z0-9]+)').search(url)
+    return r.group(1) + '%s.php?ref=%s' %('view' if view else 'cdn', r.group(2))
