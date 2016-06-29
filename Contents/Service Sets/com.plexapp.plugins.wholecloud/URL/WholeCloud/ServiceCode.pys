@@ -18,7 +18,7 @@ USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Ge
 ####################################################################################################
 def NormalizeURL(url):
 
-    rurl = url_check(url.replace('nowvideo.eu', 'nowvideo.li'), geturl=True)
+    rurl = url_check(url.replace('nowvideo.eu', 'nowvideo.li').replace('//embed.', '//'), geturl=True)
     url = rurl if rurl != bool() else url
 
     if '/embed/' in url:

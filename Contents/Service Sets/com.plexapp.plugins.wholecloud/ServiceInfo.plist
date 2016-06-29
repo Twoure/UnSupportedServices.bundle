@@ -8,17 +8,17 @@
     <dict>
       <key>URLPatterns</key>
       <array>
-        <string>^https?\:\/\/(www\.)?auroravid\.(?:[^\/]+\/).+</string>
-        <string>^https?\:\/\/(www\.)?bitvid\.(?:[^\/]+\/).+</string>
-        <string>^https?\:\/\/(www\.)?cloudtime\.(?:[^\/]+\/).+</string>
-        <string>^https?\:\/\/(www\.)?cloudy\.(?:[^\/]+\/).+</string>
-        <string>^https?\:\/\/(www\.)?movshare\.(?:[^\/]+\/).+</string>
-        <string>^https?\:\/\/(www\.)?novamov\.(?:[^\/]+\/).+</string>
-        <string>^https?\:\/\/(www\.)?nowvideo\.(?:[^\/]+\/).+</string>
-        <string>^https?\:\/\/(www\.)?videoraj\.(?:[^\/]+\/).+</string>
-        <string>^https?\:\/\/(www\.)?videoweed\.(?:[^\/]+\/).+</string>
-        <string>^https?\:\/\/(www\.)?vid(?:gg\.\w+|\.gg)\/.+</string>
-        <string>^https?\:\/\/(www\.)?wholecloud\.(?:[^\/]+\/).+</string>
+        <string>^https?\:\/\/(?:www\.|embed\.)?auroravid\.(?:[^\/]+\/).+</string>
+        <string>^https?\:\/\/(?:www\.|embed\.)?bitvid\.(?:[^\/]+\/).+</string>
+        <string>^https?\:\/\/(?:www\.|embed\.)?cloudtime\.(?:[^\/]+\/).+</string>
+        <string>^https?\:\/\/(?:www\.|embed\.)?cloudy\.(?:[^\/]+\/).+</string>
+        <string>^https?\:\/\/(?:www\.|embed\.)?movshare\.(?:[^\/]+\/).+</string>
+        <string>^https?\:\/\/(?:www\.|embed\.)?novamov\.(?:[^\/]+\/).+</string>
+        <string>^https?\:\/\/(?:www\.|embed\.)?nowvideo\.(?:[^\/]+\/).+</string>
+        <string>^https?\:\/\/(?:www\.|embed\.)?videoraj\.(?:[^\/]+\/).+</string>
+        <string>^https?\:\/\/(?:www\.|embed\.)?videoweed\.(?:[^\/]+\/).+</string>
+        <string>^https?\:\/\/(?:www\.|embed\.)?vid(?:gg\.\w+|\.gg)\/.+</string>
+        <string>^https?\:\/\/(?:www\.|embed\.)?wholecloud\.(?:[^\/]+\/).+</string>
       </array>
     </dict>
   </dict>
