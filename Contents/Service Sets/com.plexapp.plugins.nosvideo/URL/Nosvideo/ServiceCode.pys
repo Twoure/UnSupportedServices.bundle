@@ -2,7 +2,14 @@
 
 """Nosvideo.com Service Code"""
 
-USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2623.110 Safari/537.36'
+USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36'
+
+####################################################################################################
+def NormalizeURL(url):
+    r = Regex(r'(?i)(https?\:\/\/\w+\.\w+)(?:\/\?v=|\/vj/video(?:main)?.php\?u=|\/embed\/)([a-z0-9]+)').search(url)
+    if r:
+        url = r.group(1) + '/' + r.group(2)
+    return url
 
 ####################################################################################################
 def MetadataObjectForURL(url):
@@ -12,20 +19,15 @@ def MetadataObjectForURL(url):
     except:
         raise Ex.MediaNotAvailable
 
-    title = html.xpath('//title/text()')
+    if html.xpath('//b[starts-with(text(), "File Not Found")]'):
+        raise Ex.MediaExpired
+
+    title = html.xpath('//input[@name="fname"]/@value')
     if not title:
         raise Ex.MediaExpired
 
-    err = html.xpath('//font[@class="err"]/text()')
-    if err:
-        if 'site maintenance' in err[0].lower():
-            Log.Warn('* Nosvideo Warning: %s' %err[0])
-        else:
-            Log.Error('* Nosvideo Error: %s' %err[0])
-        raise Ex.MediaNotAvailable
-
     return VideoClipObject(
-        title=title[0].split(' - Nosvideo')[0].strip(),
+        title=title[0].strip(),
         thumb='http://i.imgur.com/75YO83o.jpg',
         source_title='Nosvideo'
         )
@@ -48,23 +50,28 @@ def MediaObjectsForURL(url):
 @indirect
 def PlayVideo(url, **kwargs):
 
-    reurl = Regex(r'(https?\:\/\/\w+\.\w+\/)([a-z0-9]+)').search(url)
-    url = reurl.group(1) + 'vj/video.php?u=' + reurl.group(2)
-
-    headers = dict()
-    headers['User-Agnet'] = USER_AGENT
-
+    http_headers = {'User-Agnet': USER_AGENT}
     try:
-        page = HTTP.Request(url, headers=headers).content
+        html = HTML.ElementFromURL(url, headers=http_headers)
     except:
         raise Ex.MediaNotAvailable
 
-    r = Regex(r'tracker:\s*?[\'\"]([^\'\"].+)[\'\"]').search(page)
+    values = dict()
+    for item in html.xpath('//input'):
+        values.update({item.get('name'): item.get('value')})
+
+    if not values:
+        raise Ex.MediaExpired
+
+    http_headers.update({'Referer': url})
+    try:
+        page = HTTP.Request(url, values=values, headers=http_headers).content
+    except:
+        raise Ex.MediaNotAvailable
+
+    r = Regex(r'[\'\"](http[^\'\"]+\.(?:mp4|flv|avi|mkv|mov|divx))[\'\"]').search(page)
     if r:
-        vurl = String.Base64Decode(r.group(1))
-        Log.Debug('* PlayVideo URL = \"%s\"' %vurl)
-        headers.update({'Range': 'bytes=0-', 'Referer': url})
-        Log(headers)
-        return IndirectResponse(VideoClipObject, key=vurl, http_headers=headers)
+        Log.Debug('* PlayVideo URL = \"%s\"' %r.group(1))
+        return IndirectResponse(VideoClipObject, key=r.group(1))
 
     raise Ex.MediaNotAvailable
