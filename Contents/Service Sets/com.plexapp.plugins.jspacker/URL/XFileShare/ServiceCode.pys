@@ -114,10 +114,12 @@ def PlayVideo(url, **kwargs):
     page = HTTP.Request(url, headers=http_headers).content
     packed = get_packed_data(page)
     if packed:
-        vurl = (url, Unpack(packed.group(1)))
-        if vurl:
-            Log.Debug('* PlayVideo URL = \"%s\"' %vurl)
-            return IndirectResponse(VideoClipObject, key=vurl, http_headers=http_headers)
+        page = Unpack(packed.group(1))
+
+    vurl = get_video_url(url, page)
+    if vurl:
+        Log.Debug('* PlayVideo URL = \"%s\"' %vurl)
+        return IndirectResponse(VideoClipObject, key=vurl, http_headers=http_headers)
 
     raise Ex.MediaNotAvailable
 
