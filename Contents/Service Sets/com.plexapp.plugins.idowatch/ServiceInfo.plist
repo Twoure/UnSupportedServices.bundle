@@ -9,6 +9,7 @@
       <key>URLPatterns</key>
       <array>
         <string>^https?\:\/\/(?:www\.)?idowatch\.(?:[^\/]+\/).+</string>
+        <string>^https?\:\/\/(?:www\.)?letwatch\.(?:[^\/]+\/).+</string>
       </array>
     </dict>
   </dict>

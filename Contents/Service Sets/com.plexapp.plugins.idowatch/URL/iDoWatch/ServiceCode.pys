@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-"""iDoWatch Service Code"""
+"""iDoWatch.net, LetWatch.(us|to) Service Code"""
 
 ####################################################################################################
 def NormalizeURL(url):
@@ -18,25 +18,31 @@ def MetadataObjectForURL(url):
     except:
         raise Ex.MediaNotAvailable
 
-    title = html.xpath('//h2/text()')
+    if Regex(r'(?:\.|\/)(\w+)\.\w+').search(url).group(1) == 'idowatch':
+        title = html.xpath('//h2/text()')
+        if title:
+            title = title[0].strip()
+    else:
+        title = html.xpath('//title/text()')
+        if title:
+            title = (title[0].replace('Watch Watch', 'Watch') if title[0].startswith('Watch Watch') else title[0].replace('Watch ', '')).strip()
+
     if not title:
         raise Ex.MediaExpired
-    elif title[0].strip() is '':
-        Log.Warn('* Media in Processing for %s' %url)
-        raise Ex.MediaNotAvailable
 
     rt = Regex(r'[\"\']?image[\"\']?\s*?\:\s*?[\"\'](http[^\"\']+)[\"\']').search(page)
     rd = Regex(r'[\"\']?duration[\"\']?\s*?\:\s*?[\"\'](\d+)[\"\']').search(page)
+    st = Regex(r'https?\:\/\/(?:www\.)?(\w+)\.\w+').search(url)
 
     fallback = 'http://i.imgur.com/75YO83o.jpg'
     thumb = rt.group(1) if rt else fallback
     duration = int(rd.group(1)) * 1000 if rd else None
 
     return VideoClipObject(
-        title=title[0].strip(),
+        title=title,
         duration=duration,
         thumb=Resource.ContentsOfURLWithFallback([thumb, fallback]),
-        source_title='iDoWatch'
+        source_title=st.group(1).title() if st else 'iDoWatch'
         )
 
 ####################################################################################################
