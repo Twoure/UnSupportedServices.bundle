@@ -56,6 +56,13 @@
         <string>^nahttps?\:\/\/(?:www\.)?vid\.ag\/.+</string>
       </array>
     </dict>
+    <key>VidBull</key>
+    <dict>
+      <key>URLPatterns</key>
+      <array>
+        <string>^https?\:\/\/(?:www\.)?vidbull\.\w+\/.+</string>
+      </array>
+    </dict>
     <key>VideoMega</key>
     <dict>
       <key>URLPatterns</key>
