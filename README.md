@@ -52,6 +52,8 @@ I plan to make a few channels that will require this UnSupported Services channe
   - Started kodi anti-scrape measures.  Works for now, kinda.
 - **beta.vidup.me**
   - Host connection issues due to timeouts
+- **Nosvideo**
+  - Host updated site code, for now can parse
 - Refer to **Notes** within the [Host List](https://github.com/Twoure/UnSupportedServices.bundle/wiki/Host-list) for further issues and details.
 
 ## [Host List](https://github.com/Twoure/UnSupportedServices.bundle/wiki/Host-list)
