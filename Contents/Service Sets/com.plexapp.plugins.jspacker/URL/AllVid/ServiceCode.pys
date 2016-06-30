@@ -1,0 +1,112 @@
+#!/usr/bin/env python
+
+"""AllVid.ch Service Code"""
+
+from unpacker import unpack as Unpack
+
+USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36'
+
+####################################################################################################
+def NormalizeURL(url):
+
+    if '/embed-' in url:
+        r = Regex(r'(https?\:\/\/(?:www\.)?\w+\.\w+\/)embed\-([A-Za-z0-9]+)').search(url)
+        url = r.group(1) + r.group(2)
+    return url
+
+####################################################################################################
+def MetadataObjectForURL(url):
+
+    try:
+        html = HTML.ElementFromURL(url)
+    except:
+        raise Ex.MediaNotAvailable
+
+    title = html.xpath('//h3/text()')
+    if not title:
+        raise Ex.MediaExpired
+
+    page = get_embed_page(url)
+    if page:
+        rt = Regex(r'[\"\']?image[\"\']?\s*?\:\s*?[\"\'](http[^\"\']+)[\"\']').search(page)
+        rd = Regex(r'[\"\']?duration[\"\']?\s*?\:\s*?[\"\'](\d+)[\"\']').search(page)
+
+        fallback = 'http://i.imgur.com/75YO83o.jpg'
+        thumb = rt.group(1) if rt else fallback
+        duration = int(rd.group(1)) * 1000 if rd else None
+
+        return VideoClipObject(
+            title=title[0].strip(),
+            duration=duration,
+            thumb=Resource.ContentsOfURLWithFallback([thumb, fallback]),
+            source_title='AllVid'
+            )
+
+    raise Ex.MediaNotAvailable
+
+####################################################################################################
+def MediaObjectsForURL(url):
+
+    return [
+        MediaObject(
+            container=Container.MP4,
+            video_codec=VideoCodec.H264,
+            audio_codec=AudioCodec.AAC,
+            video_resolution='sd',
+            audio_channels=2,
+            optimized_for_streaming=True,
+            parts=[
+                PartObject(key=Callback(PlayVideo, url=url))
+                ]
+            )
+        ]
+
+####################################################################################################
+@indirect
+def PlayVideo(url, **kwargs):
+
+    http_headers = {'User-Agent': USER_AGENT}
+    page = get_embed_page(url)
+    if not page:
+        raise Ex.MediaNotAvailable
+
+    r = Regex(r'[\"\']?file[\"\']?\s*?\:\s*?[\"\'](http[^\"\'\?]+(?<!m3u8|smil))[\"\']').search(page)
+    if r:
+        Log.Debug('* PlayVideo ULR = %s' %r.group(1))
+        return IndirectResponse(VideoClipObject, key=r.group(1), http_headers=http_headers)
+
+    raise Ex.MediaNotAvailable
+
+####################################################################################################
+def get_embed_url(url):
+    r = Regex(r'(https?\:\/\/(?:www\.)?\w+\.\w+\/)([A-Za-z0-9]+)').search(url)
+    return r.group(1) + 'embed-' + r.group(2) + '.html'
+
+####################################################################################################
+def get_embed_page(url):
+    html = None
+    page = None
+
+    http_headers = {'User-Agent': USER_AGENT, 'Referer': url}
+    eurl1 = get_embed_url(url)
+
+    try:
+        html = HTML.ElementFromURL(eurl1, headers=http_headers)
+    except Exception as e:
+        Log.Error(str(e))
+
+    if html is not None:
+        eurl2 = html.xpath('//iframe/@src')
+        if eurl2:
+            try:
+                http_headers.update({'Referer': eurl1})
+                page = HTTP.Request(eurl2[0], headers=http_headers).content
+            except Exception as e:
+                Log.Error(str(e))
+
+    if page is not None:
+        packed = Regex(r"<script type=.text\/javascript.>(eval\(function\(p,a,c,k,e,.+(?:file).+\.split\('\|'\)\)\))").search(page)
+        if packed:
+            page = Unpack(packed.group(1))
+
+    return page
