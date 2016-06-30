@@ -1,0 +1,71 @@
+#!/usr/bin/env python
+
+"""WatchVideo.us Service Code"""
+
+USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36'
+
+####################################################################################################
+def NormalizeURL(url):
+    if '/embed-' in url:
+        url = url.replace('/embed-', '/').split('-')[0]
+    return url
+
+####################################################################################################
+def MetadataObjectForURL(url):
+
+    try:
+        page = HTTP.Request(url).content
+    except:
+        raise Ex.MediaNotAvailable
+
+    t1 = Regex(r'\[\/IMG\]([^\[]+)\[\/URL\]').search(page)
+    t2 = Regex(r'title\>[^\<]+\<\/title').search(page)
+
+    if t1:
+        title = t1.group(1)
+    elif t2:
+        title = Regex(r'^[Ww]atch\s+?(.+?)$').sub(r'\1', t2.group(1).strip())
+    else:
+        raise Ex.MediaExpired
+
+    rt = Regex(r'[\"\']?image[\"\']?\s*?\:\s*?[\"\'](http[^\"\']+)[\"\']').search(page)
+    rd = Regex(r'[\"\']?duration[\"\']?\s*?\:\s*?[\"\'](\d+)[\"\']').search(page)
+
+    fallback = 'http://i.imgur.com/75YO83o.jpg'
+    thumb = rt.group(1) if rt else fallback
+    duration = int(rd.group(1)) * 1000 if rd else None
+
+    return VideoClipObject(
+        title=title.strip(),
+        duration=duration,
+        thumb=Resource.ContentsOfURLWithFallback([thumb, fallback]),
+        source_title='WatchVideo'
+        )
+
+####################################################################################################
+def MediaObjectsForURL(url):
+
+    return [
+        MediaObject(
+            parts=[PartObject(
+                key=HTTPLiveStreamURL(Callback(PlayVideo, url=url))
+                )]
+            )
+        ]
+
+####################################################################################################
+@indirect
+def PlayVideo(url, **kwargs):
+
+    http_headers = {'User-Agent': USER_AGENT}
+    try:
+        page = HTTP.Request(url, headers=http_headers).content
+    except:
+        raise Ex.MediaNotAvailable
+
+    r = Regex(r'[\"\']?file[\"\']?\s*?\:\s*?[\"\'](http[^\"\']+\.m3u8)[\"\']').search(page)
+    if r:
+        Log.Debug('* PlayVideo ULR = %s' %r.group(1))
+        return IndirectResponse(VideoClipObject, key=r.group(1))
+
+    raise Ex.MediaNotAvailable
