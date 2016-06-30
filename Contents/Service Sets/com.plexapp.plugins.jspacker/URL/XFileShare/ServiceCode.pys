@@ -134,7 +134,7 @@ def get_embed_url(url, norm=False):
 
 ####################################################################################################
 def correct_url(url):
-    url_list = ['vodlocker', 'gorillavid']
+    url_list = ['vodlocker', 'gorillavid', 'faststream']
     test = [url[4:] for u in url_list if Regex(r'(?:\.|\/)(%s)\.' %u).search(url)]
     return test[0] if test else url
 

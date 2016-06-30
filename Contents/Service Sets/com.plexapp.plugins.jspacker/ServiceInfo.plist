@@ -97,7 +97,7 @@
       <array>
         <string>^https?\:\/\/(www\.)?allmyvideos\.(?:[^\/]+\/).+</string>
         <string>^https?\:\/\/(www\.)?daclips\.(?:[^\/]+\/).+</string>
-        <string>^https?\:\/\/(www\.)?faststream\.(?:[^\/]+\/).+</string>
+        <string>^uss\/https?\:\/\/(www\.)?faststream\.(?:[^\/]+\/).+</string>
         <string>^https?\:\/\/(www\.)?filehoot\.(?:[^\/]+\/).+</string>
         <string>^https?\:\/\/(www\.)?goodvideohost\.(?:[^\/]+\/).+</string>
         <string>^uss\/https?\:\/\/(www\.)?gorillavid\.(?:[^\/]+\/).+</string>
