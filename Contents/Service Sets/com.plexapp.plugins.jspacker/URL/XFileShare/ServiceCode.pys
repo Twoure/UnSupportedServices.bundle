@@ -3,7 +3,7 @@
 """
 Service Code for:
     AllMyVideos, DaClips, FileHoot, GorillaVid, MovPod, PowerWatch,
-    Rapidvideo, Streamin, StreamPlay, TheVideoBee, VideoNest, Vidtodo,
+    Rapidvideo.ws | FastStream.in, Streamin, StreamPlay, TheVideoBee, VideoNest, Vidtodo,
     VidPlay, VoDLocker, ZStream
 
 Decided to sepearte out Vidto, because it host multiple resolutions
