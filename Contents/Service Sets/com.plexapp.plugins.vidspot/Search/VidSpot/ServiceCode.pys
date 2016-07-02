@@ -1,0 +1,57 @@
+#!/usr/bin/env python
+
+"""Vidspot.net Search Code"""
+
+SEARCH_URL = 'http://vidspot.net/2/search?q=%s'
+FALLBACK = 'http://i.imgur.com/75YO83o.jpg'
+
+####################################################################################################
+def Search(query):
+
+    oc = ObjectContainer(title1='VidSpot', title2='Search Results')
+    html = HTML.ElementFromURL(SEARCH_URL %String.Quote(query.strip(), usePlus=True))
+
+    try:
+        test = html.xpath('//div[@class="resulttitle"]')[0].text_content().strip()
+        if Regex(r'([Nn]o\s*?video\s*?results\s*?for)').search(test):
+            return oc
+    except Exception as e:
+        Log.Error('* VidSpot Search Error: %s' %str(e))
+        return oc
+
+    for item in html.xpath('//div[starts-with(@class, "vcard")]'):
+        try:
+            title = item.xpath('.//a[@class="v_title"]/text()')[0].strip()
+        except:
+            continue
+
+        try:
+            thumb = item.xpath('.//img/@src')[0].strip()
+        except:
+            thumb = FALLBACK
+
+        try:
+            duration = Datetime.MillisecondsFromString(item.xpath('.//div[@class="duration"]/text()')[0].strip())
+        except:
+            duration = None
+
+        try:
+            summary = item.xpath('.//div[@class="v_descr"]')[0].text_content().strip()
+        except:
+            summary = None
+
+        try:
+            url = item.xpath('.//span/a/@href')[0].strip()
+        except:
+            continue
+
+        oc.add(VideoClipObject(
+            title=title,
+            duration=duration,
+            summary=summary if summary is not '' else None,
+            thumb=Resource.ContentsOfURLWithFallback([thumb, FALLBACK]),
+            source_title='VidSpot',
+            url=url
+            ))
+
+    return oc
