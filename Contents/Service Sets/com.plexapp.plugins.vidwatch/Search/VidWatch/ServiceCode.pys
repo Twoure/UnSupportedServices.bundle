@@ -1,0 +1,46 @@
+#!/usr/bin/env python
+
+"""VidWatch.me Search Code"""
+
+SEARCH_URL = 'http://vidwatch.me/?op=search&per_page=15&k=%s'
+
+####################################################################################################
+def Search(query):
+
+    oc = ObjectContainer(title1='VidWatch', title2='Search Results')
+    html = HTML.ElementFromURL(SEARCH_URL %String.Quote(query.strip(), usePlus=True))
+
+    for node in html.xpath('//div[@class="videobox"]'):
+        fallback = 'http://i.imgur.com/75YO83o.jpg'
+        source_title = 'VidWatch'
+
+        try:
+            thumb = Regex(r'url\([\'\"](http[^\'\"]+)[\'\"]').search(node.xpath('.//div/@style')[0]).group(1)
+        except:
+            thumb = fallback
+
+        try:
+            duration = Datetime.MillisecondsFromString(node.xpath('.//div/span/text()')[0])
+        except:
+            duration = None
+
+        try:
+            title = node.xpath('.//a[@class="title"]/text()')[0].strip()
+        except:
+            title = source_title
+
+        try:
+            url = node.xpath('.//a[@class="title"]/@href')[0]
+        except:
+            url = None
+
+        if url is not None:
+            oc.add(VideoClipObject(
+                title=title,
+                duration=duration,
+                thumb=Resource.ContentsOfURLWithFallback([thumb, fallback]),
+                source_title=source_title,
+                url=url
+                ))
+
+    return oc

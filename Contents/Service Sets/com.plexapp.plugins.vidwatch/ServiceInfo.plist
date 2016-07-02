@@ -1,16 +1,24 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
-<dict>
-  <key>URL</key>
   <dict>
-    <key>VidWatch</key>
+    <key>Search</key>
     <dict>
-      <key>URLPatterns</key>
-      <array>
-        <string>^https?\:\/\/(?:www\.)?vidwatch\.(?:[^\/]+\/).+</string>
-      </array>
+      <key>VidWatch</key>
+      <dict>
+        <key>Identifier</key>
+        <string>com.plexapp.plugins.vidwatch</string>
+      </dict>
+    </dict>
+    <key>URL</key>
+    <dict>
+      <key>VidWatch</key>
+      <dict>
+        <key>URLPatterns</key>
+        <array>
+          <string>^https?\:\/\/(?:www\.)?vidwatch\.(?:[^\/]+\/).+</string>
+        </array>
+      </dict>
     </dict>
   </dict>
-</dict>
 </plist>
