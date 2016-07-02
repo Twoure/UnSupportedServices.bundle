@@ -1,0 +1,34 @@
+#!/usr/bin/env python
+
+"""Videoraj.to Search Code"""
+
+BASE_URL = 'http://www.videoraj.to'
+SEARCH_URL = BASE_URL + '/search?search=%s'
+FALLBACK = 'http://i.imgur.com/75YO83o.jpg'
+
+####################################################################################################
+def Search(query):
+
+    oc = ObjectContainer(title1='VideoRaj', title2='Search Results')
+    html = HTML.ElementFromURL(SEARCH_URL %String.Quote(query.strip(), usePlus=True))
+
+    # limit search results to first 15 matches
+    for item in html.xpath('//div[@class="item"]')[:15]:
+        try:
+            title = item.xpath('./a[starts-with(@class, "item-title")]/text()')[0].strip()
+            thumb = item.xpath('.//img/@src')[0].strip()
+            duration = item.xpath('.//span[@class="time"]/text()')[0].strip()
+            href = item.xpath('./a/@href')[0].strip()
+            url = BASE_URL + href if href.startswith('/') else (href if href.startswith('http') else BASE_URL + '/' + href)
+
+            oc.add(VideoClipObject(
+                title=title,
+                duration=Datetime.MillisecondsFromString(duration) if duration is not '' else None,
+                thumb=Resource.ContentsOfURLWithFallback([thumb, FALLBACK]),
+                source_title='VideoRaj',
+                url=url
+                ))
+        except:
+            pass
+
+    return oc
