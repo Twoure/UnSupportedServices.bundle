@@ -2,7 +2,7 @@
 
 ##### 1.0.2
 - _07/03/16_
-- Fixes:
+- **Fixes:**
   - MP4Upload - site added a fake blank.mp4 file, local var error
   - ShareSix - `go_next` changed
   - FlashX - dictionary error
@@ -16,7 +16,7 @@
   - Zalaa - update code for site changes, and found the final video URL needs the referer set in headers
     - Disabled due it Plex Framework inability to set referer value in video stream
   - HappyStreams - removed MP4 container, sometimes it's FLV
-- Updates:
+- **Updates:**
   - Improved Regex for all sites, and added Fallback Thumb for all active code
   - New Host:
     - VideoNest, VidWatch, Uploadx, Bestream, VidSpot, StreamMoe, TusFiles, HappyStreams
@@ -51,10 +51,10 @@
 
 ##### 1.0.1
 - _06/17/16_
-- Fixes:
+- **Fixes:**
   - Openload - site changes
   - Promptfile - maintenace warning issue
-- Updates:
+- **Updates:**
   - Added new host - MP4Upload
   - Added new host/search - XVIDSTAGE
   - Added DaClips back, no longer behind anti-cloudflare code
