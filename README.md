@@ -54,6 +54,12 @@ I plan to make a few channels that will require this UnSupported Services channe
   - Host connection issues due to timeouts
 - **Nosvideo**
   - Host updated site code, for now can parse
+- **Noslocker**
+  - Host updated site code, for now can parse
+  - MP4 ULR's IP Hash is wrong, so using RTMP for now
+- **ShareRepo** _not active code_
+  - Host server is extremely unreliable, will timeout Plex Clients
+  - Most links are dead, site is old, CC 2014
 - Refer to **Notes** within the [Host List](https://github.com/Twoure/UnSupportedServices.bundle/wiki/Host-list) for further issues and details.
 
 ## [Host List](https://github.com/Twoure/UnSupportedServices.bundle/wiki/Host-list)
