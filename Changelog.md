@@ -23,6 +23,7 @@
     - VideoNest, VidWatch, Uploadx, Bestream, VidSpot, StreamMoe, TusFiles, HappyStreams
     - Cloudy, VideoRaj, VideoMega, iDoWatch, LetWatch, GoodVideoHost, YourVideoHost, WatchOnline
     - Exashare, Ajihezo, PicStream, SpeedVid, AllVid, FastStream, WatchVideo, VidBull, NosLocker
+    - TheVideos
   - NeoDrive - Re-enabled, seems to work for now
   - FileNuke - Disabled, site offline
   - XFileShare:
