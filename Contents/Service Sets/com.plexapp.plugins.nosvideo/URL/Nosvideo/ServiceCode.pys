@@ -2,11 +2,11 @@
 
 """
 Nos(video|locker).com Service Code
-Both sites provide an MP4 link and RTMP stream
-
-Noslocker: MP4 IP Hash is incorrect, so for now only returning the RTMP stream
-Nosvideo: currently only returning the MP4 link, not RTMP stream
+- Both sites provide an MP4 link and RTMP stream
+- MP4 IP Hash is incorrect, so for now only returning the RTMP stream
 """
+
+from time import sleep
 
 USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36'
 
@@ -62,6 +62,11 @@ def PlayVideo(url, **kwargs):
     except:
         raise Ex.MediaNotAvailable
 
+    wait_time = html.xpath('//span[@id="cxc"]/text()')
+    if wait_time:
+        Log('* POST Wait time = %s' %wait_time[0].strip())
+        sleep(int(wait_time[0].strip()))
+
     values = dict()
     for item in html.xpath('//input'):
         values.update({item.get('name'): item.get('value')})
@@ -75,21 +80,21 @@ def PlayVideo(url, **kwargs):
     except:
         raise Ex.MediaNotAvailable
 
-    if Regex(r'(?:\.|\/)(noslocker)\.').search(url):
-        r = Regex(r'[\'\"](http[^\'\"]+\.smil)[\'\"]').search(page)
-        if r:
-            try:
-                smil = XML.ElementFromURL(r.group(1))
-            except:
-                Log.Error('* Cannot access %s' %r.group(1))
-                raise Ex.MediaNotAvailable
+    #if Regex(r'(?:\.|\/)(noslocker)\.').search(url):
+    r = Regex(r'[\'\"](http[^\'\"]+\.smil)[\'\"]').search(page)
+    if r:
+        try:
+            smil = XML.ElementFromURL(r.group(1))
+        except:
+            Log.Error('* Cannot access %s' %r.group(1))
+            raise Ex.MediaNotAvailable
 
-            clip = smil.xpath('//video/@src')[0]
-            player = smil.xpath('//meta/@base')[0]
-            Log.Debug('* PlayVideo RTMP Stream')
-            Log.Debug('* player = %s | clip = %s' %(player, clip))
+        clip = smil.xpath('//video/@src')[0]
+        player = smil.xpath('//meta/@base')[0]
+        Log.Debug('* PlayVideo RTMP Stream')
+        Log.Debug('* player = %s | clip = %s' %(player, clip))
 
-            return IndirectResponse(VideoClipObject, key=RTMPVideoURL(url=player, clip=clip))
+        return IndirectResponse(VideoClipObject, key=RTMPVideoURL(url=player, clip=clip))
 
     r = Regex(r'[\'\"](http[^\'\"]+\.(?:mp4|flv|avi|mkv|mov|divx))[\'\"]').search(page)
     if r:
