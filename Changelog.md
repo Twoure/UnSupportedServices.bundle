@@ -1,7 +1,7 @@
 # ChangeLog
 
 ##### 1.0.2
-- _07/04/16_
+- _07/05/16_
 - **Fixes:**
   - MP4Upload - site added a fake blank.mp4 file, local var error
   - ShareSix - `go_next` changed
@@ -23,7 +23,8 @@
     - VideoNest, VidWatch, Uploadx, Bestream, VidSpot, StreamMoe, TusFiles, HappyStreams
     - Cloudy, VideoRaj, VideoMega, iDoWatch, LetWatch, GoodVideoHost, YourVideoHost, WatchOnline
     - Exashare, Ajihezo, PicStream, SpeedVid, AllVid, FastStream, WatchVideo, VidBull, NosLocker
-    - TheVideos
+    - TheVideos, BDRip, HawkHD, HDWide, NeoVid, StormVid, StreamLand, VideoHub, VidShark, VidSpace
+    - Watchers
   - NeoDrive - Re-enabled, seems to work for now
   - FileNuke - Disabled, site offline
   - XFileShare:
