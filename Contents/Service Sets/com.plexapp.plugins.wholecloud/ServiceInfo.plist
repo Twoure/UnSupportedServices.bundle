@@ -24,6 +24,7 @@
           <string>^https?\:\/\/(?:www\.|embed\.)?auroravid\.(?:[^\/]+\/).+</string>
           <string>^https?\:\/\/(?:www\.|embed\.)?bitvid\.(?:[^\/]+\/).+</string>
           <string>^https?\:\/\/(?:www\.|embed\.)?cloudtime\.(?:[^\/]+\/).+</string>
+          <string>^https?\:\/\/(?:www\.|embed\.)?divxstage\.(?:[^\/]+\/).+</string>
           <string>^https?\:\/\/(?:www\.|embed\.)?cloudy\.(?:[^\/]+\/).+</string>
           <string>^https?\:\/\/(?:www\.|embed\.)?movshare\.(?:[^\/]+\/).+</string>
           <string>^https?\:\/\/(?:www\.|embed\.)?novamov\.(?:[^\/]+\/).+</string>

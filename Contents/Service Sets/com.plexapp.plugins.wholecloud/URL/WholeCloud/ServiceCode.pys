@@ -6,7 +6,7 @@ Added new host and simplified code
 better error handling
 Host:
     movshare | wholecloud, novamov | auroravid, videoweed | bitvid,
-    cloudtime, nowvideo, vidgg, cloudy.ec | videoraj.to
+    cloudtime.to | divxstage.to, nowvideo, vidgg, cloudy.ec | videoraj.to
 """
 
 from urllib import quote, unquote
