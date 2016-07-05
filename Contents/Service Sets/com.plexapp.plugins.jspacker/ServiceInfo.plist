@@ -98,6 +98,13 @@
         <string>^https?\:\/\/(www\.)?vshare\.(?:[^\/]+\/).+</string>
       </array>
     </dict>
+    <key>Watchers</key>
+    <dict>
+      <key>URLPatterns</key>
+      <array>
+        <string>^https?\:\/\/(www\.)?watchers\.(?:[^\/]+\/).+</string>
+      </array>
+    </dict>
     <key>XFileShare</key>
     <dict>
       <key>URLPatterns</key>
