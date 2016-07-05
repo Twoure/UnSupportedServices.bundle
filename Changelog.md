@@ -1,7 +1,7 @@
 # ChangeLog
 
 ##### 1.0.2
-- _07/03/16_
+- _07/04/16_
 - **Fixes:**
   - MP4Upload - site added a fake blank.mp4 file, local var error
   - ShareSix - `go_next` changed
@@ -16,6 +16,7 @@
   - Zalaa - update code for site changes, and found the final video URL needs the referer set in headers
     - Disabled due it Plex Framework inability to set referer value in video stream
   - HappyStreams - removed MP4 container, sometimes it's FLV
+  - Nos(video/locker) - MP4 IP Hash wrong, so using RTMP stream for now
 - **Updates:**
   - Improved Regex for all sites, and added Fallback Thumb for all active code
   - New Host:

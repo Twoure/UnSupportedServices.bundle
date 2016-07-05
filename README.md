@@ -52,9 +52,7 @@ I plan to make a few channels that will require this UnSupported Services channe
   - Started kodi anti-scrape measures.  Works for now, kinda.
 - **beta.vidup.me**
   - Host connection issues due to timeouts
-- **Nosvideo**
-  - Host updated site code, for now can parse
-- **Noslocker**
+- **Nosvideo** / **Noslocker**
   - Host updated site code, for now can parse
   - MP4 ULR's IP Hash is wrong, so using RTMP for now
 - **ShareRepo** _not active code_
