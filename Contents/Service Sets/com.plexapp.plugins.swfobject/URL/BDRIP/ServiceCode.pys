@@ -1,0 +1,57 @@
+#!/usr/bin/env python
+
+"""BDRIP.ws Service Code"""
+
+####################################################################################################
+def NormalizeURL(url):
+    r = Regex(r'(https?\:\/\/(?:www\.)?\w+\.\w+\/)(?:\w+\/|[^\=]+\=)(\w+)').search(url)
+    return r.group(1) + 'rc.php?Id=' + r.group(2) if r else url
+
+####################################################################################################
+def MetadataObjectForURL(url):
+
+    try:
+        html = HTML.ElementFromURL(url)
+    except:
+        raise Ex.MediaNotAvailable
+
+    if html.xpath('//h2[text()="404 video"]'):
+        raise Ex.MediaExpired
+
+    return VideoClipObject(
+        title='BDRIP | %s' %url.split('=')[-1],
+        thumb='http://i.imgur.com/75YO83o.jpg',
+        source_title='BDRIP'
+        )
+
+####################################################################################################
+def MediaObjectsForURL(url):
+
+    return [
+        MediaObject(
+            video_resolution='sd',
+            audio_channels=2,
+            optimized_for_streaming=False,
+            parts=[
+                PartObject(key=Callback(PlayVideo, url=url))
+                ]
+            )
+        ]
+
+####################################################################################################
+@indirect
+def PlayVideo(url, **kwargs):
+
+    try:
+        page = HTTP.Request(url).content
+    except:
+        raise Ex.MediaNotAvailable
+
+    r = Regex(r'[\'\"]?file[\'\"]?\s*?\,\s*?[\'\"]([^\'\"]+)[\'\"]').search(page)
+    if r:
+        Log.Debug('* PlayVideo SWF Clip = %s' %r.group(1))
+        player = String.Base64Decode('cnRtcDovLzkzLjExNS44Ny4xMDM6MTkzNS92b2Qv')
+        clip = r.group(1) if r.group(1).startswith('mp4') else 'mp4:' + r.group(1)
+        return IndirectResponse(VideoClipObject, key=RTMPVideoURL(url=player, clip=clip))
+
+    raise Ex.MediaNotAvailable

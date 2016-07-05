@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+  <dict>
+    <key>URL</key>
+    <dict>
+      <key>BDRIP</key>
+      <dict>
+        <key>URLPatterns</key>
+        <array>
+          <string>^https?\:\/\/(?:www\.)?bdrip\.(?:[^\/]+\/).+</string>
+        </array>
+      </dict>
+      <key>HawkHD</key>
+      <dict>
+        <key>URLPatterns</key>
+        <array>
+          <string>^https?\:\/\/(?:www\.)?hawkhd\.(?:[^\/]+\/).+</string>
+          <string>^https?\:\/\/(?:www\.)?neovid\.(?:[^\/]+\/).+</string>
+        </array>
+      </dict>
+      <key>HDWide</key>
+      <dict>
+        <key>URLPatterns</key>
+        <array>
+          <string>^https?\:\/\/(?:www\.)?hdwide\.(?:[^\/]+\/).+</string>
+          <string>^https?\:\/\/(?:www\.)?stormvid\.(?:[^\/]+\/).+</string>
+        </array>
+      </dict>
+      <key>VidSpace</key>
+      <dict>
+        <key>URLPatterns</key>
+        <array>
+          <string>^https?\:\/\/(?:www\.)?streamland\.(?:[^\/]+\/).+</string>
+          <string>^https?\:\/\/(?:www\.)?videohub\.(?:[^\/]+\/).+</string>
+          <string>^https?\:\/\/(?:www\.)?vidshark\.(?:[^\/]+\/).+</string>
+          <string>^https?\:\/\/(?:www\.)?vidspace\.(?:[^\/]+\/).+</string>
+        </array>
+      </dict>
+    </dict>
+  </dict>
+</plist>

@@ -1,0 +1,80 @@
+#!/usr/bin/env python
+
+"""
+Service Code for:
+    HawkHD.me, NeoVid.me
+"""
+
+USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36'
+
+####################################################################################################
+def NormalizeURL(url):
+    r = Regex(r'(https?\:\/\/(?:www\.)?\w+\.\w+\/)(?:\w+\/|[^\=]+\=)(\w+)').search(url)
+    return r.group(1) + 'video/' + r.group(2) + '/' if r else url
+
+####################################################################################################
+def MetadataObjectForURL(url):
+
+    http_headers = {'User-Agent': USER_AGENT}
+    try:
+        html = HTML.ElementFromURL(url, headers=http_headers)
+    except:
+        raise Ex.MediaNotAvailable
+
+    if html.xpath('//h1[text()="Sorry file not found"]'):
+        raise Ex.MediaExpired
+
+    st = Regex(r'https?\:\/\/(?:www\.)?(\w+)\.\w+').search(url)
+    source_title = st.group(1).title() if st else 'HawkHD'
+
+    return VideoClipObject(
+        title='%s | %s' %(source_title, url.split('=')[-1]),
+        thumb='http://i.imgur.com/75YO83o.jpg',
+        source_title=source_title
+        )
+
+####################################################################################################
+def MediaObjectsForURL(url):
+
+    return [
+        MediaObject(
+            video_resolution='sd',
+            audio_channels=2,
+            optimized_for_streaming=False,
+            parts=[
+                PartObject(key=Callback(PlayVideo, url=url))
+                ]
+            )
+        ]
+
+####################################################################################################
+@indirect
+def PlayVideo(url, **kwargs):
+
+    http_headers = {'User-Agent': USER_AGENT}
+    cookies = HTTP.CookiesForURL(url)
+    if not cookies:
+        HTTP.Request(url, headers=http_headers).load()
+        cookies = HTTP.CookiesForURL(url)
+
+    http_headers.update({'Referer': url, 'Cookie': cookies})
+    values = {'confirm': 'Continue as Free User'}
+
+    try:
+        page = HTTP.Request(get_embed_url(url), headers=http_headers, values=values).content
+    except:
+        raise Ex.MediaNotAvailable
+
+    r = Regex(r'[\'\"]?file[\'\"]?\s*?\,\s*?[\'\"]([^\'\"]+)[\'\"]').search(page)
+    if r:
+        Log.Debug('* PlayVideo SWF Clip = %s' %r.group(1))
+        player = String.Base64Decode('cnRtcDovLzkzLjExNS44Ny4xMDM6MTkzNS92b2Qv')
+        clip = r.group(1) if r.group(1).startswith('mp4') else 'mp4:' + r.group(1)
+        return IndirectResponse(VideoClipObject, key=RTMPVideoURL(url=player, clip=clip))
+
+    raise Ex.MediaNotAvailable
+
+####################################################################################################
+def get_embed_url(url):
+    r = Regex(r'(https?\:\/\/(?:www\.)?\w+\.\w+\/)(?:\w+\/|[^\=]+\=)(\w+)').search(url)
+    return r.group(1) + 'play/' + r.group(2) + '/' if r else url
