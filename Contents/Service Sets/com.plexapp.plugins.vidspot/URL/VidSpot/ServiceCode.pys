@@ -52,11 +52,11 @@ def MetadataObjectForURL(url):
 ####################################################################################################
 def MediaObjectsForURL(url):
 
-    mo = []
+    mo = list()
     eurl = get_embed_url(url)
-    data = get_data(HTTP.Request(eurl).content)
-    if data and 'url_list' in data.keys():
-        for f, u in reversed(sorted(data['url_list'])):
+    url_list = get_urls(HTTP.Request(eurl).content)
+    if url_list is not None:
+        for f, u in reversed(sorted(url_list)):
             mo.append(MediaObject(
                 container=Container.MP4,
                 video_codec=VideoCodec.H264,
@@ -80,13 +80,22 @@ def PlayVideo(url, **kwargs):
     return Redirect(url)
 
 ####################################################################################################
-def get_data(page):
-    data = dict()
-    u = Regex(r'[\"\']?file[\"\']?\s*?\:\s*?[\"\'](http[^\"\']+(?<!m3u8|smil))[\"\']\,\s*?[^\,]+\,\s*?[\"\']?label[\"\']?\s*?\:\s*?[\"\'](\d+p?)[\"\']?').findall(page)
-    if len(u) is not None:
-        data.update({'url_list': [((int(d) if d.lower()[len(d)-1:] != 'p' else int(d[:-1])), url) for url, d in u]})
+def get_urls(page):
+    url_list = list()
+    u = Regex(r'[\"\']?file[\"\']?\s*?\:\s*?[\"\'](http[^\"\']+(?<!m3u8|smil))[\"\']\,\s*?(?:[^\,]+\,\s*?)?[\"\']?label[\"\']?\s*?\:\s*?[\"\'](\d+p?|original)[\"\']?').findall(page)
 
-    return data
+    if len(u) is not None:
+        for url, d in u:
+            if d == 'original':
+                fmt = 360
+            elif d.lower()[len(d)-1:] != 'p':
+                fmt = int(d)
+            else:
+                fmt = (int(d[:-1]))
+
+            url_list.append((fmt, url))
+
+    return url_list
 
 ####################################################################################################
 def get_embed_url(url):
