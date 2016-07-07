@@ -29,36 +29,7 @@ I plan to make a few channels that will require this UnSupported Services channe
 - Continue by following the [Manual Install](#manual) directions
 - **Important:** make sure to restart PMS after manually installing
 
-## Issues
-
-- **FileNuke** _not active code_ / **ShareSix** _active code_
-  - If the Video Thumb is black or looks like [this](http://i.imgur.com/GEKTJP3.png) then the video/thumb host domain is down
-  - Basically if the video thumb is from the video, then the video should play
-  - FileNuke site currently offline, may not come back
-- **Zalaa** / **Uploadc** _not active code_
-  - Video URL needs `User-Agent` and `Referer` to work. Plex Framework only supports `User-Agent` and `Cookie` values for video URLs.
-- **Vid.ag** _not active code_
-  - The host is down for _"maintenance"_
-  - Will see if they come back, not sure
-- **PromptFile** / **Briskfile**
-  - The host does not like Kodi parsing them, and has started to implement some obfuscation
-  - Currently works, but may be susceptible to breaking later
-- **MightyUpload** _not active code_
-  - The server they use is currently offline so videos cannot load
-- **GorillaVid**
-  - Thumbs redirect to DaClips, but do not exist there either
-  - Added fallback thumb for now
-- **Openload**
-  - Started kodi anti-scrape measures.  Works for now, kinda.
-- **beta.vidup.me**
-  - Host connection issues due to timeouts
-- **Nosvideo** / **Noslocker**
-  - Host updated site code, for now can parse
-  - MP4 ULR's IP Hash is wrong, so using RTMP for now
-- **ShareRepo** _not active code_
-  - Host server is extremely unreliable, will timeout Plex Clients
-  - Most links are dead, site is old, CC 2014
-- Refer to **Notes** within the [Host List](https://github.com/Twoure/UnSupportedServices.bundle/wiki/Host-list) for further issues and details.
+## [Issues](https://github.com/Twoure/UnSupportedServices.bundle/wiki/Issues)
 
 ## [Host List](https://github.com/Twoure/UnSupportedServices.bundle/wiki/Host-list)
 
