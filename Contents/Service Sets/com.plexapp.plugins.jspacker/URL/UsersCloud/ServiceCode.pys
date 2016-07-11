@@ -1,0 +1,79 @@
+#!/usr/bin/env python
+
+"""UsersCloud.com Service Code"""
+
+from unpacker import unpack as Unpack
+
+####################################################################################################
+def NormalizeURL(url):
+
+    if '/embed-' in url:
+        url = url.replace('/embed-', '/').split('-')[0]
+    return url
+
+####################################################################################################
+def MetadataObjectForURL(url):
+
+    try:
+        page = HTTP.Request(url).content
+    except:
+        raise Ex.MediaNotAvailable
+
+    data = get_data(page)
+    if not data:
+        raise Ex.MediaExpired
+
+    rt = Regex(r'[\'\"]?title[\'\"]?\s*?\:\s*?[\'\"\\]+(.+?)[\'\"\\]+').search(data)
+    rth = Regex(r'[\'\"]?image[\'\"]?\s*?\:\s*?[\'\"](http[^\'\"]+)[\'\"]').search(data)
+    rd = Regex(r'[\'\"]?duration[\'\"]?\s*?\:\s*?[\'\"](\d+)[\'\"]').search(data)
+
+    source_title = 'UsersCloud'
+    fallback = 'http://i.imgur.com/75YO83o.jpg'
+    thumb = rth.group(1) if rth else fallback
+
+    return VideoClipObject(
+        title=rt.group(1) if rt else source_title,
+        thumb=Resource.ContentsOfURLWithFallback([thumb, fallback]),
+        duration=int(rd.group(1)) * 1000 if rd else None,
+        source_title=source_title
+        )
+
+####################################################################################################
+def MediaObjectsForURL(url):
+
+    return [
+        MediaObject(
+            container=Container.MP4,
+            video_codec=VideoCodec.H264,
+            audio_codec=AudioCodec.AAC,
+            video_resolution='sd',
+            audio_channels=2,
+            optimized_for_streaming=True,
+            parts=[
+                PartObject(key=Callback(PlayVideo, url=url))
+                ]
+            )
+        ]
+
+####################################################################################################
+@indirect
+def PlayVideo(url, **kwargs):
+
+    page = HTTP.Request(url).content
+    data = get_data(page)
+    if data:
+        r = Regex(r'[\"\']?file[\"\']?\s*?\:\s*?[\"\'](http[^\"\'\?]+(?<!m3u8|smil))[\"\']').search(data)
+        if r:
+            Log.Debug('* PlayVideo ULR = %s' %r.group(1))
+            return IndirectResponse(VideoClipObject, key=r.group(1))
+
+    raise Ex.MediaNotAvailable
+
+####################################################################################################
+def get_data(page):
+    r = Regex(r"<script type=.text\/javascript.>(eval\(function\(p,a,c,k,e,.+(?:file).+\.split\('\|'\)\)\))").search(page)
+    if r:
+        data = Unpack(r.group(1))
+        if data:
+            return data
+    return False

@@ -11,6 +11,13 @@
         <string>^https?\:\/\/(www\.)?allvid\.(?:[^\/]+\/).+</string>
       </array>
     </dict>
+    <key>UsersCloud</key>
+    <dict>
+      <key>URLPatterns</key>
+      <array>
+        <string>^https?\:\/\/(www\.)?userscloud\.(?:[^\/]+\/).+</string>
+      </array>
+    </dict>
     <key>FlashX</key>
     <dict>
       <key>URLPatterns</key>
