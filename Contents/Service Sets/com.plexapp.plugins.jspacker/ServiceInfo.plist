@@ -38,6 +38,7 @@
       <array>
         <string>^https?\:\/\/(www\.)?movdivx\.(?:[^\/]+\/).+</string>
         <string>^https?\:\/\/(www\.)?tusfiles\.(?:[^\/]+\/).+</string>
+        <string>^https?\:\/\/(www\.)?uploadkadeh\.(?:[^\/]+\/).+</string>
         <string>^https?\:\/\/(www\.)?xvidstage\.(?:[^\/]+\/).+</string>
       </array>
     </dict>

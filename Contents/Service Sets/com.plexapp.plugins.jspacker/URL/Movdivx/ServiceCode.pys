@@ -1,12 +1,15 @@
 #!/usr/bin/env python
 
-"""Movdivx.com, xvidstage.com, TusFiles.net Service Code"""
+"""
+Service Code for:
+    Movdivx.com, xvidstage.com, TusFiles.net, uploadkadeh.ir
+"""
 
 from unpacker import unpack as Unpack
 import urllib2
 import contextlib
 
-HTTP_HEADERS = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2623.110 Safari/537.36'}
+HTTP_HEADERS = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36'}
 
 ####################################################################################################
 def NormalizeURL(url):
@@ -94,16 +97,8 @@ def get_data(url):
                 hthumb = html.xpath('//param[@name="previewImage"]/@value')
                 if hthumb:
                     data.update({'thumb': hthumb[0]})
-                if hurl:
-                    try:
-                        req = urllib2.Request(hurl[0], headers=HTTP_HEADERS)
-                        req.get_method = lambda : 'HEAD'
-                        with contextlib.closing(urllib2.urlopen(req)) as resp:
-                            h = resp.headers
-                        if 'html' not in h['Content-Type']:
-                            data.update({'url': hurl[0]})
-                    except Exception as e:
-                        Log.Error('* get_data Error: %s' %str(e))
+                if hurl and check_url(hurl[0]):
+                    data.update({'url': hurl[0]})
     elif fpacked:
         fpdata = Unpack(fpacked.group(1))
         if fpdata:
@@ -123,3 +118,17 @@ def get_data(url):
 def get_embed_url(url):
     r = Regex(r'(?i)(https?:\/\/(?:www\.)?\w+\.\w+\/)([a-z0-9]+)').search(url)
     return r.group(1) + 'embed-' + r.group(2) + '.html'
+
+####################################################################################################
+def check_url(url):
+    try:
+        req = urllib2.Request(url, headers=HTTP_HEADERS)
+        req.get_method = lambda : 'HEAD'
+        try:
+            with contextlib.closing(urllib2.urlopen(req)) as resp:
+                return True if 'html' not in resp.headers['Content-Type'] else False
+        except urllib2.HTTPError, e:
+            Log.Error('* check_url: %s' %str(e))
+    except Exception as er:
+        Log.Error('* check_url: %s' %str(er))
+    return False
