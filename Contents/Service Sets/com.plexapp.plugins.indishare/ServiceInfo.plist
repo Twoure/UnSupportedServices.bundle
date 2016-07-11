@@ -9,6 +9,7 @@
         <key>URLPatterns</key>
         <array>
           <string>^https?\:\/\/(?:www\.)?indishare\.(?:[^\/]+\/).+</string>
+          <string>^https?\:\/\/(?:www\.)?bdupload\.(?:[^\/]+\/).+</string>
         </array>
       </dict>
     </dict>

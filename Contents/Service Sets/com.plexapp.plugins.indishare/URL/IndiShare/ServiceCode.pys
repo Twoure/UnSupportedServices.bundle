@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-"""IndiShare.me Service Code"""
+"""IndiShare.me & BDUpload.info Service Code"""
 
 from time import sleep
 
@@ -18,10 +18,13 @@ def MetadataObjectForURL(url):
     if not title:
         raise Ex.MediaExpired
 
+    title = Regex(r'[Dd]ownload\s(.+)$').sub(r'\1', title[0].strip()) if 'download' in title[0].lower() else title[0].strip()
+    st = Regex(r'https?\:\/\/(?:www\.)?(\w+)\.\w+').search(url)
+
     return VideoClipObject(
-        title=title[0].strip(),
+        title=title,
         thumb='http://i.imgur.com/75YO83o.jpg',
-        source_title='IndiShare'
+        source_title=st.group(1).title() if st else 'IndiShare'
         )
 
 ####################################################################################################
