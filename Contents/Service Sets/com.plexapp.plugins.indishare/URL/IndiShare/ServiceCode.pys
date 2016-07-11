@@ -1,0 +1,72 @@
+#!/usr/bin/env python
+
+"""IndiShare.me Service Code"""
+
+from time import sleep
+
+USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36'
+
+####################################################################################################
+def MetadataObjectForURL(url):
+
+    try:
+        html = HTML.ElementFromURL(url)
+    except:
+        raise Ex.MediaNotAvailable
+
+    title = html.xpath('//h1/text()')
+    if not title:
+        raise Ex.MediaExpired
+
+    return VideoClipObject(
+        title=title[0].strip(),
+        thumb='http://i.imgur.com/75YO83o.jpg',
+        source_title='IndiShare'
+        )
+
+####################################################################################################
+def MediaObjectsForURL(url):
+
+    return [
+        MediaObject(
+            video_resolution='sd',
+            audio_channels=2,
+            optimized_for_streaming=False,
+            parts=[
+                PartObject(key=Callback(PlayVideo, url=url))
+                ]
+            )
+        ]
+
+####################################################################################################
+@indirect
+def PlayVideo(url, **kwargs):
+
+    http_headers = {'User-Agent': USER_AGENT}
+    try:
+        html1 = HTML.ElementFromURL(url, headers=http_headers)
+    except:
+        raise Ex.MediaNotAvailable
+
+    wait_time = html1.xpath('//span[@id="countdown_str"]/span/text()')
+    if wait_time:
+        Log('* POST Wait time = %s' %wait_time[0].strip())
+        sleep(int(wait_time[0].strip()))
+
+    data = dict()
+    for item in html1.xpath('//input'):
+        data.update({item.get('name'): item.get('value')})
+
+    try:
+        html2 = HTML.ElementFromString(HTTP.Request(url, headers=http_headers, values=data).content)
+    except Exception as e:
+        Log.Error(str(e))
+        raise Ex.MediaNotAvailable
+
+    if (len(html2) is not None):
+        vurl = html2.xpath('//table//a/@href')
+        if vurl:
+            Log.Debug('* PlayVideo URL = \"%s\"' %vurl[0])
+            return IndirectResponse(VideoClipObject, key=vurl[0])
+
+    raise Ex.MediaNotAvailable
