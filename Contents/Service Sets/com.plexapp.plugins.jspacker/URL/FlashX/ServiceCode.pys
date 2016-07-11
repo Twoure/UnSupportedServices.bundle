@@ -4,6 +4,8 @@
 
 from unpacker import unpack as Unpack
 
+USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36'
+
 ####################################################################################################
 def NormalizeURL(url):
 
@@ -50,7 +52,9 @@ def MediaObjectsForURL(url):
 ####################################################################################################
 @indirect
 def PlayVideo(url, **kwargs):
-    html = HTML.ElementFromURL(url, sleep=5)
+    http_headers = {'User-Agent': USER_AGENT}
+
+    html = HTML.ElementFromURL(url, sleep=5, headers=http_headers)
 
     post_values = {}
     action_url = html.xpath('//form[@method="POST"]/@action')
@@ -60,13 +64,14 @@ def PlayVideo(url, **kwargs):
     for item in html.xpath('//form[@method="POST"]/input'):
         post_values.update({item.get('name'): item.get('value')})
 
-    res = HTTP.Request(action_url[0], values=post_values).content
+    http_headers.update({'Referer': url})
+    res = HTTP.Request(action_url[0], values=post_values, headers=http_headers).content
     packed = Regex(r"<script type=.text\/javascript.>(eval\(function\(p,a,c,k,e,.+(?:file).+\.split\('\|'\)\)\))").search(res)
     if packed:
         data = Unpack(packed.group(1))
         vurl = Regex(r'[\"\']?file[\"\']?\s*?\:\s*?[\"\'](http[^\"\']+(?<!m3u8|smil))[\"\']').search(data)
         if vurl:
             Log.Debug('* PlayVideo URL  = %s' %vurl.group(1))
-            return IndirectResponse(VideoClipObject, key=vurl.group(1))
+            return IndirectResponse(VideoClipObject, key=vurl.group(1), http_headers={'User-Agent': USER_AGENT})
 
     raise Ex.MediaNotAvailable
