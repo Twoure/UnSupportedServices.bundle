@@ -1,0 +1,61 @@
+#!/usr/bin/env python
+
+"""FilesUpload.org Service Code"""
+
+####################################################################################################
+def NormalizeURL(url):
+    r = None
+    if len(url.split('/')) > 5:
+        r = Regex(r'(https?\:\/\/(?:www\.)?\w+\.\w+\/)[^\/]+\/(.+)').search(url)
+    elif len(url.split('/')) == 5:
+        r = Regex(r'(https?\:\/\/(?:www\.)?\w+\.\w+\/)(.+)').search(url)
+
+    return r.group(1) + 'download-or-watch/' + r.group(2) if r else url
+
+####################################################################################################
+def MetadataObjectForURL(url):
+
+    try:
+        html = HTML.ElementFromURL(url)
+    except:
+        raise Ex.MediaNotAvailable
+
+    if html.xpath('//title[starts-with(text(), "File not found")]'):
+        raise Ex.MediaExpired
+
+    return VideoClipObject(
+        title=url.rsplit('/', 1)[1],
+        thumb='http://i.imgur.com/75YO83o.jpg',
+        source_title='FilesUpload'
+        )
+
+####################################################################################################
+def MediaObjectsForURL(url):
+
+    return [
+        MediaObject(
+            video_resolution='sd',
+            audio_channels=2,
+            optimized_for_streaming=False,
+            parts=[
+                PartObject(key=Callback(PlayVideo, url=url))
+                ]
+            )
+        ]
+
+####################################################################################################
+@indirect
+def PlayVideo(url, **kwargs):
+
+    try:
+        html = HTML.ElementFromURL(url)
+    except:
+        raise Ex.MediaNotAvailable
+
+    vurl = html.xpath('//video/source/@src')
+    if vurl:
+        vurl = vurl[0].replace('&amp;', '&')
+        Log.Debug('* PlayVideo ULR = %s' %vurl)
+        return IndirectResponse(VideoClipObject, key=vurl)
+
+    raise Ex.MediaNotAvailable
