@@ -1,6 +1,11 @@
 #!/usr/bin/env python
 
-"""MyStream.la Service Code"""
+"""
+Service Code for:
+    MyStream.la,
+    SpeedPlay(1|2).(site|pw), SpeedPlay3.pw, SpeedPlay.(us|me),
+    YouLol.(me|pw), YouLol1.pw, YouLol2.site
+"""
 
 ####################################################################################################
 def NormalizeURL(url):
@@ -28,6 +33,7 @@ def MetadataObjectForURL(url):
 
     rt = Regex(r'[\'\"]?image[\'\"]?\s*?\:\s*?[\'\"](http[^\'\"]+)[\'\"]').search(page)
     rd = Regex(r'[\'\"]?duration[\'\"]?\s*?\:\s*?[\'\"](\d+)[\'\"]').search(page)
+    st = Regex(r'https?\:\/\/(?:www\.)?(\w+)\.\w+').search(url)
 
     fallback = 'http://i.imgur.com/75YO83o.jpg'
     thumb = rt.group(1) if rt else fallback
@@ -37,7 +43,7 @@ def MetadataObjectForURL(url):
         title=title,
         duration=duration,
         thumb=Resource.ContentsOfURLWithFallback([thumb, fallback]),
-        source_title='MyStream'
+        source_title=st.group(1).title() if st else 'MyStream'
         )
 
 ####################################################################################################

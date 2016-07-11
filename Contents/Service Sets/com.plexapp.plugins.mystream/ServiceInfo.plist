@@ -9,6 +9,8 @@
         <key>URLPatterns</key>
         <array>
           <string>^https?\:\/\/(?:www\.)?mystream\.(?:[^\/]+\/).+</string>
+          <string>^https?\:\/\/(?:www\.)?speedplay(\d+)?\.\w+\/.+</string>
+          <string>^https?\:\/\/(?:www\.)?youlol(\d+)?\.\w+\/.+</string>
         </array>
       </dict>
     </dict>
