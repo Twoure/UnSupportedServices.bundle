@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-"""UsersCloud.com Service Code"""
+"""UsersCloud.com & filescdn.com Service Code"""
 
 from unpacker import unpack as Unpack
 
@@ -76,8 +76,8 @@ def get_data(page):
     fallback = 'http://i.imgur.com/75YO83o.jpg'
     source_title = 'UsersCloud'
 
-    r1 = Regex(r"<script type=.text\/javascript.>(eval\(function\(p,a,c,k,e,.+(?:file).+\.split\('\|'\)\)\))").search(page)
-    r2 = Regex(r"<script type=.text\/javascript.>(eval\(function\(p,a,c,k,e,.+(?:src).+\.split\('\|'\)\)\))").search(page)
+    r1 = Regex(r"<script type=.text\/javascript.>(eval\(function\(p,a,c,k,e,.+(?:\|file\|).+\.split\('\|'\)\)\))").search(page)
+    r2 = Regex(r"<script type=.text\/javascript.>(eval\(function\(p,a,c,k,e,.+(?:\|src\|).+\.split\('\|'\)\)\))").search(page)
 
     if r1:
         data = Unpack(r1.group(1))
@@ -90,8 +90,9 @@ def get_data(page):
             thumb = rth.group(1) if rth else fallback
             title = rt.group(1) if rt else source_title
             duration = int(rd.group(1)) * 1000 if rd else None
+            vurl = ru.group(1) if ru else None
 
-            return {'title': title, 'thumb': thumb, 'duration': duration, 'url': ru.group(1)}
+            return {'title': title, 'thumb': thumb, 'duration': duration, 'url': vurl}
     elif r2:
         data = Unpack(r2.group(1))
         if data:
