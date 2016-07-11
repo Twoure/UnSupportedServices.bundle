@@ -64,10 +64,10 @@ def MediaObjectsForURL(url):
         Log.Debug('* SpeedVideo URLs = %s' %urls)
         mo = list()
         for fmt, vurl in urls:
-            if fmt == 'mp4':
+            if (fmt == 'mp4') or (fmt == 'flv'):
                 mo.append(
                         MediaObject(
-                            container=Container.MP4,
+                            container=Container.FLV if fmt == 'flv' else Container.MP4,
                             video_codec=VideoCodec.H264,
                             audio_codec=AudioCodec.AAC,
                             video_resolution='sd',
