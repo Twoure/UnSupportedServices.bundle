@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 
-"""UsersCloud.com & filescdn.com Service Code"""
+"""Service Code for:
+    UsersCloud.com, filescdn.com, UsersFiles.com
+"""
 
 from unpacker import unpack as Unpack
 
