@@ -4,13 +4,14 @@
 Service Code for:
     MyStream.la,
     SpeedPlay(1|2).(site|pw), SpeedPlay3.pw, SpeedPlay.(us|me),
-    YouLol.(me|pw), YouLol1.pw, YouLol2.site
+    YouLol.(me|pw), YouLol1.pw, YouLol2.site,
+    FastPlay.(cc|sx)
 """
 
 ####################################################################################################
 def NormalizeURL(url):
 
-    r = Regex(r'(https?\:\/\/(?:www\.)?\w+\.\w+)(?:\/external\/|\/embed\-|\/)(\w+)').search(url)
+    r = Regex(r'(https?\:\/\/(?:www\.)?\w+\.\w+)(?:\/external\/|\/embed\-|\/flash\-|\/)(\w+)').search(url)
     return r.group(1) + '/' + r.group(2) if r else url
 
 ####################################################################################################
