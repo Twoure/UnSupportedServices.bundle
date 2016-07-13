@@ -22,6 +22,9 @@ def MetadataObjectForURL(url):
     except:
         raise Ex.MediaNotAvailable
 
+    if Regex(r'([Ff]ile\s[Nn]ot\s[Ff]ound)').search(page):
+        raise Ex.MediaExpired
+
     title = Regex(r'\<title\>([^\<]+)\<\/title\>').search(page)
     if title:
         title= Regex(r'Watch\s(.+)$').sub(r'\1', title.group(1))
