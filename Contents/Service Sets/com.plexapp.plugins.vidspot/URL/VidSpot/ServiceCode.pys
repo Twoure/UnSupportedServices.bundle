@@ -58,12 +58,9 @@ def MediaObjectsForURL(url):
     if url_list is not None:
         for f, u in reversed(sorted(url_list)):
             mo.append(MediaObject(
-                container=Container.MP4,
-                video_codec=VideoCodec.H264,
-                audio_codec=AudioCodec.AAC,
                 video_resolution=str(f),
                 audio_channels=2,
-                optimized_for_streaming=True,
+                optimized_for_streaming=False,
                 parts=[
                     PartObject(key=Callback(PlayVideo, url=u))
                     ]
