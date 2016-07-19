@@ -128,6 +128,7 @@
         <string>^https?\:\/\/(www\.)?movpod\.(?:[^\/]+\/).+</string>
         <string>^https?\:\/\/(www\.)?powerwatch\.(?:[^\/]+\/).+</string>
         <string>^https?\:\/\/(www\.)?rapidvideo\.ws\/.+</string>
+        <string>^https?\:\/\/(www\.)?streame\.(?:[^\/]+\/).+</string>
         <string>^https?\:\/\/(www\.)?streamin\.(?:[^\/]+\/).+</string>
         <string>^https?\:\/\/(www\.)?streamplay\.(?:[^\/]+\/).+</string>
         <string>^nahttps?\:\/\/(www\.)?thevideobee\.(?:[^\/]+\/).+</string>
