@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
-"""Uploadx.org Service Code"""
+"""Uploadx.org, Upload.af Service Code"""
 
-HTTP_HEADERS = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36'}
+USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36'
 
 ####################################################################################################
 def MetadataObjectForURL(url):
@@ -16,10 +16,12 @@ def MetadataObjectForURL(url):
     if not title:
         raise Ex.MediaExpired
 
+    st = Regex(r'https?\:\/\/(?:www\.)?(\w+)\.\w+').search(url)
+
     return VideoClipObject(
         title=title[0].strip(),
         thumb='http://i.imgur.com/75YO83o.jpg',
-        source_title='Uploadx'
+        source_title=st.group(1).title() if st else 'Uploadx'
         )
 
 ####################################################################################################
@@ -40,27 +42,34 @@ def MediaObjectsForURL(url):
 @indirect
 def PlayVideo(url, **kwargs):
 
+    http_headers = {'User-Agent': USER_AGENT}
     try:
-        base_html = HTML.ElementFromURL(url, headers=HTTP_HEADERS)
+        base_html = HTML.ElementFromURL(url, headers=http_headers)
     except:
         raise Ex.MediaNotAvailable
 
     html = get_post_html(url, base_html)
     if (len(html) is not None):
-        for node in html.xpath('//span[@id="direct_link"]/a'):
-            Log.Debug('* PlayVideo URL = \"%s\"' %node.get('href'))
-            return IndirectResponse(VideoClipObject, key=node.get('href'))
+        if Regex(r'(?:\.|\/)(upload)\.').search(url):
+            node = html.xpath('//a[starts-with(@class, "downloadbtn")]/@href')
+        else:
+            node = html.xpath('//span[@id="direct_link"]/a/@href')
+
+        for vurl in node:
+            Log.Debug('* PlayVideo URL = \"%s\"' %vurl)
+            return IndirectResponse(VideoClipObject, key=vurl)
 
     raise Ex.MediaNotAvailable
 
 ####################################################################################################
 def get_post_html(url, html):
+    http_headers = {'User-Agent': USER_AGENT, 'Referer': url}
     data = dict()
     for item in html.xpath('//input'):
         data.update({item.get('name'): item.get('value')})
 
     if bool(data):
-        return get_post_html(url, HTML.ElementFromString(HTTP.Request(url, headers=HTTP_HEADERS, values=data).content))
+        return get_post_html(url, HTML.ElementFromString(HTTP.Request(url, headers=http_headers, values=data).content))
     else:
         return html
 

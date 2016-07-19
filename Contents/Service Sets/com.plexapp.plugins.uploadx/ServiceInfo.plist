@@ -8,6 +8,7 @@
     <dict>
       <key>URLPatterns</key>
       <array>
+        <string>^https?\:\/\/(?:www\.)?upload\.(?:[^\/]+\/).+</string>
         <string>^https?\:\/\/(?:www\.)?uploadx\.(?:[^\/]+\/).+</string>
       </array>
     </dict>
