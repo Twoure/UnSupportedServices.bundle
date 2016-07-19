@@ -1,0 +1,71 @@
+#!/usr/bin/env python
+
+"""GamoVideo.com Service Code"""
+
+####################################################################################################
+def NormalizeURL(url):
+
+    r = Regex(r'(https?\:\/\/(?:www\.)?\w+\.\w+)(?:\/external\/|\/embed\-|\/flash\-|\/)(\w+)').search(url)
+    return r.group(1) + '/' + r.group(2) if r else url
+
+####################################################################################################
+def MetadataObjectForURL(url):
+
+    try:
+        html = HTML.ElementFromURL(url)
+    except:
+        raise Ex.MediaNotAvailable
+
+    title = html.xpath('//td[@id="file_title"]/text()')
+    if title:
+        title = title[0].strip()
+    elif html.xpath('//title/text()'):
+        title = html.xpath('//title/text()')[0]
+        title = Regex(r'Watch\s(.+)$').sub(r'\1', title.group(1))
+    else:
+        raise Ex.MediaExpired
+
+    fallback = 'http://i.imgur.com/75YO83o.jpg'
+    thumb = html.xpath('//span[@id="vplayer"]/img/@src')
+    thumb = thumb[0] if thumb else fallback
+
+    return VideoClipObject(
+        title=title,
+        thumb=Resource.ContentsOfURLWithFallback([thumb, fallback]),
+        source_title='GamoVideo'
+        )
+
+####################################################################################################
+def MediaObjectsForURL(url):
+
+    return [
+        MediaObject(
+            video_resolution='sd',
+            audio_channels=2,
+            optimized_for_streaming=False,
+            parts=[
+                PartObject(key=Callback(PlayVideo, url=url))
+                ]
+            )
+        ]
+
+####################################################################################################
+@indirect
+def PlayVideo(url, **kwargs):
+
+    try:
+        page = HTTP.Request(url).content
+    except:
+        raise Ex.MediaNotAvailable
+
+    r = Regex(r'[\"\']?file[\"\']?\s*?\:\s*?[\"\'](rtmp[^\"\']+(?<!m3u8|smil))[\"\']').search(page)
+    node = Regex(r'(.+?\/)(mp4\:.+)').search(r.group(1)) if r else None
+    player = node.group(1) if node else None
+    clip = node.group(2) if node else None
+
+    if player and clip:
+        Log.Debug('* PlayVideo RTMP Stream')
+        Log.Debug('* player = %s | clip = %s' %(player, clip))
+        return IndirectResponse(VideoClipObject, key=RTMPVideoURL(url=player, clip=clip))
+
+    raise Ex.MediaNotAvailable
