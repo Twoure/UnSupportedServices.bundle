@@ -43,6 +43,13 @@
           <string>^https?\:\/\/(?:www\.)?cloudzilla\.(?:[^\/]+\/).+</string>
         </array>
       </dict>
+      <key>SaveFile</key>
+      <dict>
+        <key>URLPatterns</key>
+        <array>
+          <string>^https?\:\/\/(?:www\.)?savefile\.(?:[^\/]+\/).+</string>
+        </array>
+      </dict>
       <key>SendMyWay</key>
       <dict>
         <key>URLPatterns</key>
@@ -145,6 +152,14 @@
           <string>^uss\/https?\:\/\/(www\.)?vodlocker\.(?:[^\/]+\/).+</string>
           <string>^https?\:\/\/(www\.)?yourvideohost\.(?:[^\/]+\/).+</string>
           <string>^https?\:\/\/(www\.)?zstream\.(?:[^\/]+\/).+</string>
+        </array>
+      </dict>
+      <key>XFileSharing</key>
+      <dict>
+        <key>URLPatterns</key>
+        <array>
+          <string>^https?\:\/\/(www\.)?aisfile\.(?:[^\/]+\/).+</string>
+          <string>^https?\:\/\/(www\.)?weebvid\.(?:[^\/]+\/).+</string>
         </array>
       </dict>
     </dict>
