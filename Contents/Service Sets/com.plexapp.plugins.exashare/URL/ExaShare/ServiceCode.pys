@@ -13,7 +13,7 @@ USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Ge
 def NormalizeURL(url):
 
     if '/embed-' in url:
-        r = Regex(r'(https?\:\/\/(?:www\.)?\w+\.\w+\/)embed\-([A-Za-z0-9]+)').search(url)
+        r = Regex(r'(https?\:\/\/(?:www\.)?\w+\.\w+\/)embed\-(\w+)').search(url)
         url = r.group(1) + r.group(2)
     return url
 
@@ -25,12 +25,12 @@ def MetadataObjectForURL(url):
     except:
         raise Ex.MediaNotAvailable
 
-    vid = Regex(r'https?\:\/\/(?:www\.)?\w+\.\w+\/([A-Za-z0-9]+)').search(url).group(1)
+    vid = Regex(r'https?\:\/\/(?:www\.)?\w+\.\w+\/(\w+)').search(url).group(1)
     ier = html.xpath('//input[@id="ier"]/@value')
     if not ier:
         raise Ex.MediaExpired
 
-    r = Regex(r'%s\]\[IMG\](http[^\[]+)\[\/IMG\]([^\[]+)\[\/URL\]\[\d+x\d+\,\s*?([^\]]+)' %vid).search(ier[0])
+    r = Regex(r'%s\]\[IMG\](http[^\[]+)\[\/IMG\](\[?[^\[]+)\[\/URL\]\[\d+x\d+\,\s*?([^\]]+)' %vid).search(ier[0])
     st = Regex(r'https?\:\/\/(?:www\.)?(\w+)\.\w+').search(url)
 
     fallback = 'http://i.imgur.com/75YO83o.jpg'
@@ -86,5 +86,5 @@ def PlayVideo(url, **kwargs):
 
 ####################################################################################################
 def get_embed_url(url):
-    r = Regex(r'(https?\:\/\/(?:www\.)?\w+\.\w+\/)([A-Za-z0-9]+)').search(url)
+    r = Regex(r'(https?\:\/\/(?:www\.)?\w+\.\w+\/)(\w+)').search(url)
     return r.group(1) + 'embed-' + r.group(2) + '.html'
