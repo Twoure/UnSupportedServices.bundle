@@ -29,7 +29,7 @@ def MetadataObjectForURL(url):
     if title:
         title= Regex(r'Watch\s(.+)$').sub(r'\1', title.group(1))
     else:
-        title = Regex(r'\[\/IMG\]\s*?([^\[]+)\[\/URL\]').search(page)
+        title = Regex(r'\[\/IMG\]\s*?(\]?[^\[]+)\[\/URL\]').search(page)
         if title:
             title = title.group(1).strip('_-\s\r\n\t')
         else:
