@@ -18,7 +18,9 @@ def MetadataObjectForURL(url):
     except:
         raise Ex.MediaNotAvailable
 
-    if data['movie']['status'] != 'OK':
+    if data['error'] == 'forbidden':
+        raise Ex.MediaExpired
+    elif data['movie']['status'] != 'OK':
         raise Ex.MediaExpired
 
     fallback = 'http://i.imgur.com/75YO83o.jpg'
