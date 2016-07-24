@@ -22,8 +22,32 @@ def MetadataObjectForURL(url):
     title = embed_node[0].get('movietitle')
     thumb = embed_node[0].get('previewimage')
 
+    rating = html.xpath('//div[@id="rate"]/img/@alt')
+    rating = float(rating[0])*2 if rating else None
+
+    duration = html.xpath('//table[@id="infobox"]//td[text()="Length:"]/following-sibling::td/text()')
+    duration = Datetime.MillisecondsFromString(duration[0]) if duration else None
+
+    summary_long = html.xpath('//div[@id="description"]//span[@id="longdesc"]')
+    summary_short = html.xpath('//div[@id="description"]//span[@id="shortdesc"]')
+    summary = summary_long[0].text_content().strip() if summary_long else (summary_short[0].text_content().strip() if summary_short else None)
+
+    date = html.xpath('//div[@id="info"]/h2/span/text()')
+    date = Regex(r'Added\s(.+)$').sub(r'\1', date[0]) if date else None
+    date = Datetime.ParseDate(date) if date else None
+
+    tags = html.xpath('//div[@id="tagscont"]//a/text()')
+    genres = html.xpath('//table[@id="infobox"]//td[text()="Category:"]/following-sibling::td/a/text()')
+
     return VideoClipObject(
         title=String.Unquote(title),
+        rating=rating,
+        duration=duration,
+        summary=summary,
+        genres=genres if genres else [],
+        tags=tags if tags else [],
+        year=int(date.year) if date else None,
+        originally_available_at=date if date else None,
         thumb=Resource.ContentsOfURLWithFallback([thumb, 'http://i.imgur.com/75YO83o.jpg']),
         source_title='Stagevu'
         )
