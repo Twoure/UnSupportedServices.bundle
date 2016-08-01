@@ -2,7 +2,8 @@
 
 """Openload.co service code"""
 
-from openload import decode_openload
+#from openload import decode_openload
+from openload import OpenloadStreamFromURL
 import contextlib
 import urllib2
 
@@ -63,68 +64,22 @@ def MediaObjectsForURL(url):
 @indirect
 def PlayVideo(url, **kwargs):
 
-    ourl = get_openload_url(url)
+    http_headers = {'User-Agent': USER_AGENT, 'Referer': url}
+    ourl = OpenloadStreamFromURL(url, http_headers=http_headers)
     if ourl:
-        Log.Debug('* PlayVideo URL  = %s' %ourl)
-        return IndirectResponse(VideoClipObject, key=ourl)
+        rourl = get_url_redirect(ourl, http_headers)
+        Log.Debug('* PlayVideo URL  = {}'.format(rourl))
+        return IndirectResponse(VideoClipObject, key=rourl)
 
     raise Ex.MediaNotAvailable
 
 ####################################################################################################
-def get_openload_url(ourl, count=0):
-    """
-    Get Openload video URL
-    Sometimes the page has no video url, so try again up to 3 times
-    """
-
+def get_url_redirect(url, http_headers):
     try:
-        base = Regex(r'(https?:\/\/\w+\.\w+)\/\w+\/([^\/]+)(\/.+)?').search(ourl)
-        eurl = base.group(1) + '/embed/' + base.group(2) + (base.group(3) if base.group(3) else '')
-
-        h = {'User-Agent': USER_AGENT, 'Referer': eurl}
-        s = HTTP.Request(eurl, encoding=('utf-8'), headers=h).content
-
-        if base.group(3):
-            title = base.group(3)[1:]
-        else:
-            title = Regex(r'og\:title\"\s*?content\=\"([^\"]+)').search(s)
-            title = title if title else Regex(r'title[\'\"]\>([^\<]+)').search(s)
-            title = String.Quote(title.group(1), usePlus=True) if title else None
-        Log.Debug('* Openload video title = %s' %title)
-
-        url = False
-        urls = decode_openload(s)
-        if urls:
-            for u in urls:
-                rurl = get_url_redirect(u)
-                if title and title == rurl.rsplit('/', 1)[1].split('?mime=')[0]:
-                    url = rurl
-                elif 'Komp+1.mp4' != rurl.rsplit('/', 1)[1].split('?mime=')[0]:
-                    url = rurl
-
-        if not url:
-            if (count == 2):
-                Log.Error('* Openload Error: Tried 3 times to get Video URL, but Failed')
-                return False
-            else:
-                count += 1
-                Log.Warn('* Openload Warn: try %i faild to get Video URL, trying again' %count)
-                return get_openload_url(ourl, count=count)
-    except Exception as e:
-        Log.Error('* Openload Error: Something went wrong, cannot access %s' %ourl)
-        Log.Critical('* Openload Error: %s' %str(e))
-        url = False
-
-    return url
-
-####################################################################################################
-def get_url_redirect(url):
-    try:
-        req = urllib2.Request(url, headers={'User-Agent': USER_AGENT, 'Referer': url})
+        req = urllib2.Request(url, headers=http_headers)
         req.get_method = lambda : 'HEAD'
         with contextlib.closing(urllib2.urlopen(req)) as resp:
             url = resp.geturl()
     except Exception as e:
         Log.Critical('* get_url_redirect Error: %s' %str(e))
-
     return url
