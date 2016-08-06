@@ -1,44 +1,53 @@
 #!/usr/bin/env python
 
-"""beat.VidUP.me Service Code"""
+"""VidUP.me Service Code"""
 
 from unpacker import unpack as Unpack
 
 ####################################################################################################
 def NormalizeURL(url):
 
-    if '/embed-' in url:
-        url = url.replace('/embed-', '/').split('-')[0]
-
+    if '/embed-' not in url:
+        r = Regex(r'(?i)(https?:\/\/(?:beta\.|www\.)?\w+\.\w+\/)(\w+)').search(url)
+        url = r.group(1) + 'embed-' + r.group(2) + '.html' if r else url
     return url
 
 ####################################################################################################
 def MetadataObjectForURL(url):
 
     try:
-        html = HTML.ElementFromURL(url)
+        page = HTTP.Request(url).content
     except:
         raise Ex.MediaNotAvailable
 
-    title = html.xpath('//meta[@property="og:title"]/@content')
-    thumb = html.xpath('//meta[@property="og:image"]/@content')
-    if not title:
-        raise Ex.MediaNotAvailable
+    rt = Regex(r'title\s*?\:\s*?\'(.+)\'').search(page)
+    if not rt:
+        raise Ex.MediaExpired
+    title = rt.group(1)
 
     fallback = 'http://i.imgur.com/75YO83o.jpg'
-    thumb = thumb[0].strip() if thumb else fallback
+    rth = Regex(r'image\s*?\:\s*?[\'\"](http[^\'\"]+)[\'\"]').search(page)
+    thumb = rth.group(1) if rth else fallback
+
+    rs = Regex(r'description\s*?\:\s*?\'(.+)\'').search(page)
+    summary = rs.group(1) if rs else None
+
+    rd = Regex(r'duration\s*?\:\s*?[\'\"](\d+)[\'\"]').search(page)
+    duraiton = int(rd.group(1))*1000 if rd else None
 
     return VideoClipObject(
-        title=title[0].strip(),
+        title=title,
+        summary=summary,
+        duration=duration,
         thumb=Resource.ContentsOfURLWithFallback([thumb, fallback]),
-        source_title='VidUp'
+        source_title='VidUP'
         )
 
 ####################################################################################################
 def MediaObjectsForURL(url):
 
     mo = []
-    fmt_list = source_dict(get_embed_url(url))
+    fmt_list = source_dict(url)
     for item in reversed(sorted(fmt_list, key=lambda k: k['label'])):
         mo.append(MediaObject(
             video_resolution=item['label'][:-1],
@@ -56,22 +65,13 @@ def MediaObjectsForURL(url):
 @indirect
 def PlayVideo(url, label, **kwargs):
 
-    fmt_list = source_dict(get_embed_url(url))
+    fmt_list = source_dict(url)
     for item in fmt_list:
         if label == item['label']:
-            Log.Debug("* PlayVideo URL  = %s" %item['file'])
+            Log.Debug("* PlayVideo URL  = {}".format(item['file']))
             return IndirectResponse(VideoClipObject, key=item['file'])
 
     raise Ex.MediaNotAvailable
-
-####################################################################################################
-def get_embed_url(url):
-
-    if 'embed-' not in url:
-        r = Regex(r'(?i)(https?:\/\/(?:beta\.|www\.)?vidup\.\w+\/)([a-z0-9]+)').search(url)
-        url = r.group(1) + 'embed-' + r.group(2) + '.html'
-
-    return url
 
 ####################################################################################################
 def source_dict(url):
@@ -81,14 +81,12 @@ def source_dict(url):
     except:
         raise Ex.MediaNotAvailable
 
-    data = Regex(r"<script type=.text\/javascript.>(eval\(function\(p,a,c,k,e,.+(?:file).+\.split\('\|'\)\)\))").search(page)
-    if not data:
-        raise Ex.MediaNotAvailable
+    data = Regex(r"<script type=.text\/javascript.>(eval\(function\(p,a,c,k,e,.+(?:\|file\|).+\.split\('\|'\)\)\))").search(page)
+    if data:
+        data = Unpack(data.group(1))
+        page = data.replace('\\', '')
 
-    data = Unpack(data.group(1))
-    data = data.replace('\\', '')
-
-    sources = Regex(r'sources:(.*),sharing').search(data)
+    sources = Regex(r'sources\s*?\:\s*?(\[\{.+\}\])\,').search(page)
     if not sources:
         raise Ex.MediaExpired
 
