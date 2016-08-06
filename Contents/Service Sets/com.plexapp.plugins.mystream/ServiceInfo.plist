@@ -12,7 +12,7 @@
           <string>^https?\:\/\/(?:www\.)?megamp4\.(?:[^\/]+\/).+</string>
           <string>^https?\:\/\/(?:www\.)?mystream\.(?:[^\/]+\/).+</string>
           <string>^https?\:\/\/(?:www\.)?shitmovie\.\w+\/.+</string>
-          <string>^https?\:\/\/(?:www\.)?speedplay(\d+)?\.\w+\/.+</string>
+          <string>^https?\:\/\/(?:www\.)?speedplay(\d+|x)?\.\w+\/.+</string>
           <string>^https?\:\/\/(?:www\.)?youlol(\d+)?\.\w+\/.+</string>
         </array>
       </dict>
