@@ -28,19 +28,24 @@ def MetadataObjectForURL(url):
     except:
         raise Ex.MediaNotAvailable
 
-    file_info = html.xpath('//dl[@class="file-info"]/dd')
-    if not file_info:
+    title = html.xpath('//dl[@class="file-info"]/dt[text()="Filename:"]/following-sibling::dd/text()')
+    if not title:
         raise Ex.MediaExpired
+
+    duration = html.xpath('//dl[@class="file-info"]/dt[text()="Length:"]/following-sibling::dd/text()')
+    duration = Datetime.MillisecondsFromString(duration[0]) if duration else None
 
     data = get_data(page)
     if not data['url']:
         raise Ex.MediaNotAvailable
 
+    st = Regex(r'https?\:\/\/(?:www\.)?(\w+)\.\w+').search(url)
+
     return VideoClipObject(
-        title=file_info[0].text,
+        title=title[0].strip(),
         thumb=Resource.ContentsOfURLWithFallback([data['thumb'], 'http://i.imgur.com/GEKTJP3.png']),
-        duration=Datetime.MillisecondsFromString(file_info[2].text.strip()),
-        source_title=get_source_title(url)
+        duration=duration,
+        source_title=st.group(1).title() if st else 'FileNuke'
         )
 
 ####################################################################################################
@@ -83,17 +88,6 @@ def PlayVideo(url, **kwargs):
         return IndirectResponse(VideoClipObject, key=data['url'], http_headers=HTTP_HEADERS)
 
     raise Ex.MediaNotAvailable
-
-####################################################################################################
-def get_source_title(url):
-    """get source title from url"""
-
-    stitle = url.split('/')[2]
-    sltitle = stitle.split('.')
-    if len(sltitle) > 2:
-        return sltitle[1].title()+'.'+sltitle[2]
-    else:
-        return sltitle[0].title()+'.'+sltitle[1]
 
 ####################################################################################################
 def get_go_next(html, url):
