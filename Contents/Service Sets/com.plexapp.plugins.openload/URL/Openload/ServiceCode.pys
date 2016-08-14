@@ -22,7 +22,7 @@ def NormalizeURL(url):
 def MetadataObjectForURL(url):
 
     try:
-        html = HTML.ElementFromURL(url)
+        html = HTML.ElementFromURL(url, cacheTime=CACHE_1MINUTE)
     except:
         raise Ex.MediaNotAvailable
 
