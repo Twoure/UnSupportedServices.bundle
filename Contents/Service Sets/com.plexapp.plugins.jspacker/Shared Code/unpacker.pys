@@ -45,11 +45,13 @@ def unpack(source):
 
 def filterargs(source):
     """Juice from a source file the four args needed by decoder."""
-    argsregex = (r"}\('(.*)', *(\d+), *(\d+), *'(.*?)'\.split\('\|'\)")
+    argsregex = (r"}\('(.*)', *(\d+|\[\]), *(\d+), *'(.*?)'\.split\('\|'\)")
     args = Regex(argsregex).search(source, Regex.DOTALL).groups()
 
     try:
-        return args[0], args[3].split('|'), int(args[1]), int(args[2])
+        a = 36 if args[1] == '[]' else int(args[1])
+        return args[0], args[3].split('|'), a, int(args[2])
+        #return args[0], args[3].split('|'), int(args[1]), int(args[2])
     except ValueError:
         raise UnpackingError('Corrupted p.a.c.k.e.r. data.')
 
