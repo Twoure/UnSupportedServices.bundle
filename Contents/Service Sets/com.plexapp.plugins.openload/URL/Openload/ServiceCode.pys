@@ -2,7 +2,6 @@
 
 """Openload.co service code"""
 
-#from openload import decode_openload
 from openload import OpenloadStreamFromURL
 import contextlib
 import urllib2
