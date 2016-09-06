@@ -4,10 +4,15 @@
 # and modified for use with Plex Media Server by Twoure
 
 from aadecode import aadecode
+from jjdecode import JJDecoder
 
 USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36'
 
-def decode_hiddenUrl(x, aalist):
+def code_at(text):
+    r = Regex(r'(?i)CodeAt\(0\)\s*\+\s*(\d+)').search(text)
+    return int(r.group(1)) if r else False
+
+def decode_hiddenUrl(x, aalist, jjlist):
     s = ""
     tmp = ""
     try:
@@ -25,25 +30,34 @@ def decode_hiddenUrl(x, aalist):
         except:
             Log.Exception("* Cannot decode item >>>")
 
-    num = Regex(r'(?i)CodeAt\(0\)\s*\+\s*([0-9]+?)[^0-9]').search(tmp)
-    return s[:-1] + chr(ord(s[-1]) + int(num.group(1))) if s and num else False
+    num = code_at(tmp)
+    if not num:
+        tmp = ""
+        for item in jjlist:
+            tmp += JJDecoder(item).decode()
+    num = code_at(tmp)
+    return s[:-1] + chr(ord(s[-1]) + num) if s and num else False
 
 def OpenloadStreamFromURL(url, http_headers=None):
     if not http_headers:
         http_headers = {'User-Agnet': USER_AGENT, 'Referer': url}
 
+    base = Regex(r'(https?:\/\/\w+\.\w+)\/\w+\/([^\/]+)(\/.+)?').search(url)
+    eurl = base.group(1) + '/embed/' + base.group(2) + (base.group(3) if base.group(3) else '')
+
     try:
-        page = HTTP.Request(url, encoding=('utf-8'), headers=http_headers, cacheTime=CACHE_1MINUTE).content
+        page = HTTP.Request(eurl, encoding=('utf-8'), headers=http_headers, cacheTime=CACHE_1MINUTE).content
     except:
-        Log.Exception(u"* Cannot Open Openload URL '{}' >>>".format(url))
+        Log.Exception(u"* Cannot Open Openload URL '{}' >>>".format(eurl))
         return False
 
     html = HTML.ElementFromString(page)
     hiddenUrl = html.xpath('//span[@id="hiddenurl"]/text()')
     aadata_list = Regex(r'(?s)<script type="text/javascript">(ﾟωﾟ.*?)</script>').findall(page)
+    jjdata_list = Regex(r'(?s)<script type="text/javascript">(j=.*?\(\)\)\(\);)').findall(page)
 
     if hiddenUrl:
-        hurl = decode_hiddenUrl(hiddenUrl[0], aadata_list)
+        hurl = decode_hiddenUrl(hiddenUrl[0], aadata_list, jjdata_list)
         if hurl:
             return u'https://openload.co/stream/{0}?mime=true'.format(hurl)
         else:
