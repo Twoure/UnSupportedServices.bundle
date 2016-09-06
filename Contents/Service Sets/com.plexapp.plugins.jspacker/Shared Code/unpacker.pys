@@ -45,15 +45,20 @@ def unpack(source):
 
 def filterargs(source):
     """Juice from a source file the four args needed by decoder."""
-    argsregex = (r"}\('(.*)', *(\d+|\[\]), *(\d+), *'(.*?)'\.split\('\|'\)")
-    args = Regex(argsregex).search(source, Regex.DOTALL).groups()
+    juicers = [ (r"}\('(.*)', *(\d+), *(\d+), *'(.*)'\.split\('\|'\), *(\d+), *(.*)\)\)"),
+                (r"}\('(.*)', *(\d+), *(\d+), *'(.*)'\.split\('\|'\)"),
+              ]
+    for juicer in juicers:
+        args = Regex(juicer).search(source, Regex.DOTALL)
+        if args:
+            a = args.groups()
+            try:
+                return a[0], a[3].split('|'), int(a[1]), int(a[2])
+            except ValueError:
+                raise UnpackingError('Corrupted p.a.c.k.e.r. data.')
 
-    try:
-        a = 36 if args[1] == '[]' else int(args[1])
-        return args[0], args[3].split('|'), a, int(args[2])
-        #return args[0], args[3].split('|'), int(args[1]), int(args[2])
-    except ValueError:
-        raise UnpackingError('Corrupted p.a.c.k.e.r. data.')
+    # could not find a satisfying regex
+    raise UnpackingError('Could not make sense of p.a.c.k.e.r data (unexpected code structure)')
 
 def replacestrings(source):
     """Strip string lookup table (list) and replace values in source."""
@@ -73,9 +78,11 @@ class Unbaser(object):
     """Functor for a given base. Will efficiently convert
     strings to natural numbers."""
     ALPHABET  = {
-        64 : '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ+/',
+        53 : '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQ',
+        59 : '0123456789abcdefghijklmnopqrstuvwABCDEFGHIJKLMNOPQRSTUVWXYZ',
+        62 : '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ',
         95 : (' !"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-              '[\]^_`abcdefghijklmnopqrstuvwxyz{|}~')
+            '[\]^_`abcdefghijklmnopqrstuvwxyz{|}~')
     }
 
     def __init__(self, base):
@@ -90,11 +97,7 @@ class Unbaser(object):
                 self.dictionary = dict((cipher, index) for
                     index, cipher in enumerate(self.ALPHABET[base]))
             except KeyError:
-                try:
-                    self.dictionary = dict((cipher, index) for
-                        index, cipher in enumerate(self.ALPHABET[64][:base]))
-                except KeyError:
-                    raise TypeError('Unsupported base encoding.')
+                raise TypeError('Unsupported base encoding.')
 
             self.unbase = self.dictunbaser
 
