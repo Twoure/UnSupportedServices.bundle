@@ -11,7 +11,7 @@ def NormalizeURL(url):
 def MetadataObjectForURL(url):
 
     try:
-        page = HTTP.Request(url).content
+        page = HTTP.Request(url, cacheTime=10).content
         html = HTML.ElementFromString(page)
     except:
         raise Ex.MediaNotAvailable
@@ -27,10 +27,11 @@ def MetadataObjectForURL(url):
             raise Ex.MediaExpired
 
     rt = Regex(r'[\"\']?image[\"\']?\s*?\:\s*?[\"\'](http[^\"\']+)[\"\']').search(page)
+    ht = html.xpath('//video/@poster')
     rd = Regex(r'[\"\']?duration[\"\']?\s*?\:\s*?[\"\'](\d+)[\"\']').search(page)
 
     fallback = 'http://i.imgur.com/75YO83o.jpg'
-    thumb = rt.group(1) if rt else fallback
+    thumb = rt.group(1) if rt else (ht[0] if ht else fallback)
     duration = int(rd.group(1)) * 1000 if rd else None
 
     return VideoClipObject(
@@ -62,13 +63,19 @@ def MediaObjectsForURL(url):
 def PlayVideo(url, **kwargs):
 
     try:
-        page = HTTP.Request(url).content
+        page = HTTP.Request(url, cacheTime=10).content
     except:
         raise Ex.MediaNotAvailable
 
     r = Regex(r'[\"\']?file[\"\']?\s*?\:\s*?[\"\'](http[^\"\'\?]+(?<!m3u8|smil))[\"\']').search(page)
     if r:
-        Log.Debug('* PlayVideo ULR = %s' %r.group(1))
+        Log.Debug(u"* PlayVideo URL = {0}".format(r.group(1)))
         return IndirectResponse(VideoClipObject, key=r.group(1))
+
+    html = HTML.ElementFromString(page)
+    r2 = html.xpath('//video/source/@src')
+    if r2:
+        Log.Debug(u"* PlayVideo URL = {0}".format(r2[0]))
+        return IndirectResponse(VideoClipObject, key=r2[0])
 
     raise Ex.MediaNotAvailable
