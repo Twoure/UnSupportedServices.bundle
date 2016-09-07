@@ -42,7 +42,6 @@ def MediaObjectsForURL(url):
 
     mo = list()
     fmt_list = source_dict(url, {'User-Agent': USER_AGENT})
-    #for item in reversed(sorted(fmt_list, key=lambda k: k['label'])):
     for item in reversed(Util.ListSortedByKey(fmt_list, 'label')):
         mo.append(MediaObject(
             video_resolution=item['label'][:-1],
