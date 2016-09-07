@@ -10,15 +10,5 @@
       <string>com.plexapp.plugins.thevideo</string>
     </dict>
   </dict>
-  <key>URL</key>
-  <dict>
-    <key>TheVideo</key>
-    <dict>
-      <key>URLPatterns</key>
-      <array>
-        <string>^https?\:\/\/(?:www\.)?thevideo\.(?:[^\/]+\/).+</string>
-      </array>
-    </dict>
-  </dict>
 </dict>
 </plist>

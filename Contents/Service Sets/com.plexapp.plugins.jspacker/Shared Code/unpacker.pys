@@ -46,14 +46,16 @@ def unpack(source):
 def filterargs(source):
     """Juice from a source file the four args needed by decoder."""
     juicers = [ (r"}\('(.*)', *(\d+), *(\d+), *'(.*)'\.split\('\|'\), *(\d+), *(.*)\)\)"),
+                (r"}\('(.*)', *(\[\]), *(\d+), *'(.*)'\.split\('\|'\), *(\d+), *(.*)\)\)"),
                 (r"}\('(.*)', *(\d+), *(\d+), *'(.*)'\.split\('\|'\)"),
+                (r"}\('(.*)', *(\[\]), *(\d+), *'(.*)'\.split\('\|'\)"),
               ]
     for juicer in juicers:
         args = Regex(juicer).search(source, Regex.DOTALL)
         if args:
             a = args.groups()
             try:
-                return a[0], a[3].split('|'), int(a[1]), int(a[2])
+                return a[0], a[3].split('|'), 36 if a[1] == '[]' else int(a[1]), int(a[2])
             except ValueError:
                 raise UnpackingError('Corrupted p.a.c.k.e.r. data.')
 

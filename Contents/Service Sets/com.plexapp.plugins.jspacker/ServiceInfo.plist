@@ -43,6 +43,13 @@
           <string>^https?\:\/\/(?:www\.)?cloudzilla\.(?:[^\/]+\/).+</string>
         </array>
       </dict>
+      <key>TheVideo</key>
+      <dict>
+        <key>URLPatterns</key>
+        <array>
+          <string>^https?\:\/\/(?:www\.)?thevideo\.(?:[^\/]+\/).+</string>
+        </array>
+      </dict>
       <key>SaveFile</key>
       <dict>
         <key>URLPatterns</key>

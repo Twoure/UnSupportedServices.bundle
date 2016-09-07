@@ -2,19 +2,23 @@
 
 """TheVideo.me Service Code"""
 
+from unpacker import unpack as Unpack
+
+USER_AGENT = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/52.0.2743.116 Safari/537.36"
+
 ####################################################################################################
 def NormalizeURL(url):
 
     if '/embed-' not in url:
         r = Regex(r'(?i)(https?:\/\/(?:www\.)?\w+\.\w+\/)([a-z0-9]+)').search(url)
-        url = r.group(1) + 'embed-' + r.group(2) + '.html'
+        url = r.group(1) + 'embed-' + r.group(2) + '.html' if r else url
 
     return url
 
 ####################################################################################################
 def MetadataObjectForURL(url):
 
-    page = HTTP.Request(url).content
+    page = HTTP.Request(url, cacheTime=10).content
     title = Regex(r'title\s*?\:\s*?[\'\"](.*?)[\'\"]\,').search(page)
     if not title:
         raise Ex.MediaExpired
@@ -36,9 +40,10 @@ def MetadataObjectForURL(url):
 ####################################################################################################
 def MediaObjectsForURL(url):
 
-    mo = []
-    fmt_list = source_dict(url)
-    for item in reversed(sorted(fmt_list, key=lambda k: k['label'])):
+    mo = list()
+    fmt_list = source_dict(url, {'User-Agent': USER_AGENT})
+    #for item in reversed(sorted(fmt_list, key=lambda k: k['label'])):
+    for item in reversed(Util.ListSortedByKey(fmt_list, 'label')):
         mo.append(MediaObject(
             video_resolution=item['label'][:-1],
             audio_channels=2,
@@ -55,23 +60,41 @@ def MediaObjectsForURL(url):
 @indirect
 def PlayVideo(url, label, **kwargs):
 
-    fmt_list = source_dict(url)
+    http_headers = {'User-Agent': USER_AGENT}
+    fmt_list = source_dict(url, http_headers)
     for item in fmt_list:
         if label == item['label']:
-            Log.Debug('* PlayVideo URL  = %s' %item['file'])
-            return IndirectResponse(VideoClipObject, key=item['file'])
+            vurl = item['file']
+            Log.Debug('* PlayVideo URL  = {}'.format(vurl))
+            return IndirectResponse(VideoClipObject, key=vurl, http_headers=http_headers)
 
     raise Ex.MediaNotAvailable
 
 ####################################################################################################
-def source_dict(url):
+def source_dict(url, http_headers):
 
-    page = HTTP.Request(url).content
+    page = HTTP.Request(url, headers=http_headers, cacheTime=10).content
+    rtoken = Regex(r'var\s*?tkn\=[\'\"]([^\'\"]+)[\'\"]').search(page)
+    if not rtoken:
+        raise Ex.MediaNotAvailable
+
+    http_headers.update({'Referer': url})
+    try:
+        packed = HTTP.Request('http://thevideo.me/jwv/{}'.format(rtoken.group(1)), headers=http_headers, cacheTime=10).content.strip()
+    except:
+        Log.Exception("* Error handling packed URL >>>")
+        raise Ex.MediaNotAvailable
+
     sources = Regex(r'sources:\s(.*),').search(page)
+    rd = Regex(r'vt\=([^\'\"]+)[\'\"]').search(Unpack(packed))
     if not sources:
         raise Ex.MediaExpired
+    elif not rd:
+        raise Ex.MediaNotAvailable
 
     s = sources.group(1)
     s = s.replace('\'', '\"').replace('label', '\"label\"').replace('file', '\"file\"')
 
-    return JSON.ObjectFromString(s)
+    data = JSON.ObjectFromString(s)
+    [d.update({'file': d['file'] + '?direct=false&ua=1&vt={}'.format(rd.group(1))}) for d in data]
+    return data
