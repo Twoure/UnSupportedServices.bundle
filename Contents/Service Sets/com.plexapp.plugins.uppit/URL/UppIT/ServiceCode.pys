@@ -59,7 +59,8 @@ def PlayVideo(url, **kwargs):
 
     vurl = html2.xpath('//a[@onclick]/@href')
     if vurl:
-        Log.Debug('* PlayVideo URL = %s' %vurl[0])
-        return IndirectResponse(VideoClipObject, key=vurl[0])
+        playurl = vurl[0].replace(" ", "%20")
+        Log.Debug(u"* PlayVideo URL = {0}".format(playurl))
+        return IndirectResponse(VideoClipObject, key=playurl)
 
     raise Ex.MediaNotAvailable
