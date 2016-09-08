@@ -4,7 +4,7 @@
 
 from unpacker import unpack as Unpack
 
-USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36'
+USER_AGENT = 'Mozilla/5.0 (iPhone; CPU iPhone OS 9_1 like Mac OS X) AppleWebKit/601.1.46 (KHTML, like Gecko) Version/9.0 Mobile/13B143 Safari/601.1'
 
 ####################################################################################################
 def NormalizeURL(url):
@@ -17,13 +17,14 @@ def NormalizeURL(url):
 def MetadataObjectForURL(url):
 
     try:
-        html = HTML.ElementFromURL(url)
+        html = HTML.ElementFromURL(url, headers={'User-Agent': USER_AGENT})
     except:
+        Log.Exception(u"* Error loading '{0}' >>>".format(url))
         raise Ex.MediaNotAvailable
 
     title = html.xpath('//input[@name="fname"]/@value')
     if not title:
-        raise Ex.MediaNotAvailable
+        raise Ex.MediaExpired
 
     fallback = 'http://i.imgur.com/75YO83o.jpg'
     image = html.xpath('//meta[@property="og:image"]/@content')
@@ -52,11 +53,14 @@ def MediaObjectsForURL(url):
 ####################################################################################################
 @indirect
 def PlayVideo(url, **kwargs):
-    http_headers = {'User-Agent': USER_AGENT}
+    http_headers = {'User-Agent': USER_AGENT, 'Referer': url}
+    try:
+        html = HTML.ElementFromURL(url, sleep=5, headers=http_headers)
+    except:
+        Log.Exception(u"* Error loading '{0}' >>>".format(url))
+        raise Ex.MediaNotAvailable
 
-    html = HTML.ElementFromURL(url, sleep=5, headers=http_headers)
-
-    post_values = {}
+    post_values = dict()
     action_url = html.xpath('//form[@method="POST"]/@action')
     if not action_url:
         raise Ex.MediaExpired
@@ -64,14 +68,13 @@ def PlayVideo(url, **kwargs):
     for item in html.xpath('//form[@method="POST"]/input'):
         post_values.update({item.get('name'): item.get('value')})
 
-    http_headers.update({'Referer': url})
-    res = HTTP.Request(action_url[0], values=post_values, headers=http_headers).content
-    packed = Regex(r"<script type=.text\/javascript.>(eval\(function\(p,a,c,k,e,.+(?:file).+\.split\('\|'\)\)\))").search(res)
+    page = HTTP.Request(action_url[0], encoding='utf8', errors='ignore', values=post_values, headers=http_headers, method='POST').content
+    packed = Regex(r"<script type=.text\/javascript.>(eval\(function\(p,a,c,k,e,.+(?:\|file\|).+\.split\('\|'\).*?\)\))").search(page)
     if packed:
         data = Unpack(packed.group(1))
         vurl = Regex(r'[\"\']?file[\"\']?\s*?\:\s*?[\"\'](http[^\"\']+(?<!m3u8|smil))[\"\']').search(data)
         if vurl:
-            Log.Debug('* PlayVideo URL  = %s' %vurl.group(1))
-            return IndirectResponse(VideoClipObject, key=vurl.group(1), http_headers={'User-Agent': USER_AGENT})
+            Log.Debug(u"* PlayVideo URL = {0}".format(vurl.group(1)))
+            return IndirectResponse(VideoClipObject, key=vurl.group(1), user_agent=USER_AGENT)
 
     raise Ex.MediaNotAvailable
