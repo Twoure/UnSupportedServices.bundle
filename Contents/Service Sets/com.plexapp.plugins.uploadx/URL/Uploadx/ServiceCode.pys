@@ -56,7 +56,8 @@ def PlayVideo(url, **kwargs):
             node = html.xpath('//span[@id="direct_link"]/a/@href')
 
         for vurl in node:
-            Log.Debug('* PlayVideo URL = \"%s\"' %vurl)
+            vurl = vurl.replace(' ', '%20')
+            Log.Debug(u"* PlayVideo URL = {0}".format(vurl))
             return IndirectResponse(VideoClipObject, key=vurl)
 
     raise Ex.MediaNotAvailable
@@ -70,7 +71,4 @@ def get_post_html(url, html):
 
     if bool(data):
         return get_post_html(url, HTML.ElementFromString(HTTP.Request(url, headers=http_headers, values=data).content))
-    else:
-        return html
-
-    return False
+    return html
