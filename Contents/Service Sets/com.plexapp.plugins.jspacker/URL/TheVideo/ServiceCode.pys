@@ -73,13 +73,15 @@ def PlayVideo(url, label, **kwargs):
 def source_dict(url, http_headers):
 
     page = HTTP.Request(url, headers=http_headers, cacheTime=10).content
-    rtoken = Regex(r'var\s*?tkn\=[\'\"]([^\'\"]+)[\'\"]').search(page)
+    rtkn = Regex(r'[\'\"]\/[\'\"]\+(.+)\+.+\\x3C\/script\>').search(page)
+    rtoken = Regex(r'var\s*?{0}\=[\'\"]([^\'\"]+)[\'\"]'.format(rtkn.group(1))).search(page) if rtkn else None
     if not rtoken:
+        Log.Error("* Error: Cannot find packer token")
         raise Ex.MediaNotAvailable
 
     http_headers.update({'Referer': url})
     try:
-        packed = HTTP.Request('http://thevideo.me/jwv/{}'.format(rtoken.group(1)), headers=http_headers, cacheTime=10).content.strip()
+        packed = HTTP.Request('http://thevideo.me/jwv/{0}'.format(rtoken.group(1)), headers=http_headers, cacheTime=10).content.strip()
     except:
         Log.Exception("* Error handling packed URL >>>")
         raise Ex.MediaNotAvailable
