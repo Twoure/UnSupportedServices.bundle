@@ -135,6 +135,7 @@
         <array>
           <string>^https?\:\/\/(www\.)?watchers\.(?:[^\/]+\/).+</string>
           <string>^https?\:\/\/(www\.)?estream\.(?:[^\/]+\/).+</string>
+          <string>^https?\:\/\/(www\.)?playu\.(?:[^\/]+\/).+</string>
         </array>
       </dict>
       <key>XFileShare</key>
