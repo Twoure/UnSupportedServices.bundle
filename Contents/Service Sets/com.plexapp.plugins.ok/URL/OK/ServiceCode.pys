@@ -18,7 +18,7 @@ def MetadataObjectForURL(url):
     except:
         raise Ex.MediaNotAvailable
 
-    if data['error'] == 'forbidden':
+    if data.get('error', '') == 'forbidden':
         raise Ex.MediaExpired
     elif data['movie']['status'] != 'OK':
         raise Ex.MediaExpired
