@@ -2,27 +2,24 @@
 
 """(Promp, Brisk)file Service Code"""
 
-import urllib2
-import contextlib
-
-HTTP_HEADERS = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2623.110 Safari/537.36'}
+USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2623.110 Safari/537.36'
 
 ####################################################################################################
 def MetadataObjectForURL(url):
 
-    html = HTML.ElementFromURL(url, headers=HTTP_HEADERS)
-    if html.xpath('//div[@id="not_found_msg"]'):
-        message = html.xpath('//div[@id="not_found_msg"]/text()')[0]
-        if 'maintenance' in message:
-            Log.Warn('* %s' %message)
-        else:
-            raise Ex.MediaExpired
+    try:
+        html = HTML.ElementFromString(get_post_page(url))
+    except:
+        Log.Exception(u"* Error: Cannot open '{0}' >>>".format(url))
+        raise Ex.MediaNotAvailable
 
-    title = html.xpath('//span/@title')[0].strip()
+    fallback = 'http://i.imgur.com/75YO83o.jpg'
+    thumb = html.xpath('//img[contains(@src, "/thumbs/")]/@src')
+    thumb = thumb[0] if thumb else fallback
 
     return VideoClipObject(
-        title=title,
-        thumb='http://i.imgur.com/75YO83o.jpg',
+        title=html.xpath('//span/@title')[0].strip(),
+        thumb=Resource.ContentsOfURLWithFallback([thumb, fallback]),
         source_title=url.split('/')[2].title()
         )
 
@@ -31,7 +28,6 @@ def MediaObjectsForURL(url):
 
     return [
         MediaObject(
-            video_resolution='sd',
             audio_channels=2,
             optimized_for_streaming=False,
             parts=[
@@ -44,10 +40,43 @@ def MediaObjectsForURL(url):
 @indirect
 def PlayVideo(url, **kwargs):
 
-    html = HTML.ElementFromURL(url, headers=HTTP_HEADERS)
+    page = get_post_page(url)
+    http_headers = {'User-Agent': USER_AGENT, 'Referer': url}
+    r = Regex(r'src\:\s*?[\'\"](http[^\'\"]+)[\'\"]').search(page)
+    if r:
+        try:
+            vurl = r.group(1)
+            page = HTTP.Request(vurl, headers=http_headers, follow_redirects=False, method='HEAD', cacheTime=10).content
+        except Ex.RedirectError, e:
+            if 'Location' in e.headers:
+                vurl = e.headers['Location']
+            if 'Set-Cookie' in e.headers:
+                http_headers['Cookie'] = e.headers['Set-Cookie'].split(';')[0]
+
+        Log.Debug(u"* PlayVideo URL = {0}".format(vurl))
+        return IndirectResponse(VideoClipObject, key=vurl, http_headers=http_headers)
+
+
+    raise Ex.MediaNotAvailable
+
+####################################################################################################
+def get_post_page(url):
+
     post_values = {}
-    h = {'Content-type': 'application/x-www-form-urlencoded'}
-    h.update(HTTP_HEADERS)
+    http_headers = {'User-Agent': USER_AGENT}
+    try:
+        html = HTML.ElementFromURL(url, headers=http_headers, cacheTime=10)
+    except:
+        Log.Exception(u"* Error: Cannot open '{0}' >>>".format(url))
+        raise Ex.MediaNotAvailable
+
+    if html.xpath('//div[@id="not_found_msg"]'):
+        message = html.xpath('//div[@id="not_found_msg"]/text()')[0]
+        if 'maintenance' in message:
+            Log.Warn(u"* {0}".format(message))
+        else:
+            Log.Warn(u"* Warning: Media expired for '{0}'".format(url))
+            raise Ex.MediaExpired
 
     for item in html.xpath('//form[@method="post"]'):
         name = item.xpath('./input/@name')[0]
@@ -63,20 +92,9 @@ def PlayVideo(url, **kwargs):
                 chash = r[1] + value
         post_values[name] = chash
 
-    page = HTTP.Request(url, values=post_values, headers=h, method='POST').content
-
-    vurl = Regex(r'url\:\s?[\"\'](http[^\"\']+?)[\"\'],').search(page)
-    if vurl:
-        try:
-            req = urllib2.Request(vurl.group(1), headers=HTTP_HEADERS)
-            req.get_method = lambda : 'HEAD'
-            with contextlib.closing(urllib2.urlopen(req)) as resp:
-                vurl = resp.geturl()
-        except Exception as e:
-            Log.Error('* PlayVideo Error: %s' %str(e))
-            vurl = vurl.group(1)
-
-        Log.Debug('* PlayVideo ULR = %s' %vurl)
-        return IndirectResponse(VideoClipObject, key=vurl)
-
-    raise Ex.MediaNotAvailable
+    try:
+        http_headers['Content-type'] = 'application/x-www-form-urlencoded'
+        return HTTP.Request(url, values=post_values, headers=http_headers, method='POST').content
+    except:
+        Log.Exception(u"* Error: Cannot handle POST '{0}' >>>".format(url))
+        raise Ex.MediaNotAvailable
