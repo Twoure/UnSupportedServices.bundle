@@ -2,18 +2,15 @@
 
 """FileRev.cc Service Code"""
 
-import urllib
-import urllib2
-import contextlib
-
 USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36'
 
 ####################################################################################################
 def MetadataObjectForURL(url):
 
     try:
-        html = HTML.ElementFromURL(url)
+        html = HTML.ElementFromURL(url, cacheTime=10)
     except:
+        Log.Exception(u"* Error: Cannot open '{0}' >>>".format(url))
         raise Ex.MediaNotAvailable
 
     title = html.xpath('//input[@name="fname"]/@value')
@@ -46,8 +43,9 @@ def PlayVideo(url, **kwargs):
 
     http_headers = {'User-Agent': USER_AGENT}
     try:
-        html1 = HTML.ElementFromURL(url, headers=http_headers)
+        html1 = HTML.ElementFromURL(url, headers=http_headers, cacheTime=10)
     except:
+        Log.Exception(u"* Error: Cannot open '{0}' >>>".format(url))
         raise Ex.MediaNotAvailable
 
     data = dict()
@@ -63,30 +61,13 @@ def PlayVideo(url, **kwargs):
         data.update({item.get('name'): item.get('value')})
 
     if data:
-        vurl = urllib2_post_head(url, data, url)
-        if vurl:
-            Log.Debug('* PlayVideo URL = %s' %vurl)
-            return IndirectResponse(VideoClipObject, key=vurl)
+        try:
+            page = HTTP.Request(url, values=data, headers=http_headers, follow_redirects=False).content
+            Log.Warn(u"* Warning: cannot find video URL for '{0}'".format(url))
+        except Ex.RedirectError, e:
+            if 'Location' in e.headers:
+                vurl = e.headers['Location']
+                Log.Debug(u"* PlayVideo URL = {0}".format(vurl))
+                return IndirectResponse(VideoClipObject, key=vurl)
 
     raise Ex.MediaNotAvailable
-
-####################################################################################################
-def urllib2_post_head(url, values, ref_url):
-    data = urllib.urlencode(values)
-
-    class NoRedirection(urllib2.HTTPErrorProcessor):
-        def http_response(self, request, response):
-            return response
-        https_response = http_response
-
-    opener = urllib2.build_opener(NoRedirection)
-    opener.addheaders = [('User-Agent', USER_AGENT), ('Referer', ref_url)]
-
-    try:
-        with contextlib.closing(opener.open(url, data=data,)) as resp:
-            h = resp.headers
-            return h['Location'] if 'Location' in h.keys() else (h['location'] if 'location' in h.keys() else url)
-    except urllib2.HTTPError, e:
-        Log.Error('* urllib2_post_head: %s' %str(e))
-
-    return url
