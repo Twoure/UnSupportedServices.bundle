@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 
 """
-ExaShare.com | Ajihezo.info Service Code
+ExaShare.com, s147gs.xyz, Ajihezo.info Service Code
 
 This code also works for YouWatch.org | Chouhaa.info, but those require a Referer value to access
-video URLs which Plex Framework is not setup to do yet, but can since Transcoder built off of ffmpeg.
+video URLs which Plex Framework is not setup to do yet, but could since Transcoder built off of ffmpeg.
 """
 
 USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36'
@@ -12,17 +12,18 @@ USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Ge
 ####################################################################################################
 def NormalizeURL(url):
 
-    if '/embed-' in url:
-        r = Regex(r'(https?\:\/\/(?:www\.)?\w+\.\w+\/)embed\-(\w+)').search(url)
-        url = r.group(1) + r.group(2)
-    return url
+    r = Regex(r'(https?\:\/\/(?:www\.)?\w+\.\w+\/)(?:embed\-)?(\w+)').search(url)
+    # set url to exashare, even though it's redirecting to s147gs.xyz
+    # ajihezo.info no longer redirects, but video hash is still valid
+    return 'http://exashare.com/' + r.group(2) if r else url
 
 ####################################################################################################
 def MetadataObjectForURL(url):
 
     try:
-        html = HTML.ElementFromURL(url)
+        html = HTML.ElementFromURL(url, cacheTime=10)
     except:
+        Log.Exception(u"* Error: Cannot open '{0}' >>>".format(url))
         raise Ex.MediaNotAvailable
 
     vid = Regex(r'https?\:\/\/(?:www\.)?\w+\.\w+\/(\w+)').search(url).group(1)
@@ -70,8 +71,9 @@ def PlayVideo(url, **kwargs):
 
     http_headers = {'User-Agent': USER_AGENT}
     try:
-        html = HTML.ElementFromURL(get_embed_url(url), headers=http_headers)
+        html = HTML.ElementFromURL(get_embed_url(url), headers=http_headers, cacheTime=10)
     except:
+        Log.Exception(u"* Error: Cannot open '{0}' >>>".format(url))
         raise Ex.MediaNotAvailable
 
     eurl = html.xpath('//iframe/@src')
@@ -79,8 +81,8 @@ def PlayVideo(url, **kwargs):
         page = HTTP.Request(eurl[0], headers=http_headers).content
         r = Regex(r'[\"\']?file[\"\']?\s*?\:\s*?[\"\'](http[^\"\'\?]+(?<!m3u8|smil))[\"\']').search(page)
         if r:
-            Log.Debug('* PlayVideo ULR = %s' %r.group(1))
-            return IndirectResponse(VideoClipObject, key=r.group(1), http_headers=http_headers)
+            Log.Debug(u"* PlayVideo URL = {0}".format(r.group(1)))
+            return IndirectResponse(VideoClipObject, key=r.group(1), user_agent=USER_AGENT)
 
     raise Ex.MediaNotAvailable
 
