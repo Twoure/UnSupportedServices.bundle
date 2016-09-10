@@ -14,8 +14,9 @@ def NormalizeURL(url):
 def MetadataObjectForURL(url):
 
     try:
-        html = HTML.ElementFromURL(url)
+        html = HTML.ElementFromURL(url, cacheTime=10)
     except:
+        Log.Exception(u"* Error: Cannot open '{}' >>>".format(url))
         raise Ex.MediaNotAvailable
 
     title = html.xpath('//h1/text()')
@@ -28,7 +29,7 @@ def MetadataObjectForURL(url):
     else:
         title = title[0].strip()
 
-    data = get_data(HTTP.Request(get_embed_url(url)).content)
+    data = get_data(HTTP.Request(get_embed_url(url), cacheTime=10).content)
     if 'url' not in data.keys():
         raise Ex.MediaNotAvailable
 
@@ -60,13 +61,14 @@ def MediaObjectsForURL(url):
 def PlayVideo(url, **kwargs):
 
     try:
-        page = HTTP.Request(get_embed_url(url)).content
+        page = HTTP.Request(get_embed_url(url), cacheTime=10).content
     except:
+        Log.Exception(u"* Error: Cannot open '{}' >>>".format(url))
         raise Ex.MediaNotAvailable
 
     data = get_data(page)
     if 'url' in data.keys():
-        Log.Debug('* PlayVideo URL = \"%s\"' %data['url'])
+        Log.Debug(u"* PlayVideo URL = {}".format(data['url']))
         return IndirectResponse(VideoClipObject, key=data['url'])
 
     raise Ex.MediaNotAvailable
