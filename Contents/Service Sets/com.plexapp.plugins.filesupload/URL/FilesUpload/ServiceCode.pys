@@ -1,6 +1,10 @@
 #!/usr/bin/env python
 
-"""FilesUpload.org Service Code"""
+"""
+FilesUpload.org Service Code
+
+Most direct video URLs are removed within a few days of creation, not a good streaming host
+"""
 
 ####################################################################################################
 def NormalizeURL(url):
@@ -18,6 +22,7 @@ def MetadataObjectForURL(url):
     try:
         html = HTML.ElementFromURL(url)
     except:
+        Log.Exception(u"* Error: Cannot open '{0}' >>>".format(url))
         raise Ex.MediaNotAvailable
 
     if html.xpath('//title[starts-with(text(), "File not found")]'):
@@ -50,12 +55,13 @@ def PlayVideo(url, **kwargs):
     try:
         html = HTML.ElementFromURL(url)
     except:
+        Log.Exception(u"* Error: Cannot open '{0}' >>>".format(url))
         raise Ex.MediaNotAvailable
 
     vurl = html.xpath('//video/source/@src')
     if vurl:
         vurl = vurl[0].replace('&amp;', '&')
-        Log.Debug('* PlayVideo ULR = %s' %vurl)
+        Log.Debug(u"* PlayVideo URL = {0}".format(vurl))
         return IndirectResponse(VideoClipObject, key=vurl)
 
     raise Ex.MediaNotAvailable
