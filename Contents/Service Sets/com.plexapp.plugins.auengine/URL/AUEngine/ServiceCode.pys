@@ -12,8 +12,9 @@ def NormalizeURL(url):
 def MetadataObjectForURL(url):
 
     try:
-        page = HTTP.Request(url).content
+        page = HTTP.Request(url, cacheTime=10).content
     except:
+        Log.Exception(u"* Error: Cannot open '{}' >>>".format(url))
         raise Ex.MediaNotAvailable
 
     title = Regex(r'\<title\>(.+)\<\/title\>').search(page)
@@ -50,13 +51,14 @@ def MediaObjectsForURL(url):
 def PlayVideo(url, **kwargs):
 
     try:
-        page = HTTP.Request(url).content
+        page = HTTP.Request(url, cacheTime=10).content
     except:
+        Log.Exception(u"* Error: Cannot open '{}' >>>".format(url))
         raise Ex.MediaNotAvailable
 
     r = Regex(r'var\s*?video\_link\s*?\=\s*?[\'\"](http[^\'\"]+(?<!m3u8|smil))').search(page)
     if r:
-        Log.Debug('* PlayVideo ULR = %s' %r.group(1))
+        Log.Debug(u"* PlayVideo URL = {}".format(r.group(1)))
         return IndirectResponse(VideoClipObject, key=r.group(1))
 
     raise Ex.MediaNotAvailable
