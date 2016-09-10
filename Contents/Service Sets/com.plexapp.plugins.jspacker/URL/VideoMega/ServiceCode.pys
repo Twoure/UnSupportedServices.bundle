@@ -19,6 +19,7 @@ def MetadataObjectForURL(url):
     try:
         html = HTML.ElementFromURL(url)
     except:
+        Log.Exception(u"* Error: Cannot open '{0}' >>>".format(url))
         raise Ex.MediaNotAvailable
 
     title = html.xpath('//title/text()')
@@ -65,14 +66,15 @@ def PlayVideo(url, **kwargs):
     try:
         page = HTTP.Request(url, headers=http_headers).content
     except:
+        Log.Exception(u"* Error: Cannot open '{0}' >>>".format(url))
         raise Ex.MediaNotAvailable
 
-    packed = Regex(r"(eval\(function\(p,a,c,k,e,.+(?:src).+\.split\('\|'\).*?\)\))").search(page)
+    packed = Regex(r"(eval\(function\(p,a,c,k,e,.+(?:\|src\|).+\.split\('\|'\).*?\)\))").search(page)
     if packed:
         data = Unpack(packed.group(1))
         vurl = Regex(r'"src"\s*,\s*"([^"]+)"').search(data)
         if vurl:
-            Log.Debug('* PlayVideo URL = %s' %vurl.group(1))
+            Log.Debug(u"* PlayVideo URL = {0}".format(vurl.group(1)))
             return IndirectResponse(VideoClipObject, key=vurl.group(1))
 
     raise Ex.MediaNotAvailable
