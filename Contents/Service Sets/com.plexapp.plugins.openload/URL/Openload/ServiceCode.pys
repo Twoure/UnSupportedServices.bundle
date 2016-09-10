@@ -3,8 +3,6 @@
 """Openload.co service code"""
 
 from openload import OpenloadStreamFromURL
-import contextlib
-import urllib2
 
 USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36'
 
@@ -23,6 +21,7 @@ def MetadataObjectForURL(url):
     try:
         html = HTML.ElementFromURL(url, cacheTime=CACHE_1MINUTE)
     except:
+        Log.Exception(u"* Error: Cannot open '{0}' >>>".format(url))
         raise Ex.MediaNotAvailable
 
     title = html.xpath('//meta[@name="og:title"]/@content')
@@ -33,6 +32,7 @@ def MetadataObjectForURL(url):
         if title:
             title = title[0]
         else:
+            Log.Error(u"* Error: Cannot find title within '{0}'".format(url))
             raise Ex.MediaNotAvailable
 
     fallback = 'http://i.imgur.com/75YO83o.jpg'
@@ -65,20 +65,16 @@ def PlayVideo(url, **kwargs):
 
     http_headers = {'User-Agent': USER_AGENT, 'Referer': url}
     ourl = OpenloadStreamFromURL(url, http_headers=http_headers)
+    vurl = None
     if ourl:
-        rourl = get_url_redirect(ourl, http_headers)
-        Log.Debug('* PlayVideo URL  = {}'.format(rourl))
-        return IndirectResponse(VideoClipObject, key=rourl)
+        try:
+            page = HTTP.Request(ourl, headers=http_headers, follow_redirects=False, method='HEAD').content
+            vurl = ourl
+        except Ex.RedirectError, e:
+            if 'Location' in e.headers:
+                vurl = e.headers['Location']
+        if vurl:
+            Log.Debug(u"* PlayVideo URL  = {0}".format(vurl))
+            return IndirectResponse(VideoClipObject, key=vurl)
 
     raise Ex.MediaNotAvailable
-
-####################################################################################################
-def get_url_redirect(url, http_headers):
-    try:
-        req = urllib2.Request(url, headers=http_headers)
-        req.get_method = lambda : 'HEAD'
-        with contextlib.closing(urllib2.urlopen(req)) as resp:
-            url = resp.geturl()
-    except Exception as e:
-        Log.Critical('* get_url_redirect Error: %s' %str(e))
-    return url
