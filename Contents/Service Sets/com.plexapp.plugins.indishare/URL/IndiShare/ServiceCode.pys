@@ -10,8 +10,9 @@ USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Ge
 def MetadataObjectForURL(url):
 
     try:
-        html = HTML.ElementFromURL(url)
+        html = HTML.ElementFromURL(url, cacheTime=10)
     except:
+        Log.Exception(u"* Error: Cannot open '{0}' >>>".format(url))
         raise Ex.MediaNotAvailable
 
     title = html.xpath('//h1/text()')
@@ -49,13 +50,14 @@ def PlayVideo(url, **kwargs):
 
     http_headers = {'User-Agent': USER_AGENT}
     try:
-        html1 = HTML.ElementFromURL(url, headers=http_headers)
+        html1 = HTML.ElementFromURL(url, headers=http_headers, cacheTime=10)
     except:
+        Log.Exception(u"* Error: Cannot open '{0}' >>>".format(url))
         raise Ex.MediaNotAvailable
 
     wait_time = html1.xpath('//span[contains(@id, "countdown")]/span/text()')
     if wait_time:
-        Log('* POST Wait time = %s' %wait_time[0].strip())
+        Log(u"* POST Wait time = {0}".format(wait_time[0].strip()))
         sleep(int(wait_time[0].strip()))
 
     data = dict()
@@ -64,8 +66,8 @@ def PlayVideo(url, **kwargs):
 
     try:
         html2 = HTML.ElementFromString(HTTP.Request(url, headers=http_headers, values=data).content)
-    except Exception as e:
-        Log.Error(str(e))
+    except:
+        Log.Exception(u"* Error: Cannot handle '{0}' >>>".format(url))
         raise Ex.MediaNotAvailable
 
     if (len(html2) is not None):
