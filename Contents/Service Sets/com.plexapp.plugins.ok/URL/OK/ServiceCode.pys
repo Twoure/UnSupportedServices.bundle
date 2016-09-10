@@ -14,8 +14,9 @@ def NormalizeURL(url):
 def MetadataObjectForURL(url):
 
     try:
-        data = JSON.ObjectFromURL(url)
+        data = JSON.ObjectFromURL(url, headers={'User-Agent': USER_AGENT}, cacheTime=10)
     except:
+        Log.Exception(u"* Error: Cannot open '{0}' >>>".format(url))
         raise Ex.MediaNotAvailable
 
     if data.get('error', '') == 'forbidden':
@@ -54,10 +55,10 @@ def MediaObjectsForURL(url):
 @indirect
 def PlayVideo(url, label, **kwargs):
 
-    http_headers = {'User-Agent': USER_AGENT}
     try:
-        data = JSON.ObjectFromURL(url, headers=http_headers)
+        data = JSON.ObjectFromURL(url, headers={'User-Agent': USER_AGENT}, cacheTime=10)
     except:
+        Log.Exception(u"* Error: Cannot open '{0}' >>>".format(url))
         raise Ex.MediaNotAvailable
 
     vurl = None
@@ -67,7 +68,7 @@ def PlayVideo(url, label, **kwargs):
             break
 
     if vurl:
-        Log.Debug('* PlayVideo ULR = %s' %item['url'])
-        return IndirectResponse(VideoClipObject, key=item['url'], http_headers=http_headers)
+        Log.Debug(u"* PlayVideo URL = {0}".format(item['url']))
+        return IndirectResponse(VideoClipObject, key=item['url'], user_agent=USER_AGENT)
 
     raise Ex.MediaNotAvailable
