@@ -12,8 +12,9 @@ def NormalizeURL(url):
 def MetadataObjectForURL(url):
 
     try:
-        html = HTML.ElementFromURL(url)
+        html = HTML.ElementFromURL(url, cacheTime=10)
     except:
+        Log.Exception(u"* Error: Cannot open '{0}' >>>".format(url))
         raise Ex.MediaNotAvailable
 
     title = html.xpath('//td[@id="file_title"]/text()')
@@ -54,8 +55,9 @@ def MediaObjectsForURL(url):
 def PlayVideo(url, **kwargs):
 
     try:
-        page = HTTP.Request(url).content
+        page = HTTP.Request(url, cacheTime=10).content
     except:
+        Log.Exception(u"* Error: Cannot open '{0}' >>>".format(url))
         raise Ex.MediaNotAvailable
 
     r = Regex(r'[\"\']?file[\"\']?\s*?\:\s*?[\"\'](rtmp[^\"\']+(?<!m3u8|smil))[\"\']').search(page)
@@ -65,7 +67,7 @@ def PlayVideo(url, **kwargs):
 
     if player and clip:
         Log.Debug('* PlayVideo RTMP Stream')
-        Log.Debug('* player = %s | clip = %s' %(player, clip))
+        Log.Debug(u"* player = {0} | clip = {1}".format(player, clip))
         return IndirectResponse(VideoClipObject, key=RTMPVideoURL(url=player, clip=clip))
 
     raise Ex.MediaNotAvailable
