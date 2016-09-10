@@ -133,9 +133,10 @@
       <dict>
         <key>URLPatterns</key>
         <array>
-          <string>^https?\:\/\/(www\.)?watchers\.(?:[^\/]+\/).+</string>
           <string>^https?\:\/\/(www\.)?estream\.(?:[^\/]+\/).+</string>
           <string>^https?\:\/\/(www\.)?playu\.(?:[^\/]+\/).+</string>
+          <string>^https?\:\/\/(www\.)?vidabc\.(?:[^\/]+\/).+</string>
+          <string>^https?\:\/\/(www\.)?watchers\.(?:[^\/]+\/).+</string>
         </array>
       </dict>
       <key>XFileShare</key>
