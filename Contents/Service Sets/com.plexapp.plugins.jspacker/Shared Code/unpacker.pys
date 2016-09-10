@@ -33,6 +33,7 @@ def unpack(source):
     try:
         unbase = Unbaser(radix)
     except TypeError:
+        Log.Exception('Unknown p.a.c.k.e.r. encoding.')
         raise UnpackingError('Unknown p.a.c.k.e.r. encoding.')
 
     def lookup(match):
@@ -83,6 +84,7 @@ class Unbaser(object):
         53 : '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQ',
         59 : '0123456789abcdefghijklmnopqrstuvwABCDEFGHIJKLMNOPQRSTUVWXYZ',
         62 : '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ',
+        64 : '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ+/',
         95 : (' !"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ'
             '[\]^_`abcdefghijklmnopqrstuvwxyz{|}~')
     }
@@ -99,7 +101,12 @@ class Unbaser(object):
                 self.dictionary = dict((cipher, index) for
                     index, cipher in enumerate(self.ALPHABET[base]))
             except KeyError:
-                raise TypeError('Unsupported base encoding.')
+                try:
+                    self.dictionary = dict((cipher, index) for
+                        index, cipher in enumerate(self.ALPHABET[64][:base]))
+                except KeyError:
+                    Log.Exception('Unsupported base encoding.')
+                    raise TypeError('Unsupported base encoding.')
 
             self.unbase = self.dictunbaser
 
