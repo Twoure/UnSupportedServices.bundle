@@ -56,7 +56,6 @@ def PlayVideo(url, **kwargs):
         Log.Debug(u"* PlayVideo URL = {0}".format(vurl))
         return IndirectResponse(VideoClipObject, key=vurl, http_headers=http_headers)
 
-
     raise Ex.MediaNotAvailable
 
 ####################################################################################################
