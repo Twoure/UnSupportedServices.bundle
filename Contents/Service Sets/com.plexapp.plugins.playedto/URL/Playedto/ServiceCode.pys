@@ -15,6 +15,7 @@ def MetadataObjectForURL(url):
     try:
         page = HTTP.Request(url, cacheTime=10).content
     except:
+        Log.Exception(u"* Error: Cannot open '{0}' >>>".format(url))
         raise Ex.MediaNotAvailable
 
     if Regex(r'(File was deleted)').search(page):
@@ -42,7 +43,6 @@ def MediaObjectsForURL(url):
 
     return [
         MediaObject(
-            video_resolution='sd',
             audio_channels=2,
             optimized_for_streaming=False,
             parts=[PartObject(key=Callback(PlayVideo, url=url))
@@ -57,6 +57,7 @@ def PlayVideo(url, **kwargs):
     try:
         page = HTTP.Request(url, cacheTime=10).content
     except:
+        Log.Exception(u"* Error: Cannot open '{0}' >>>".format(url))
         raise Ex.MediaNotAvailable
 
     r = Regex(r'[\"\']?file[\"\']?\s*?\:\s*?[\"\'](http[^\"\']+(?<!m3u8|smil))[\"\']').search(page)
