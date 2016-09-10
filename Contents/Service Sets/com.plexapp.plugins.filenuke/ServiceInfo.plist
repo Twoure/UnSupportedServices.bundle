@@ -9,7 +9,7 @@
       <key>URLPatterns</key>
       <array>
         <string>^nahttps?\:\/\/(?:www\.)?filenuke\.(?:[^\/]+\/).+</string>
-        <string>^https?\:\/\/(?:www\.)?sharesix\.(?:[^\/]+\/).+</string>
+        <string>^nahttps?\:\/\/(?:www\.)?sharesix\.(?:[^\/]+\/).+</string>
       </array>
     </dict>
   </dict>
