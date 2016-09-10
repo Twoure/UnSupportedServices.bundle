@@ -13,8 +13,9 @@ def NormalizeURL(url):
 def MetadataObjectForURL(url):
 
     try:
-        html = HTML.ElementFromURL(url)
+        html = HTML.ElementFromURL(url, cacheTime=10)
     except:
+        Log.Exception(u"* Error: Cannot open '{0}' >>>".format(url))
         raise Ex.MediaNotAvailable
 
     title = html.xpath('//span[@class="dfilename"]/text()')
@@ -54,13 +55,16 @@ def PlayVideo(url, **kwargs):
 
     rurl = Regex(r'(?i)(https?\:\/\/(?:www\.)?\w+\.\w+\/)([a-z0-9]+)').search(url)
     url = rurl.group(1) + 'embed-' + rurl.group(2) + '.html'
-    page = HTTP.Request(url).content
+    try:
+        page = HTTP.Request(url, cacheTime=10).content
+    except:
+        Log.Exception(u"* Error: Cannot handle '{0}' >>>".format(url))
+        raise Ex.MediaNotAvailable
 
     r = Regex(r'[\"\']?file[\"\']?\s*?\:\s*?[\"\'](http[^\"\']+(?<!m3u8|smil))[\"\']').findall(page)
-    if r:
-        for u in r:
-            if ('blank.mp4' not in u) and ('error.mp4' not in u):
-                Log.Debug('* PlayVideo URL = \"%s\"' %u)
-                return IndirectResponse(VideoClipObject, key=u)
+    for u in r:
+        if ('blank.mp4' not in u) and ('error.mp4' not in u):
+            Log.Debug(u"* PlayVideo URL = {0}".format(u))
+            return IndirectResponse(VideoClipObject, key=u)
 
     raise Ex.MediaNotAvailable
