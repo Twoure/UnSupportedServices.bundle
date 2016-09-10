@@ -25,6 +25,14 @@
           <string>^https?\:\/\/(www\.)?happystreams\.(?:[^\/]+\/).+</string>
         </array>
       </dict>
+      <key>iDoWatch</key>
+      <dict>
+        <key>URLPatterns</key>
+        <array>
+          <string>^https?\:\/\/(www\.)?idowatch\.(?:[^\/]+\/).+</string>
+          <string>^https?\:\/\/(www\.)?letwatch\.(?:[^\/]+\/).+</string>
+        </array>
+      </dict>
       <key>Movdivx</key>
       <dict>
         <key>URLPatterns</key>
