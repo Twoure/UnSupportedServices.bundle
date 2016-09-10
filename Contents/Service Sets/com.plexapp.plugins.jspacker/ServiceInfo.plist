@@ -31,6 +31,7 @@
         <array>
           <string>^https?\:\/\/(www\.)?idowatch\.(?:[^\/]+\/).+</string>
           <string>^https?\:\/\/(www\.)?letwatch\.(?:[^\/]+\/).+</string>
+          <string>^https?\:\/\/(www\.)?megamp4\.(?:[^\/]+\/).+</string>
         </array>
       </dict>
       <key>Movdivx</key>

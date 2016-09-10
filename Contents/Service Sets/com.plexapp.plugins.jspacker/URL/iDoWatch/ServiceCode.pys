@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-"""iDoWatch.net, LetWatch.(us|to) Service Code"""
+"""iDoWatch.net, LetWatch.(us|to), MegaMP4.net Service Code"""
 
 from unpacker import unpack as Unpack
 
