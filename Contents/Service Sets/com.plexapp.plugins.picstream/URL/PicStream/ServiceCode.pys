@@ -41,7 +41,6 @@ def MediaObjectsForURL(url):
 
     return [
         MediaObject(
-            video_resolution='sd',
             audio_channels=2,
             optimized_for_streaming=False,
             parts=[
@@ -60,7 +59,7 @@ def PlayVideo(url, **kwargs):
 
     vurl = html.xpath('//video/@src')
     if vurl:
-        Log.Debug('* PlayVideo ULR = %s' %vurl[0])
+        Log.Debug(u"* PlayVideo URL = {0}".format(vurl[0]))
         return IndirectResponse(VideoClipObject, key=vurl[0])
 
     raise Ex.MediaNotAvailable
@@ -74,11 +73,10 @@ def get_pass_url(page):
 def setup_pass_page(url):
     http_headers = {'User-Agent': USER_AGENT}
     try:
-        page = HTTP.Request(url, headers=http_headers, sleep=3).content
+        page = HTTP.Request(url, headers=http_headers, sleep=3, cacheTime=CACHE_1MINUTE).content
         cookies = HTTP.CookiesForURL(url)
-    except Exception as e:
-        Log.Error('* Cannot open %s' %url)
-        Log.Error(str(e))
+    except:
+        Log.Exception(u"* Cannot open '{0}' >>>".format(url))
         return False
 
     purl = get_pass_url(page)
@@ -87,10 +85,8 @@ def setup_pass_page(url):
         return False
 
     http_headers.update({'Referer': url, 'Cookie': cookies})
-    Log(http_headers)
     try:
-        return HTML.ElementFromURL(purl, headers=http_headers)
-    except Exception as e:
-        Log.Error('* Error getting html info from pass page')
-        Log.Error(str(e))
+        return HTML.ElementFromURL(purl, headers=http_headers, cacheTime=CACHE_1MINUTE)
+    except:
+        Log.Exception(u"* Error getting html page from '{0}'".format(purl))
         return False
