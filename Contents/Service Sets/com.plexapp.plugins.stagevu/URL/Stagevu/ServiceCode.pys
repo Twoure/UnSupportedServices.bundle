@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-"""Stagevu service code"""
+"""Stagevu.com Service Code"""
 
 ####################################################################################################
 def NormalizeURL(url):
@@ -11,8 +11,9 @@ def NormalizeURL(url):
 def MetadataObjectForURL(url):
 
     try:
-        html = HTML.ElementFromURL(url)
+        html = HTML.ElementFromURL(url, cacheTime=10)
     except:
+        Log.Exception(u"* Error: Cannot open '{0}' >>>".format(url))
         raise Ex.MediaNotAvailable
 
     embed_node = html.xpath('//embed[@type="video/divx"]')
@@ -57,7 +58,6 @@ def MediaObjectsForURL(url):
 
     return [
         MediaObject(
-            video_resolution='sd',
             audio_channels=2,
             optimized_for_streaming=False,
             parts=[
@@ -71,13 +71,14 @@ def MediaObjectsForURL(url):
 def PlayVideo(url, **kwargs):
 
     try:
-        html = HTML.ElementFromURL(url)
+        html = HTML.ElementFromURL(url, cacheTime=10)
     except:
+        Log.Exception(u"* Error: Cannot open '{0}' >>>".format(url))
         raise Ex.MediaNotAvailable
 
     vurl = html.xpath('//embed[@type="video/divx"]/@src')
     if vurl:
-        Log.Debug('* PlayVideo URL  = %s' %vurl[0])
+        Log.Debug(u"* PlayVideo URL = {0}".format(vurl[0]))
         return IndirectResponse(VideoClipObject, key=vurl[0])
 
     raise Ex.MediaNotAvailable
