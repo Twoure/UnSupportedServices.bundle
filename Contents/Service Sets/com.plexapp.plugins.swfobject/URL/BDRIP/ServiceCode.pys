@@ -2,6 +2,8 @@
 
 """BDRIP.ws Service Code"""
 
+USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/53.0.2785.92 Safari/537.36'
+
 ####################################################################################################
 def NormalizeURL(url):
     r = Regex(r'(https?\:\/\/(?:www\.)?\w+\.\w+\/)(?:\w+\/|[^\=]+\=)(\w+)').search(url)
@@ -11,15 +13,16 @@ def NormalizeURL(url):
 def MetadataObjectForURL(url):
 
     try:
-        html = HTML.ElementFromURL(url)
+        html = HTML.ElementFromURL(url, cacheTime=CACHE_1MINUTE, headers={'User-Agent': USER_AGENT})
     except:
+        Log.Exception(u"* Error: Cannot open '{0}' >>>".format(url))
         raise Ex.MediaNotAvailable
 
     if html.xpath('//h2[text()="404 video"]'):
         raise Ex.MediaExpired
 
     return VideoClipObject(
-        title='BDRIP | %s' %url.split('=')[-1],
+        title=u'BDRIP | {0}'.format(url.split('=')[-1]),
         thumb='http://i.imgur.com/75YO83o.jpg',
         source_title='BDRIP'
         )
@@ -29,7 +32,6 @@ def MediaObjectsForURL(url):
 
     return [
         MediaObject(
-            video_resolution='sd',
             audio_channels=2,
             optimized_for_streaming=False,
             parts=[
@@ -43,13 +45,14 @@ def MediaObjectsForURL(url):
 def PlayVideo(url, **kwargs):
 
     try:
-        page = HTTP.Request(url).content
+        page = HTTP.Request(url, cacheTime=CACHE_1MINUTE, headers={'User-Agent': USER_AGENT}).content
     except:
+        Log.Exception(u"* Error: Cannot open '{0}' >>>".format(url))
         raise Ex.MediaNotAvailable
 
     r = Regex(r'[\'\"]?file[\'\"]?\s*?\,\s*?[\'\"]([^\'\"]+)[\'\"]').search(page)
     if r:
-        Log.Debug('* PlayVideo SWF Clip = %s' %r.group(1))
+        Log.Debug(u'* PlayVideo SWF Clip = {0}'.format(r.group(1)))
         player = String.Base64Decode('cnRtcDovLzkzLjExNS44Ny4xMDM6MTkzNS92b2Qv')
         clip = r.group(1) if r.group(1).startswith('mp4') else 'mp4:' + r.group(1)
         return IndirectResponse(VideoClipObject, key=RTMPVideoURL(url=player, clip=clip))

@@ -2,6 +2,8 @@
 
 """HDWide.co & StormVid.co Service Code"""
 
+USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/53.0.2785.92 Safari/537.36'
+
 ####################################################################################################
 def NormalizeURL(url):
     r = Regex(r'(https?\:\/\/(?:www\.)?\w+\.\w+\/)(?:\w+\/|[^\=]+\=)(\w+)').search(url)
@@ -11,8 +13,9 @@ def NormalizeURL(url):
 def MetadataObjectForURL(url):
 
     try:
-        html = HTML.ElementFromURL(url)
+        html = HTML.ElementFromURL(url, headers={'User-Agent': USER_AGENT}, cacheTime=10)
     except:
+        Log.Exception(u"* Error: Cannot open '{0}' >>>".format(url))
         raise Ex.MediaNotAvailable
 
     if not html.xpath('//form[@method="POST"]'):
@@ -22,7 +25,7 @@ def MetadataObjectForURL(url):
     source_title = st.group(1).title() if st else 'HDWide'
 
     return VideoClipObject(
-        title='%s | %s' %(source_title, url.split('/')[-2]),
+        title=u'{0} | {1}'.format(source_title, url.split('/')[-2]),
         thumb='http://i.imgur.com/75YO83o.jpg',
         source_title=source_title
         )
@@ -32,7 +35,6 @@ def MediaObjectsForURL(url):
 
     return [
         MediaObject(
-            video_resolution='sd',
             audio_channels=2,
             optimized_for_streaming=False,
             parts=[
@@ -46,13 +48,15 @@ def MediaObjectsForURL(url):
 def PlayVideo(url, **kwargs):
 
     try:
-        page = HTTP.Request(get_embed_url(url)).content
+        eurl = get_embed_url(url)
+        page = HTTP.Request(eurl, headers={'User-Agent': USER_AGENT}, cacheTime=10).content
     except:
+        Log.Exception(u"* Error: Cannot open '{0}' >>>".format(eurl))
         raise Ex.MediaNotAvailable
 
     r = Regex(r'[\'\"]?file[\'\"]?\s*?\,\s*?[\'\"]([^\'\"]+)[\'\"]').search(page)
     if r:
-        Log.Debug('* PlayVideo SWF Clip = %s' %r.group(1))
+        Log.Debug(u'* PlayVideo SWF Clip = {0}'.format(r.group(1)))
         player = String.Base64Decode('cnRtcDovLzkzLjExNS44Ny4xMDM6MTkzNS92b2Qv')
         clip = r.group(1) if r.group(1).startswith('mp4') else 'mp4:' + r.group(1)
         return IndirectResponse(VideoClipObject, key=RTMPVideoURL(url=player, clip=clip))

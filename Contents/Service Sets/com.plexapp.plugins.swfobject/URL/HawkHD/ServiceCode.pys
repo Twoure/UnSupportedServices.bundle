@@ -15,10 +15,10 @@ def NormalizeURL(url):
 ####################################################################################################
 def MetadataObjectForURL(url):
 
-    http_headers = {'User-Agent': USER_AGENT}
     try:
-        html = HTML.ElementFromURL(url, headers=http_headers)
+        html = HTML.ElementFromURL(url, cacheTime=CACHE_1MINUTE, headers={'User-Agent': USER_AGENT})
     except:
+        Log.Exception(u"* Error: Cannot open '{0}' >>>".format(url))
         raise Ex.MediaNotAvailable
 
     if html.xpath('//h1[text()="Sorry file not found"]'):
@@ -28,7 +28,7 @@ def MetadataObjectForURL(url):
     source_title = st.group(1).title() if st else 'HawkHD'
 
     return VideoClipObject(
-        title='%s | %s' %(source_title, url.split('=')[-1]),
+        title=u'{0} | {1}'.format(source_title, url.split('=')[-1]),
         thumb='http://i.imgur.com/75YO83o.jpg',
         source_title=source_title
         )
@@ -38,7 +38,6 @@ def MediaObjectsForURL(url):
 
     return [
         MediaObject(
-            video_resolution='sd',
             audio_channels=2,
             optimized_for_streaming=False,
             parts=[
@@ -54,20 +53,25 @@ def PlayVideo(url, **kwargs):
     http_headers = {'User-Agent': USER_AGENT}
     cookies = HTTP.CookiesForURL(url)
     if not cookies:
-        HTTP.Request(url, headers=http_headers).load()
+        HTTP.Request(url, headers=http_headers, cacheTime=0, immediate=True)
         cookies = HTTP.CookiesForURL(url)
 
-    http_headers.update({'Referer': url, 'Cookie': cookies})
-    values = {'confirm': 'Continue as Free User'}
+    http_headers['Referer'] = url
+    if cookies:
+        http_headers['Cookie'] = cookies
+    else:
+        Log.Warn(u"* Warning: cannot find cookies for '{0}'".format(url))
 
     try:
-        page = HTTP.Request(get_embed_url(url), headers=http_headers, values=values).content
+        eurl = get_embed_url(url)
+        page = HTTP.Request(eurl, headers=http_headers, values={'confirm': 'Continue as Free User'}).content
     except:
+        Log.Exception(u"* Error: Cannot open '{0}' >>>".format(eurl))
         raise Ex.MediaNotAvailable
 
     r = Regex(r'[\'\"]?file[\'\"]?\s*?\,\s*?[\'\"]([^\'\"]+)[\'\"]').search(page)
     if r:
-        Log.Debug('* PlayVideo SWF Clip = %s' %r.group(1))
+        Log.Debug(u'* PlayVideo SWF Clip = {0}'.format(r.group(1)))
         player = String.Base64Decode('cnRtcDovLzkzLjExNS44Ny4xMDM6MTkzNS92b2Qv')
         clip = r.group(1) if r.group(1).startswith('mp4') else 'mp4:' + r.group(1)
         return IndirectResponse(VideoClipObject, key=RTMPVideoURL(url=player, clip=clip))
