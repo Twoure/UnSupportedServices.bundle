@@ -8,8 +8,9 @@ USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Ge
 def MetadataObjectForURL(url):
 
     try:
-        html = HTML.ElementFromURL(url)
+        html = HTML.ElementFromURL(url, cacheTime=10, headers={'User-Agent': USER_AGENT})
     except:
+        Log.Exception(u"* Error: Cannot open '{0}' >>>".format(url))
         raise Ex.MediaNotAvailable
 
     title = html.xpath('//input[@name="fname"]/@value')
@@ -29,7 +30,6 @@ def MediaObjectsForURL(url):
 
     return [
         MediaObject(
-            video_resolution='sd',
             audio_channels=2,
             optimized_for_streaming=False,
             parts=[
@@ -44,8 +44,9 @@ def PlayVideo(url, **kwargs):
 
     http_headers = {'User-Agent': USER_AGENT}
     try:
-        base_html = HTML.ElementFromURL(url, headers=http_headers)
+        base_html = HTML.ElementFromURL(url, headers=http_headers, cacheTime=10)
     except:
+        Log.Exception(u"* Error: Cannot open '{0}' >>>".format(url))
         raise Ex.MediaNotAvailable
 
     html = get_post_html(url, base_html)
@@ -67,7 +68,7 @@ def get_post_html(url, html):
     http_headers = {'User-Agent': USER_AGENT, 'Referer': url}
     data = dict()
     for item in html.xpath('//input'):
-        data.update({item.get('name'): item.get('value')})
+        data[item.get('name')] = item.get('value')
 
     if bool(data):
         return get_post_html(url, HTML.ElementFromString(HTTP.Request(url, headers=http_headers, values=data).content))
