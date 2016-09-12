@@ -11,10 +11,10 @@ def NormalizeURL(url):
 def MetadataObjectForURL(url):
 
     try:
-        page = HTTP.Request(url).content
+        page = HTTP.Request(url, cacheTime=10).content
         html = HTML.ElementFromString(page)
-    except Exception as e:
-        Log.Error('* MetadataObjectForURL Error: %s' %str(e))
+    except:
+        Log.Exception(u"* Error: Cannot open '{0}' >>>".format(url))
         raise Ex.MediaNotAvailable
 
     title = html.xpath('//meta[@property="og:title"]/@content')
@@ -27,6 +27,9 @@ def MetadataObjectForURL(url):
 
     data = get_data(page)
     if not 'vpi' in data.keys():
+        raise Ex.MediaExpired
+    elif data.get('type', 'Flash').lower() != 'flash':
+        Log.Warn(u"* Host video server offline for '{0}' file within '{1}'".format(data['type'], url))
         raise Ex.MediaExpired
 
     summary = html.xpath('//td[@class="infodropdown"]//div')
@@ -79,9 +82,9 @@ def MediaObjectsForURL(url):
 def PlayVideo(url, **kwargs):
 
     try:
-        page = HTTP.Request(url).content
-    except Exception as e:
-        Log.Error('* PlayVideo Error1: %s' %str(e))
+        page = HTTP.Request(url, cacheTime=10).content
+    except:
+        Log.Exception(u"* Error: Cannot open '{0}' >>>".format(url))
         raise Ex.MediaNotAvailable
 
     rvpi = Regex(r'(\/vpi\?[^\'\"]+)').search(page)
@@ -90,8 +93,8 @@ def PlayVideo(url, **kwargs):
 
         try:
             html = HTML.ElementFromURL(base_url.group(1) + rvpi.group(1))
-        except Exception as e:
-            Log.Error('* PlayVideo Error2: %s' %str(e))
+        except:
+            Log.Exception(u"* PlayVideo Error2 >>>")
             raise Ex.MediaNotAvailable
 
         embed = html.xpath('//embed[@type="video/divx"]/@src')
@@ -99,40 +102,40 @@ def PlayVideo(url, **kwargs):
 
         if embed:
             if len(embed) != 0:
-                Log.Debug('* PlayVideo DIVX URL = %s' %embed[0])
+                Log.Debug(u'* PlayVideo DIVX URL = {0}'.format(embed[0]))
                 return IndirectResponse(VideoClipObject, key=embed[0])
         elif flashvars:
             if len(flashvars) != 0:
                 json = flashvars[0].split('config=')[-1]
                 json_obj = JSON.ObjectFromString(json)
                 video_url = String.Unquote(json_obj['clip']['url'])
-                Log.Debug('* PlayVideo Flash URL = %s' %video_url)
+                Log.Debug(u'* PlayVideo Flash URL = {0}'.format(video_url))
                 return IndirectResponse(VideoClipObject, key=video_url)
 
     raise Ex.MediaNotAvailable
 
 ####################################################################################################
 def get_data(page):
-    info = {}
+    info = dict()
 
     rvpi = Regex(r'(\/vpi\?[^\'\"]+)').search(page)
     if rvpi:
-        info.update({'vpi': rvpi.group(1)})
+        info['vpi'] = rvpi.group(1)
 
     rd = Regex(r'(?i)duration\s*?\:\s*?([0-9\:]+)').search(page)
     if rd:
-        info.update({'duration': rd.group(1)})
+        info['duration'] = rd.group(1)
 
     rres = Regex(r'(?i)resolution\s*?\:\s*?([0-9x]+)').search(page)
     if rres:
-        info.update({'res': rres.group(1).split('x')[-1]})
+        info['res'] = rres.group(1).split('x')[-1]
 
     rbit = Regex(r'(?i)bitrate\s*?\:\s*?([0-9]+)').search(page)
     if rbit:
-        info.update({'bitrate': rbit.group(1)})
+        info['bitrate'] = rbit.group(1)
 
     rtype = Regex(r'(?i)type\s*?\:\s*?(flash|divx)').search(page)
     if rtype:
-        info.update({'type': rtype.group(1)})
+        info['type'] = rtype.group(1)
 
     return info
