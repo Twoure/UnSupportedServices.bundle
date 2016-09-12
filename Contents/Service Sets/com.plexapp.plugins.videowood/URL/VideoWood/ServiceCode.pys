@@ -4,13 +4,14 @@
 """VideoWood.tv Service Code"""
 
 from unpacker import unpack as Unpack
-from aadecode import decode as AADecode
+from aadecode import aadecode as AADecode
 
+REGEX_PACKED = Regex(r"(eval\(function\(p,a,c,k,e,.+(?:\|file\||\|src\|).+\.split\('\|'\)\)\))")
 USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36'
 
 ####################################################################################################
 def NormalizeURL(url):
-    if '/embed-' not in url:
+    if '/embed/' not in url:
         r = Regex(r'(https?\:\/\/(?:www\.)?\w+\.\w+\/)\w+\/(\w+)').search(url)
         url = r.group(1) + 'embed/' + r.group(2) if r else url
     return url
@@ -19,19 +20,17 @@ def NormalizeURL(url):
 def MetadataObjectForURL(url):
 
     try:
-        page = HTTP.Request(url).content
+        page = HTTP.Request(url, cacheTime=10, headers={'User-Agent': USER_AGENT}, encoding='utf-8').content
         html = HTML.ElementFromString(page)
     except:
+        Log.Exception(u"* Error: Cannot open '{0}' >>>".format(url))
         raise Ex.MediaNotAvailable
 
     tnode = html.xpath('//div[@class="videotitle"]/span/text()')
     if not tnode:
         raise Ex.MediaExpired
 
-    title = tnode[0].strip()
-    duration = Datetime.MillisecondsFromString(tnode[1].strip()) if len(tnode) > 1 else None
-
-    packed = get_packed_data(page)
+    packed = REGEX_PACKED.search(page)
     if packed:
         page = Unpack(packed.group(1))
 
@@ -41,8 +40,8 @@ def MetadataObjectForURL(url):
     thumb = rt.group(1).replace('\\', '') if rt else fallback
 
     return VideoClipObject(
-        title=title,
-        duration=duration,
+        title=tnode[0].strip(),
+        duration=Datetime.MillisecondsFromString(tnode[1].strip()) if len(tnode) > 1 else None,
         thumb=Resource.ContentsOfURLWithFallback([thumb, fallback]),
         source_title='VideoWood'
         )
@@ -52,7 +51,6 @@ def MediaObjectsForURL(url):
 
     return [
         MediaObject(
-            video_resolution='sd',
             audio_channels=2,
             optimized_for_streaming=False,
             parts=[
@@ -65,23 +63,19 @@ def MediaObjectsForURL(url):
 @indirect
 def PlayVideo(url, **kwargs):
 
-    http_headers = {'User-Agent': USER_AGENT}
     try:
-        page = HTTP.Request(url, encoding=('utf-8'), headers=http_headers).content
+        page = HTTP.Request(url, encoding=('utf-8'), headers={'User-Agent': USER_AGENT}, cacheTime=10).content
     except:
+        Log.Exception(u"* Error: Cannot open '{0}' >>>".format(url))
         raise Ex.MediaNotAvailable
 
-    text = Regex(r'(?si)(ﾟωﾟ[^\<]*)').search(page)
+    text = Regex(r'(?si)(ﾟωﾟ[^\<]+)').search(page)
     data = AADecode(text.group(1)) if text else None
 
     if data:
         r = Regex(r'\=[\'\"](http[^\'\"]+)[\'\"]').search(data)
         if r:
-            Log.Debug('* PlayVideo ULR = %s' %r.group(1))
+            Log.Debug(u"* PlayVideo URL = {0}".format(r.group(1)))
             return IndirectResponse(VideoClipObject, key=r.group(1))
 
     raise Ex.MediaNotAvailable
-
-####################################################################################################
-def get_packed_data(page):
-    return Regex(r"(eval\(function\(p,a,c,k,e,.+(?:file|src).+\.split\('\|'\)\)\))").search(page)

@@ -10,23 +10,22 @@
 # @robalo & @Cmos
 # http://blog.tvalacarta.info/plugin-xbmc/pelisalacarta/
 # ------------------------------------------------------------
-# Edited 07/05/2016 By Twoure for use with Plex Media Server
+# Edited 09/12/2016 By Twoure for use with Plex Media Server
 
-import re
 from __builtin__ import eval
 
 def find_single_match(data, pattern, index=0):
     try:
-        matches = re.findall(pattern, data, flags=re.DOTALL)
+        matches = Regex(pattern).findall(data, Regex.DOTALL)
         return matches[index]
     except:
         return ""
 
 def find_multiple_matches(text, pattern):
-    return re.findall(pattern, text, re.DOTALL)
+    return Regex(pattern).findall(text, Regex.DOTALL)
 
-def decode(text):
-    text = re.sub(r"\s+|/\*.*?\*/", "", text)
+def aadecode(text):
+    text = Regex(r"\s+|/\*.*?\*/").sub("", text)
     data = text.split("+(ﾟДﾟ)[ﾟoﾟ]")[1]
     chars = data.split("+(ﾟДﾟ)[ﾟεﾟ]+")[1:]
 
@@ -43,7 +42,7 @@ def decode(text):
             .replace("_", "3") \
             .replace("ﾟｰﾟ", "4") \
             .replace("(+", "(")
-        char = re.sub(r'\((\d)\)', r'\1', char)
+        char = Regex(r'\((\d)\)').sub(r'\1', char)
 
         c = ""; subchar = ""
         for v in list(char):
@@ -68,17 +67,16 @@ def toStringCases(txt_result):
             txt_temp = [ (n, b) for b ,n in txt_pre_temp ]
         else:
             txt_temp = find_multiple_matches(txt_result, '(\d+)\.0.\w+.([^\)]+).')
-        for numero, base in txt_temp:
-            code = toString( int(numero), eval(base+sum_base) )
+        for number, base in txt_temp:
+            code = toString( int(number), eval(base+sum_base) )
             if m3:
-                txt_result = re.sub( r'"|\+', '', txt_result.replace("("+base+","+numero+")", code) )
+                txt_result = Regex( r'"|\+').sub('', txt_result.replace("("+base+","+number+")", code) )
             else:
-                txt_result = re.sub( r"'|\+", '', txt_result.replace(numero+".0.toString("+base+")", code) )
+                txt_result = Regex( r"'|\+").sub('', txt_result.replace(number+".0.toString("+base+")", code) )
     return txt_result
 
 def toString(number, base):
     string = "0123456789abcdefghijklmnopqrstuvwxyz"
     if number < base:
         return string[number]
-    else:
-        return toString(number//base,base) + string[number%base]
+    return toString(number//base,base) + string[number%base]
