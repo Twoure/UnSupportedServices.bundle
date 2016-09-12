@@ -2,6 +2,17 @@
 <!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
   <dict>
+    <key>Search</key>
+    <dict>
+      <key>AllMyVideos</key>
+      <dict></dict>
+      <key>TheVideo</key>
+      <dict></dict>
+      <key>VoDLocker</key>
+      <dict></dict>
+      <key>XVIDSTAGE</key>
+      <dict></dict>
+    </dict>
     <key>URL</key>
     <dict>
       <key>AllVid</key>
