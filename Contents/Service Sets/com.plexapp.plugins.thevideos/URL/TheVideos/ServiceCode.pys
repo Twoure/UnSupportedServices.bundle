@@ -11,8 +11,9 @@ def NormalizeURL(url):
 def MetadataObjectForURL(url):
 
     try:
-        html = HTML.ElementFromURL(url)
+        html = HTML.ElementFromURL(url, cacheTime=10)
     except:
+        Log.Exception(u"* Error: Cannot open '{0}' >>>".format(url))
         raise Ex.MediaNotAvailable
 
     title = html.xpath('//title/text()')
@@ -20,8 +21,10 @@ def MetadataObjectForURL(url):
         raise Ex.MediaExpired
 
     try:
-        page = HTTP.Request(get_embed_url(url)).content
+        eurl = get_embed_url(url)
+        page = HTTP.Request(eurl, cacheTime=10).content
     except:
+        Log.Exception(u"* Error: Cannot open '{0}' >>>".format(eurl))
         raise Ex.MediaNotAvailable
 
     rt = Regex(r'[\'\"]?image[\'\"]?\s*?\:\s*?[\'\"](http[^\'\"]+)[\'\"]').search(page)
@@ -41,10 +44,10 @@ def MetadataObjectForURL(url):
 ####################################################################################################
 def MediaObjectsForURL(url):
 
-    mo = []
+    mo = list()
     eurl = get_embed_url(url)
     fmt_list = source_dict(eurl)
-    for item in reversed(sorted(fmt_list, key=lambda k: k['label'])):
+    for item in reversed(Util.ListSortedByKey(fmt_list, 'label')):
         mo.append(MediaObject(
             video_resolution=item['label'],
             audio_channels=2,
@@ -52,7 +55,7 @@ def MediaObjectsForURL(url):
             parts=[PartObject(key=Callback(PlayVideo, url=eurl, label=item['label']))]
             ))
 
-    if len(mo) != 0:
+    if mo:
         return mo
 
     raise Ex.MediaNotAvailable
@@ -64,7 +67,7 @@ def PlayVideo(url, label, **kwargs):
     fmt_list = source_dict(url)
     for item in fmt_list:
         if label == item['label']:
-            Log.Debug('* PlayVideo URL  = %s' %item['file'])
+            Log.Debug(u"* PlayVideo URL = {0}".format(item['file']))
             return IndirectResponse(VideoClipObject, key=item['file'])
 
     raise Ex.MediaNotAvailable
@@ -77,12 +80,14 @@ def get_embed_url(url):
 ####################################################################################################
 def source_dict(url):
     try:
-        page = HTTP.Request(url).content
+        page = HTTP.Request(url, cacheTime=10).content
     except:
+        Log.Exception(u"* Error: Cannot open '{0}' >>>".format(url))
         raise Ex.MediaNotAvailable
 
     sources = Regex(r'sources:\s*?(\[[^\]]+\])').search(page)
     if not sources:
+        Log.Warn(u"* Warning: Cannot find sources within '{0}'".format(url))
         raise Ex.MediaExpired
 
     s = sources.group(1)
