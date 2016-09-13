@@ -4,14 +4,18 @@
 New WholeCloud Service Code
 Added new host and simplified code
 better error handling
-Host:
-    movshare | wholecloud, novamov | auroravid, videoweed | bitvid,
-    cloudtime.to | divxstage.to, nowvideo, vidgg, cloudy.ec | videoraj.to
-"""
 
-from urllib import quote, unquote
-import urllib2
-import contextlib
+Hosts, mainly still using API:
+    movshare.net | wholecloud.net,
+    cloudy.ec, videoraj.to
+
+Hosts, some updated to HTML5 but not all have switched yet
+    auroravid.to | novamov.com,
+    bitvid.sx | videoweed.es,
+    cloudtime.to | divxstage.to,
+    nowvideo.(sx|li|eu),
+    vid(gg.to|.gg)
+"""
 
 USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36'
 
@@ -19,21 +23,19 @@ USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Ge
 def NormalizeURL(url):
 
     rurl = url_check(url.replace('nowvideo.eu', 'nowvideo.li').replace('//embed.', '//'), geturl=True)
-    url = rurl if rurl != bool() else url
+    if not isinstance(rurl, bool):
+        url = rurl
 
-    if '/embed/' in url:
-        r = Regex(r'(?i)(https?\:\/\/(?:www\.)?\w+\.\w+)\/(?:\w+\/|embed\.php)?(?:\?\w+\=)?([0-9a-z]+)').search(url)
-        v = '/v/' if Regex(r'(cloudy|videoraj)').search(r.group(1)) else '/video/'
-        url = r.group(1) + v + r.group(2)
-
-    return url
+    r = Regex(r'(https?\:\/\/(?:www\.)?\w+\.\w+)\/(?:\w+\/|embed\.php)?(?:\?\w+\=)?(\w+)').search(url)
+    return r.group(1) + ('/v/' if Regex(r'(cloudy|videoraj)').search(r.group(1)) else '/video/') + r.group(2) if r else url
 
 ####################################################################################################
 def MetadataObjectForURL(url):
 
     try:
-        html = HTML.ElementFromURL(url)
+        html = HTML.ElementFromURL(url, cacheTime=10)
     except:
+        Log.Exception(u"* Error: Cannot open '{0}' >>>".format(url))
         raise Ex.MediaNotAvailable
 
     st = Regex(r'https?\:\/\/(?:www\.)?(\w+)\.\w+').search(url)
@@ -68,17 +70,16 @@ def MetadataObjectForURL(url):
         raise Ex.MediaNotAvailable
 
     return VideoClipObject(
-      title=title,
-      thumb=Resource.ContentsOfURLWithFallback([thumb, fallback]),
-      source_title=source_title
-      )
+        title=title,
+        thumb=Resource.ContentsOfURLWithFallback([thumb, fallback]),
+        source_title=source_title
+        )
 
 ####################################################################################################
 def MediaObjectsForURL(url):
 
     return [
         MediaObject(
-            video_resolution='sd',
             audio_channels=2,
             optimized_for_streaming=False,
             parts=[
@@ -97,32 +98,42 @@ def PlayVideo(url, **kwargs):
     elif not vurl:
         raise Ex.MediaNotAvailable
 
-    Log.Debug('* PlayVideo URL = %s' %vurl)
+    Log.Debug(u'* PlayVideo URL = {0}'.format(vurl))
     return IndirectResponse(VideoClipObject, key=vurl)
 
 ####################################################################################################
 def get_embed_url(url):
-    if not Regex(r'(\/embed[\/|\.])').search(url):
-        r = Regex(r'(?i)(https?\:\/\/(?:www\.)?(\w+)\.\w+)\/\w+\/(?:\?\w+\=)?([0-9a-z]+)').search(url)
-        v = 'id' if Regex(r'(vidgg|cloudy|videoraj)').search(r.group(2)) else 'v'
-        e = 'embed.php' if Regex(r'(cloudy|videoraj)').search(r.group(2)) else 'embed/'
-        url = r.group(1) + '/%s?%s=' %(e, v) + r.group(3)
-    return url
+    r = Regex(r'(https?\:\/\/(?:www\.)?(\w+)\.\w+)\/\w+\/(?:\?\w+\=)?(\w+)').search(url)
+    return r.group(1) + ('/embed.php?id=' if Regex(r'(cloudy|videoraj)').search(r.group(2)) else '/embed/?v=')  + r.group(3)
 
 ####################################################################################################
-def setup_playvideo(url):
+def setup_playvideo(url, force=False):
 
-    page = HTTP.Request(get_embed_url(url), headers={'User-Agent': USER_AGENT}).content
+    eurl = url if Regex(r'(?:\/|\.)(vidgg)\.').search(url) and not force else get_embed_url(url)
+    try:
+        page = HTTP.Request(eurl, headers={'User-Agent': USER_AGENT}, cacheTime=10).content
+        html = HTML.ElementFromString(page)
+    except:
+        Log.Exception(u"* Error: Cannot open '{0}' >>>".format(eurl))
+        raise Ex.MediaNotAvailable
+
+    vurl = html.xpath('//video/source/@src')
+    if vurl:
+        if (vurl[1:] != vurl[:-1]):
+            Log(u"* Not all video URL's the same. -> '{0}'".format(vurl))
+        return vurl[0]
+    elif Regex(r'(?:\/|\.)(vidgg)\.').search(url) and not force:
+        return setup_playvideo(url, True)
 
     keys = ['filekey', 'file', 'domain']
-    apid = {}
+    apid = dict()
     for k in keys:
         value = None
-        r = Regex(r'flashvars\.%s\=\s*?[\'\"]?([^\"\']+)[\'\"]?\;' %k).search(page)
-        r2 = Regex(r'%s\s*?\:\s*?[\'\"]?([^\'\"]+)[\'\"]?\,' %('key' if k == 'filekey' else k)).search(page)
+        r = Regex(r'flashvars\.{0}\=\s*?[\'\"]?([^\"\']+)[\'\"]?\;'.format(k)).search(page)
+        r2 = Regex(r'{0}\s*?\:\s*?[\'\"]?([^\'\"]+)[\'\"]?\,'.format('key' if k == 'filekey' else k)).search(page)
         if r:
             if k == 'filekey':
-                fkr = Regex(r'var\s%s\=\s*?[\'\"]?([^\"\']+)[\'\"]?\;' %r.group(1)).search(page)
+                fkr = Regex(r'var\s{0}\=\s*?[\'\"]?([^\"\']+)[\'\"]?\;'.format(r.group(1))).search(page)
                 if fkr:
                     value = fkr.group(1).replace('.', '%2E').replace('-', '%2D')
                 else:
@@ -136,13 +147,17 @@ def setup_playvideo(url):
                 value = r2.group(1)
 
         if value:
-            apid.update({k: value.strip(';')})
+            apid[k] = value.strip(';')
+
+    if apid.get('file', '') == '':
+        return "This media has expired."
 
     if len(apid.keys()) != 3:
+        Log.Warn(u"* Warning: not enough api params, have '{0}' out of 3".format(len(apid.keys())))
         raise Ex.MediaNotAvailable
 
     domain = apid['domain'][:-1] if apid['domain'].endswith('/') else apid['domain']
-    data_url = '%s/api/player.api.php?key=%s&file=%s' %(domain, apid['filekey'], apid['file'])
+    data_url = '{0}/api/player.api.php?key={1}&file={2}'.format(domain, apid['filekey'], apid['file'])
     vurl = get_video_url(data_url)
 
     return vurl if vurl else False
@@ -150,17 +165,16 @@ def setup_playvideo(url):
 ####################################################################################################
 def url_check(url, geturl=False):
     try:
-        req = urllib2.Request(url, headers={'User-Agent': USER_AGENT})
-        req.get_method = lambda : 'HEAD'
-        try:
-            with contextlib.closing(urllib2.urlopen(req)) as resp:
-                return resp.geturl() if geturl else True
-        except urllib2.HTTPError, e:
-            Log.Error('* check_url: %s' %str(e))
-    except Exception as er:
-        Log.Critical('* check_url: %s' %str(er))
-        if url.startswith('https') and 'ssl' in str(er):
+        HTTP.Request(url, headers={'User-Agent': USER_AGENT}, cacheTime=10, method='HEAD', follow_redirects=(not geturl), immediate=True)
+        return url if geturl else True
+    except Ex.RedirectError, e:
+        if 'Location' in e.headers:
+            return e.headers['Location'] if geturl else True
+    except Ex.HTTPError, e:
+        if url.startswith('https') and 'ssl' in str(e):
             return url_check(url.replace('https:', 'http:'), geturl)
+    except:
+        Log.Exception(u"* Error: Cannot handle '{0}' >>>".format(url))
     return False
 
 ####################################################################################################
@@ -168,23 +182,23 @@ def get_video_url(url, count=0):
     match = True
     while match or (count <= 3):
         count += 1
-        data = HTTP.Request(url, headers={'User-Agent': USER_AGENT}).content
+        data = HTTP.Request(url, headers={'User-Agent': USER_AGENT}, cacheTime=10).content
         if 'error' in data:
-            Log.Error('* PlayVideo Error: %s' %str(data))
+            Log.Error(u'* PlayVideo Error: {0}'.format(data))
             if data.split('error_msg=')[1] == 'The video no longer exists':
                 return "This media has expired."
             match = False
         elif 'url' in data:
             vurl = data.split('url=')[1].split('&')[0]
-            vurl = unquote(vurl) if Regex(r'(cloudy|videoraj)').search(url) else vurl
+            vurl = String.Unquote(vurl) if Regex(r'(cloudy|videoraj)').search(url) else vurl
             if (count == 1) and not url_check(vurl):
-                nurl = url + '&errorCode=404&errorUrl=' + quote(vurl, '').replace('.', '%2E')
-                Log.Warn('* Video URL %i faild. Sending Error URL to WholeCloud API to get corrected URL' %count)
-                Log.Warn('* New API URL = %s' %nurl)
+                nurl = url + '&errorCode=404&errorUrl=' + String.URLEncode(vurl).replace('.', '%2E')
+                Log.Warn(u'* Video URL {0} failed. Sending Error URL to WholeCloud API to get corrected URL'.format(count))
+                Log.Warn(u'* New API URL = {0}'.format(nurl))
                 return get_video_url(nurl, count)
             return vurl
         else:
             match = False
 
-    Log.Critical('* No video source found for %s' %url)
+    Log.Critical(u'* No video source found for {0}'.format(url))
     return False
