@@ -7,16 +7,16 @@ def NormalizeURL(url):
 
     if '/embed-' in url:
         url = url.replace('/embed-', '/').split('-')[0]
-
     return url
 
 ####################################################################################################
 def MetadataObjectForURL(url):
 
     try:
-        page = HTTP.Request(url).content
+        page = HTTP.Request(url, cacheTime=10).content
         html = HTML.ElementFromString(page)
     except:
+        Log.Exception(u"* Error: Cannot open '{0}' >>>".format(url))
         raise Ex.MediaNotAvailable
 
     fallback = 'http://i.imgur.com/75YO83o.jpg'
@@ -50,31 +50,32 @@ def MetadataObjectForURL(url):
         )
 
 ####################################################################################################
+@deferred
 def MediaObjectsForURL(url):
 
     mo = list()
     eurl = get_embed_url(url)
-    url_list = get_urls(HTTP.Request(eurl).content)
-    if url_list is not None:
+    try:
+        url_list = get_urls(HTTP.Request(eurl, cacheTime=10).content)
+    except:
+        Log.Exception(u"* Error: Cannot handle '{0}' >>>".format(eurl))
+        raise Ex.MediaNotAvailable
+
+    if (url_list is not None):
         for f, u in reversed(sorted(url_list)):
             mo.append(MediaObject(
                 video_resolution=str(f),
                 audio_channels=2,
                 optimized_for_streaming=False,
                 parts=[
-                    PartObject(key=Callback(PlayVideo, url=u))
+                    PartObject(key=u)
                     ]
                 ))
 
-    if len(mo) > 0:
+    if mo:
         return mo
 
     raise Ex.MediaNotAvailable
-
-####################################################################################################
-def PlayVideo(url, **kwargs):
-    Log.Debug('* PlayVideo ULR = %s' %url)
-    return Redirect(url)
 
 ####################################################################################################
 def get_urls(page):
