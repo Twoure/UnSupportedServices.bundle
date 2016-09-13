@@ -40,12 +40,12 @@ def MediaObjectsForURL(url):
 @indirect
 def PlayVideo(url, **kwargs):
 
-    page = get_post_page(url)
+    html = HTML.ElementFromString(get_post_page(url))
     http_headers = {'User-Agent': USER_AGENT, 'Referer': url}
-    r = Regex(r'src\:\s*?[\'\"](http[^\'\"]+)[\'\"]').search(page)
-    if r:
+    vurl = html.xpath('//a[@class="view_dl_link"]/@href')
+    if vurl:
         try:
-            vurl = r.group(1)
+            vurl = vurl[0]
             page = HTTP.Request(vurl, headers=http_headers, follow_redirects=False, method='HEAD', cacheTime=10).content
         except Ex.RedirectError, e:
             if 'Location' in e.headers:
@@ -61,7 +61,7 @@ def PlayVideo(url, **kwargs):
 ####################################################################################################
 def get_post_page(url):
 
-    post_values = {}
+    post_values = dict()
     http_headers = {'User-Agent': USER_AGENT}
     try:
         html = HTML.ElementFromURL(url, headers=http_headers, cacheTime=10)
@@ -96,4 +96,4 @@ def get_post_page(url):
         return HTTP.Request(url, values=post_values, headers=http_headers, method='POST').content
     except:
         Log.Exception(u"* Error: Cannot handle POST '{0}' >>>".format(url))
-        raise Ex.MediaNotAvailable
+    raise Ex.MediaNotAvailable
