@@ -6,17 +6,18 @@ USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Ge
 
 ####################################################################################################
 def NormalizeURL(url):
-    if '/embed-' in url:
-        url = url.replace('/embed-', '/').split('-')[0]
-    return url
+
+    r = Regex(r'(https?\:\/\/(?:www\.)?\w+\.\w+)(?:\/embed\-|\/)(\w+)').search(url)
+    return r.group(1) + '/'+ r.group(2) + '.html' if r else url
 
 ####################################################################################################
 def MetadataObjectForURL(url):
 
     try:
-        page = HTTP.Request(url).content
+        page = HTTP.Request(url, headers={'User-Agent': USER_AGENT}, cacheTime=10).content
         html = HTML.ElementFromString(page)
     except:
+        Log.Exception(u"* Error: Cannot open '{0}' >>>".format(url))
         raise Ex.MediaNotAvailable
 
     title = html.xpath('//meta[@property="og:title"]/@content')
@@ -30,9 +31,11 @@ def MetadataObjectForURL(url):
     if not title:
         raise Ex.MediaExpired
 
+    eurl = get_embed_url(url)
     try:
-        epage = HTTP.Request(get_embed_url(url)).content
+        epage = HTTP.Request(eurl, headers={'User-Agent': USER_AGENT}, cacheTime=10).content
     except:
+        Log.Exception(u"* Error: Cannot open '{0}' >>>".format(eurl))
         raise Ex.MediaNotAvailable
 
     rt = Regex(r'[\"\']?image[\"\']?\s*?\:\s*?[\"\'](http[^\"\']+)[\"\']').search(epage)
@@ -64,22 +67,20 @@ def MediaObjectsForURL(url):
 @indirect
 def PlayVideo(url, **kwargs):
 
-    http_headers = {'User-Agent': USER_AGENT}
     try:
-        page = HTTP.Request(get_embed_url(url), headers=http_headers).content
+        page = HTTP.Request(get_embed_url(url), headers={'User-Agent': USER_AGENT}, cacheTime=10).content
     except:
+        Log.Exception(u"* Error: Cannot open '{0}' >>>".format(eurl))
         raise Ex.MediaNotAvailable
 
     r = Regex(r'[\"\']?file[\"\']?\s*?\:\s*?[\"\'](http[^\"\']+\.m3u8)[\"\']').search(page)
     if r:
-        Log.Debug('* PlayVideo ULR = %s' %r.group(1))
+        Log.Debug(u'* PlayVideo URL = {0}'.format(r.group(1)))
         return IndirectResponse(VideoClipObject, key=r.group(1))
 
     raise Ex.MediaNotAvailable
 
 ####################################################################################################
 def get_embed_url(url):
-    if '/embed-' not in url:
-        r = Regex(r'(https?\:\/\/(?:www\.)?\w+\.\w+\/)([A-Za-z0-9]+)').search(url)
-        url = r.group(1) + 'embed-'+ r.group(2) + '.html'
-    return url
+    r = Regex(r'(https?\:\/\/(?:www\.)?\w+\.\w+\/)(\w+)').search(url)
+    return r.group(1) + 'embed-'+ r.group(2) + '.html' if r else url
