@@ -5,14 +5,15 @@
 from unpacker import unpack as Unpack
 
 USER_AGENT = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/52.0.2743.116 Safari/537.36"
+REGEX_PTKN = Regex(r"(eval\(function\(p,a,c,k,e,.+\|(?:jwv|x3C)\|.+\.split\('\|'\).*?\)\))")
+REGEX_TKN = Regex(r'[\'\"\\]+?\/[\'\"\\]+?\+([^\+]+)\+.+?\\x3C\/script\>')
 
 ####################################################################################################
 def NormalizeURL(url):
 
     if '/embed-' not in url:
-        r = Regex(r'(?i)(https?:\/\/(?:www\.)?\w+\.\w+\/)([a-z0-9]+)').search(url)
+        r = Regex(r'(?i)(https?:\/\/(?:www\.)?\w+\.\w+\/)(\w+)').search(url)
         url = r.group(1) + 'embed-' + r.group(2) + '.html' if r else url
-
     return url
 
 ####################################################################################################
@@ -73,13 +74,14 @@ def PlayVideo(url, label, **kwargs):
 def source_dict(url, http_headers):
 
     page = HTTP.Request(url, headers=http_headers, cacheTime=10).content
-    rtkn = Regex(r'[\'\"]\/[\'\"]\+(.+)\+.+\\x3C\/script\>').search(page)
+    rptkn = REGEX_PTKN.search(page)
+    rtkn = REGEX_TKN.search(Unpack(rptkn.group(1))) if rptkn else None
     rtoken = Regex(r'var\s*?{0}\=[\'\"]([^\'\"]+)[\'\"]'.format(rtkn.group(1))).search(page) if rtkn else None
     if not rtoken:
         Log.Error("* Error: Cannot find packer token")
         raise Ex.MediaNotAvailable
 
-    http_headers.update({'Referer': url})
+    http_headers['Referer'] = url
     try:
         packed = HTTP.Request('http://thevideo.me/jwv/{0}'.format(rtoken.group(1)), headers=http_headers, cacheTime=10).content.strip()
     except:
@@ -97,5 +99,5 @@ def source_dict(url, http_headers):
     s = s.replace('\'', '\"').replace('label', '\"label\"').replace('file', '\"file\"')
 
     data = JSON.ObjectFromString(s)
-    [d.update({'file': d['file'] + '?direct=false&ua=1&vt={}'.format(rd.group(1))}) for d in data]
+    [d.update({'file': d['file'] + '?direct=false&ua=1&vt={0}'.format(rd.group(1))}) for d in data]
     return data
