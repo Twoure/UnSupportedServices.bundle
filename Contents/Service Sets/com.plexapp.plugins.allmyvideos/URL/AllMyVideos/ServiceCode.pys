@@ -1,0 +1,130 @@
+#!/usr/bin/env python
+
+"""AllMyVideos.net Service Code for"""
+
+USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36'
+RE_NORM = Regex(r'(https?\:\/\/(?:www\.)?\w+\.\w+)(?:\/embed\-|\/builtin\-|\/)(\w+)')
+RE_TITLE = Regex(r'\&filename\=([^\&]+?)[\'\"]\;')
+RE_THUMB = Regex(r'[\"\']?image[\"\']?\s*?\:\s*?[\"\'](http[^\"\']+)[\"\']')
+RE_DUR = Regex(r'[\"\']?duration[\"\']?\s*?\:\s*?[\"\'](\d+)[\"\']')
+RE_SUM = Regex(r'"description" *?\: *?"(.+?)"\,')
+RE_FMT = Regex(r'^.*?(\d+).*?$')
+RE_SOURCES = Regex(r'(?s)["\']sources["\'] *?\: *?(\[.*?\{[^\]]+\}.*?\])\,')
+FALLBACK = 'http://i.imgur.com/75YO83o.jpg'
+
+####################################################################################################
+def NormalizeURL(url):
+
+    if '/v/v-' in url:
+        return url
+
+    r = RE_NORM.search(url)
+    return r.group(1) + '/embed-' + r.group(2) + '.html' if r else url
+
+####################################################################################################
+def MetadataObjectForURL(url):
+
+    http_headers = {'User-Agent': USER_AGENT}
+    embed = '/embed-' in url
+    try:
+        if embed:
+            page = HTTP.Request(url, cacheTime=10, headers=http_headers).content
+        else:
+            html = HTML.ElementFromURL(url, cacheTime=10, headers=http_headers)
+    except:
+        Log.Exception(u"* Error: Cannot open '{0}' >>>".format(url))
+        raise Ex.MediaNotAvailable
+
+    if embed:
+        rt = RE_TITLE.search(page)
+        if not rt:
+            raise Ex.MediaExpired
+        title = String.Unquote(rt.group(1), True).strip()
+        if (';' in title) and ('&' in title):
+            title = String.DecodeHTMLEntities(title)
+
+        rth = RE_THUMB.search(page)
+        rd = RE_DUR.search(page)
+        rs = RE_SUM.search(page)
+
+        thumb = rth.group(1) if rth else FALLBACK
+        duration = int(rd.group(1)) * 1000 if rd else None
+        summary = rs.group(1).strip() if rs else None
+        if (';' in summary) and ('&' in summary):
+            title = String.DecodeHTMLEntities(summary)
+    else:
+        title = html.xpath('//meta[@property="og:title"]/@content')
+        if not title:
+            raise Ex.MediaExpired
+        title = title[0].strip()
+        if (';' in title) and ('&' in title):
+            title = String.DecodeHTMLEntities(title)
+
+        ht = html.xpath('//meta[@property="og:image"]/@content')
+        hd = html.xpath('//meta[@property="og:video:duration"]/@content')
+        hs = html.xpath('//meta[@property="og:description"]/@content')
+
+        thumb = Regex(r'(\/\d+x\d+)').sub('', ht[0]) if ht else FALLBACK
+        duration = int(hd[0]) * 1000 if hd else None
+        summary = hs[0].strip() if hs else None
+        if (';' in summary) and ('&' in summary):
+            summary = String.DecodeHTMLEntities(summary)
+
+    return VideoClipObject(
+        title=title,
+        summary=summary,
+        thumb=Resource.ContentsOfURLWithFallback([thumb, FALLBACK]),
+        duration=duration,
+        source_title='AllMyVideos'
+        )
+
+####################################################################################################
+@deferred
+def MediaObjectsForURL(url):
+
+    http_headers = {'User-Agent': USER_AGENT}
+    embed = '/embed-' in url
+    try:
+        if embed:
+            page = HTTP.Request(url, cacheTime=10, headers=http_headers).content
+        else:
+            html = HTML.ElementFromURL(url, cacheTime=10, headers=http_headers)
+    except:
+        Log.Exception(u"* Error: Cannot open '{0}' >>>".format(url))
+        raise Ex.MediaNotAvailable
+
+    if not embed:
+        burl = html.xpath('//iframe/@src')
+        if not burl:
+            raise Ex.MediaExpired
+
+        eurl = NormalizeURL(burl[0])
+        try:
+            page = HTTP.Request(eurl, cacheTime=10, headers=http_headers).content
+        except:
+            Log.Exception(u"* Error: Cannot open '{0}' >>>".format(eurl))
+            raise Ex.MediaNotAvailable
+
+    rs = RE_SOURCES.search(page)
+    if not rs:
+        raise Ex.MediaNotAvailable
+
+    try:
+        sources = JSON.ObjectFromString(rs.group(1).replace('false', '"False"').replace('true', '"True"'))
+    except:
+        Log.Exception(u"* Error converting sources to JSON object for '{0}' >>>".format(url))
+        raise Ex.MediaNotAvailable
+
+    [s.update({'label': int(RE_FMT.sub(r'\1', s['label'])), 'file': s['file']+'&direct=false&ua=true'}) for s in sources]
+    Log(sources)
+
+    return [
+        MediaObject(
+            audio_channels=2,
+            video_resolution=str(item['label']),
+            optimized_for_streaming=False,
+            parts=[
+                PartObject(key=item['file'], http_headers=http_headers)
+                ]
+            ) for item in reversed(Util.ListSortedByKey(sources, 'label'))
+        ]

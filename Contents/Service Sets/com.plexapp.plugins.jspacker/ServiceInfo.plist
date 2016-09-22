@@ -4,8 +4,6 @@
   <dict>
     <key>Search</key>
     <dict>
-      <key>AllMyVideos</key>
-      <dict></dict>
       <key>VoDLocker</key>
       <dict></dict>
     </dict>
@@ -24,7 +22,6 @@
       <dict>
         <key>URLPatterns</key>
         <array>
-          <string>^https?\:\/\/(www\.)?allmyvideos\.(?:[^\/]+\/).+</string>
           <string>^https?\:\/\/(www\.)?daclips\.(?:[^\/]+\/).+</string>
           <string>^uss\/https?\:\/\/(www\.)?faststream\.(?:[^\/]+\/).+</string>
           <string>^https?\:\/\/(www\.)?filehoot\.(?:[^\/]+\/).+</string>

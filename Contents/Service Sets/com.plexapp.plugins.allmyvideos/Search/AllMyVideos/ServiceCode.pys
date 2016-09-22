@@ -14,7 +14,7 @@ def Search(query):
     for node in html.xpath('//div[starts-with(@class, "vcard")]'):
         if node.xpath('.//div[@class="top_title"]'):
             continue
-
+        # limit search results to first 15
         if count > 15:
             continue
 
@@ -23,10 +23,15 @@ def Search(query):
 
         href = node.xpath('.//span/a/@href')[0]
         thumb = node.xpath('.//img/@src')[0]
-        url = Regex(r'(.*?https?\:\/\/(?:www\.)?\w+\.(?:[^/]+\/)?)(?:.*?[/])?([^\/\.]+)').search(href).group(1) + thumb.split('/')[-1].split('.')[0]
+        url = node.xpath('.//a/@href')[0]
 
         title = node.xpath('.//a[@class="v_title"]/@title')[0].strip()
+        if (';' in title) and ('&' in title):
+            title = String.DecodeHTMLEntities(title)
+
         summary = node.xpath('.//div[@class="v_descr"]')[0].text_content().strip()
+        if (';' in summary) and ('&' in summary):
+            summary = String.DecodeHTMLEntities(summary)
 
         oc.add(VideoClipObject(
             title=title,
