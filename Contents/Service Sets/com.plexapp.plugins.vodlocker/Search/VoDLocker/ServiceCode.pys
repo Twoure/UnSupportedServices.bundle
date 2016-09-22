@@ -1,6 +1,11 @@
 #!/usr/bin/env python
 
-"""VoDLocker.com Search Code"""
+"""
+VoDLocker.com Search Code
+
+Will remove search when merging with Service.bundle
+because adult content can be returned
+"""
 
 SEARCH_URL = 'http://vodlocker.com/?op=search&k=%s&per_page=15'
 

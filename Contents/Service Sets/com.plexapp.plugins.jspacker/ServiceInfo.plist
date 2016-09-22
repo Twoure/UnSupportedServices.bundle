@@ -2,11 +2,6 @@
 <!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
   <dict>
-    <key>Search</key>
-    <dict>
-      <key>VoDLocker</key>
-      <dict></dict>
-    </dict>
     <key>URL</key>
     <dict>
       <key>iDoWatch</key>
@@ -37,7 +32,6 @@
           <string>^https?\:\/\/(www\.)?videonest\.\w+\/.+</string>
           <string>^https?\:\/\/(www\.)?vidtodo\.(?:[^\/]+\/).+</string>
           <string>^https?\:\/\/(www\.)?vidplay\.(?:[^\/]+\/).+</string>
-          <string>^uss\/https?\:\/\/(www\.)?vodlocker\.(?:[^\/]+\/).+</string>
           <string>^https?\:\/\/(www\.)?yourvideohost\.(?:[^\/]+\/).+</string>
           <string>^https?\:\/\/(www\.)?zstream\.(?:[^\/]+\/).+</string>
         </array>

@@ -2,9 +2,9 @@
 
 """
 Service Code for:
-    AllMyVideos, DaClips, FileHoot, GorillaVid, MovPod, PowerWatch,
+    DaClips, FileHoot, GorillaVid, MovPod, PowerWatch,
     Rapidvideo.ws | FastStream.in, Streame.net, Streamin, StreamPlay,
-    TheVideoBee, VideoNest, Vidtodo, VidPlay, VoDLocker, ZStream
+    TheVideoBee, VideoNest, Vidtodo, VidPlay, ZStream
 
 Decided to sepearte out Vidto, because it host multiple resolutions
 """
@@ -78,7 +78,7 @@ def MetadataObjectForURL(url):
 ####################################################################################################
 def MediaObjectsForURL(url):
 
-    if Regex(r'(?:\.|\/)(allmyvideos|daclips|gorillavid|movpod|vodlocker)\.').search(url):
+    if Regex(r'(?:\.|\/)(daclips|gorillavid|movpod)\.').search(url):
         return [
             MediaObject(
                 container=Container.FLV if 'movpod' in url else Container.MP4,
