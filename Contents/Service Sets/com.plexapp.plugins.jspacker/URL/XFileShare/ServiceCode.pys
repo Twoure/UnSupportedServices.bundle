@@ -83,7 +83,6 @@ def MediaObjectsForURL(url):
             MediaObject(
                 container=Container.FLV if 'movpod' in url else Container.MP4,
                 video_codec=VideoCodec.H264,
-                video_resolution='sd',
                 audio_codec=AudioCodec.AAC,
                 audio_channels=2,
                 optimized_for_streaming=True,
@@ -95,7 +94,6 @@ def MediaObjectsForURL(url):
     else:
         return [
             MediaObject(
-                video_resolution='sd',
                 audio_channels=2,
                 optimized_for_streaming=False,
                 parts=[

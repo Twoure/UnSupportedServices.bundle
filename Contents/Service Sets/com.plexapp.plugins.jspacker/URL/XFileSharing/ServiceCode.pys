@@ -59,7 +59,6 @@ def MediaObjectsForURL(url):
                 container=Container.MP4,
                 video_codec=VideoCodec.H264,
                 audio_codec=AudioCodec.AAC,
-                video_resolution='sd',
                 audio_channels=2,
                 optimized_for_streaming=True,
                 parts=[
@@ -70,7 +69,6 @@ def MediaObjectsForURL(url):
     else:
         return [
             MediaObject(
-                video_resolution='sd',
                 audio_channels=2,
                 optimized_for_streaming=False,
                 parts=[
