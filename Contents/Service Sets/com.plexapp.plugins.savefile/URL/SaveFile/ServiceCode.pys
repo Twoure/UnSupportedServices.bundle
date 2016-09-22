@@ -1,16 +1,19 @@
 #!/usr/bin/env python
 
-"""MP4Upload.com Service Code"""
+"""SaveFile.co Service Code"""
 
+from unpacker import unpack as Unpack
+
+RE_PACKED = Regex(r"<script type=.text\/javascript.>(eval\(function\(p,a,c,k,e,.+\|file\|.+\.split\('\|'\).*?\)\))")
+RE_FILE = Regex(r'[\"\']?file[\"\']?\s*?\:\s*?[\"\'](http[^\"\'\?]+(?<!m3u8|smil))[\"\']')
 RE_NORM = Regex(r'(https?:\/\/(?:www\.)?\w+\.\w+)(?:\/embed\-|\/)(\w+)')
-RE_FILE = Regex(r'[\"\']?file[\"\']?\s*?\:\s*?[\"\'](http[^\"\']+(?<!m3u8|smil))[\"\']')
 FALLBACK = 'http://i.imgur.com/75YO83o.jpg'
 
 ####################################################################################################
 def NormalizeURL(url):
 
     r = RE_NORM.search(url)
-    return r.group(1) + '/' + r.group(2) if r else url
+    return r.group(1) + '/' + r.group(2) + '.html' if r else url
 
 ####################################################################################################
 def MetadataObjectForURL(url):
@@ -21,17 +24,20 @@ def MetadataObjectForURL(url):
         Log.Exception(u"* Error: Cannot open '{0}' >>>".format(url))
         raise Ex.MediaNotAvailable
 
-    title = html.xpath('//span[@class="dfilename"]/text()')
+    title = html.xpath('//tr/td/b[text()="Filename:"]/../../td/text()')
     if not title:
         raise Ex.MediaExpired
 
-    thumb = html.xpath('//span[@class="snap"]/following-sibling::span/img/@src')
+    thumb = html.xpath('//tr/td/b[text()="Snapshot:"]/../a/@href')
     thumb = thumb[0] if thumb else FALLBACK
+
+    duration = html.xpath('//tr/td/b[text()="Length:"]/../../td/text()')
 
     return VideoClipObject(
         title=title[0].strip(),
         thumb=Resource.ContentsOfURLWithFallback([thumb, FALLBACK]),
-        source_title='MP4Upload'
+        duration=Datetime.MillisecondsFromString(duration[0]) if duration else None,
+        source_title='SaveFile'
         )
 
 ####################################################################################################
@@ -54,18 +60,18 @@ def MediaObjectsForURL(url):
 @indirect
 def PlayVideo(url, **kwargs):
 
-    rurl = RE_NORM.search(url)
-    eurl = rurl.group(1) + '/embed-' + rurl.group(2) + '.html'
     try:
-        page = HTTP.Request(eurl, cacheTime=10).content
+        page = HTTP.Request(url, cacheTime=10).content
     except:
-        Log.Exception(u"* Error: Cannot handle '{0}' >>>".format(eurl))
+        Log.Exception(u"* Error: Cannot open '{0}' >>>".format(url))
         raise Ex.MediaNotAvailable
 
-    r = RE_FILE.findall(page)
-    for u in r:
-        if ('blank.mp4' not in u) and ('error.mp4' not in u):
-            Log.Debug(u"* PlayVideo URL = {0}".format(u))
-            return IndirectResponse(VideoClipObject, key=u)
+    packed = RE_PACKED.search(page)
+    page = Unpack(packed.group(1)) if packed else page
+
+    r = RE_FILE.search(page)
+    if r:
+        Log.Debug(u"* PlayVideo URL = {0}".format(r.group(1).replace(' ', '%20')))
+        return IndirectResponse(VideoClipObject, key=r.group(1).replace(' ', '%20'))
 
     raise Ex.MediaNotAvailable

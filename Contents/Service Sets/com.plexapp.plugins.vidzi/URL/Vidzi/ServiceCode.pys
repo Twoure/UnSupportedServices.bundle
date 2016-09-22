@@ -1,0 +1,81 @@
+#!/usr/bin/env python
+
+"""Vidzi.tv Service Code"""
+
+from unpacker import unpack as Unpack
+
+USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36'
+HTTP_HEADERS = {'User-Agent': USER_AGENT}
+RE_PACKED = Regex(r"<script type=.text\/javascript.>(eval\(function\(p,a,c,k,e,.+\|file\|.+\.split\('\|'\).*?\)\))")
+RE_FILE = Regex(r'[\"\']?file[\"\']?\s*?\:\s*?[\"\'](http[^\"\'\?]+(?<!m3u8)(?<!smil)(?<!vtt))[\"\']')
+RE_NORM = Regex(r'((?:uss\/)?https?:\/\/(?:www\.)?\w+\.\w+)(?:\/embed\-|\/)(\w+)')
+FALLBACK = 'http://i.imgur.com/75YO83o.jpg'
+
+####################################################################################################
+def NormalizeURL(url):
+
+    r = RE_NORM.search(url)
+    return r.group(1) + '/' + r.group(2) + '.html' if r else url
+
+####################################################################################################
+def MetadataObjectForURL(url):
+
+    # Remove 'uss/' from start of url. Work-around Official Services.bundle
+    url = url[4:] if url.startswith('uss/') else url
+    try:
+        html = HTML.ElementFromURL(url, cacheTime=CACHE_1MINUTE, headers=HTTP_HEADERS)
+    except:
+        Log.Exception(u"* Error: Cannot open '{0}' >>>".format(url))
+        raise Ex.MediaNotAvailable
+
+    if len(html.xpath('//*[contains(., "deleted")]')) > 0:
+        raise Ex.MediaNotAvailable
+
+    title = html.xpath('//h2[@class="video-title"]/text()')
+    if not title:
+        raise Ex.MediaNotAvailable
+
+    ht = html.xpath('//span[@id="vplayer"]/img/@src')
+    thumb = ht[0] if ht else FALLBACK
+
+    return VideoClipObject(
+        title=title[0].strip(),
+        thumb=Resource.ContentsOfURLWithFallback([thumb, FALLBACK]),
+        source_title='Vidzi'
+        )
+
+####################################################################################################
+def MediaObjectsForURL(url):
+
+    return [
+        MediaObject(
+            audio_channels=2,
+            optimized_for_streaming=False,
+            parts=[
+                PartObject(key=Callback(PlayVideo, url=url))
+                ]
+            )
+        ]
+
+####################################################################################################
+@indirect
+def PlayVideo(url, **kwargs):
+
+    # Remove 'uss/' from start of url. Work-around Official Services.bundle
+    url = url[4:] if url.startswith('uss/') else url
+    try:
+        page = HTTP.Request(url, cacheTime=CACHE_1MINUTE, headers=HTTP_HEADERS).content
+    except:
+        Log.Exception(u"* Error: Cannot open '{0}' >>>".format(url))
+        raise Ex.MediaNotAvailable
+
+    packed = RE_PACKED.search(page)
+    if packed:
+        page = Unpack(packed.group(1))
+
+    vurl = RE_FILE.search(page)
+    if vurl:
+        Log.Debug(u"* PlayVideo URL = {0}".format(vurl.group(1)))
+        return IndirectResponse(VideoClipObject, key=vurl.group(1), user_agent=USER_AGENT)
+
+    raise Ex.MediaNotAvailable

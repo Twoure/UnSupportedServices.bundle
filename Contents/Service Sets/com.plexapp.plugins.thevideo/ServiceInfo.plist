@@ -2,14 +2,18 @@
 <!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
   <dict>
+    <key>Search</key>
+    <dict>
+      <key>TheVideo</key>
+      <dict></dict>
+    </dict>
     <key>URL</key>
     <dict>
-      <key>WatchVideo</key>
+      <key>TheVideo</key>
       <dict>
         <key>URLPatterns</key>
         <array>
-          <string>^https?\:\/\/(?:www\.)?watchvideo\.\w+\/.+</string>
-          <string>^https?\:\/\/(?:www\.)?watchvideo\d+\.\w+\/.+</string>
+          <string>^https?\:\/\/(?:www\.)?thevideo\.(?:[^\/]+\/).+</string>
         </array>
       </dict>
     </dict>

@@ -1,0 +1,84 @@
+#!/usr/bin/env python
+
+"""VideoMega.tv Service Code"""
+
+from unpacker import unpack as Unpack
+
+USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36'
+RE_NORM = Regex(r'(https?\:\/\/(?:www\.)?videomega\.\w+\/)(?:(?:view|iframe|cdn|validatehash)\.php)?\?(?:ref|hashkey)\=(\w+)')
+RE_TITLE = Regex(r'(?i)(?:^videomega\.\w+\s*?\-\s*?|\s*?\-\s*?videomega\.\w+$)')
+RE_PACKED = Regex(r"(eval\(function\(p,a,c,k,e,.+\|src\|.+\.split\('\|'\).*?\)\))")
+RE_SRC = Regex(r'"src"\s*?,\s*?"([^"]+)"')
+FALLBACK = 'http://i.imgur.com/75YO83o.jpg'
+STITLE = 'VideoMega'
+
+####################################################################################################
+def NormalizeURL(url):
+
+    r = RE_NORM.search(url)
+    return r.group(1) + 'view.php?ref=' + r.group(2) if r else url
+
+####################################################################################################
+def MetadataObjectForURL(url):
+
+    try:
+        html = HTML.ElementFromURL(url)
+    except:
+        Log.Exception(u"* Error: Cannot open '{0}' >>>".format(url))
+        raise Ex.MediaNotAvailable
+
+    title = html.xpath('//title/text()')
+    if not title:
+        raise Ex.MediaExpired
+    title = RE_TITLE.sub(r'', title[0]).strip()
+
+    thumb = html.xpath('//video/@poster')
+    thumb = thumb[0] if thumb else FALLBACK
+
+    return VideoClipObject(
+        title=title if title else get_fallback_title(url),
+        thumb=Resource.ContentsOfURLWithFallback([thumb, FALLBACK]),
+        source_title=STITLE
+        )
+
+####################################################################################################
+def MediaObjectsForURL(url):
+
+    return [
+        MediaObject(
+            video_codec=VideoCodec.H264,
+            audio_codec=AudioCodec.AAC,
+            audio_channels=2,
+            optimized_for_streaming=True,
+            parts=[
+                PartObject(key=Callback(PlayVideo, url=url))
+                ]
+            )
+        ]
+
+####################################################################################################
+@indirect
+def PlayVideo(url, **kwargs):
+
+    http_headers = {'User-Agent': USER_AGENT, 'Referer': url, 'Cookie': 'noadvtday=0'}
+    url = url.replace('/view.php', '/cdn.php')
+
+    try:
+        page = HTTP.Request(url, headers=http_headers, cacheTime=10).content
+    except:
+        Log.Exception(u"* Error: Cannot open '{0}' >>>".format(url))
+        raise Ex.MediaNotAvailable
+
+    packed = RE_PACKED.search(page)
+    if packed:
+        data = Unpack(packed.group(1))
+        vurl = RE_SRC.search(data)
+        if vurl:
+            Log.Debug(u"* PlayVideo URL = {0}".format(vurl.group(1)))
+            return IndirectResponse(VideoClipObject, key=vurl.group(1))
+
+    raise Ex.MediaNotAvailable
+
+####################################################################################################
+def get_fallback_title(url):
+    return u"{0} | {1}".format(STITLE, url.rsplit('?ref=', 1)[1])

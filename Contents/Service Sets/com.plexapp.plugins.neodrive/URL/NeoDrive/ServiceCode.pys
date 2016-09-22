@@ -1,0 +1,89 @@
+#!/usr/bin/env python
+
+"""NeoDrive.co and CloudZilla.to Service Code"""
+
+from unpacker import unpack as Unpack
+
+USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36'
+HTTP_HEADERS = {'User-Agent': USER_AGENT}
+RE_NORM = Regex(r'^(https?\:\/\/(?:www\.)?\w+\.\w+\/)(?:\w+\/){1,2}(\w+)')
+RE_PACKED = Regex(r"(eval\(function\(p,a,c,k,e,.+\|file\|.+\.split\('\|'\).*?\)\))")
+RE_STITLE = Regex(r'https?\:\/\/(?:www\.)?(\w+)\.\w+')
+FALLBACK = 'http://i.imgur.com/75YO83o.jpg'
+
+####################################################################################################
+def NormalizeURL(url):
+
+    if '/embed/' not in url:
+        r = RE_NORM.search(url)
+        url = r.group(1) + 'embed/' + r.group(2)
+    return url
+
+####################################################################################################
+def MetadataObjectForURL(url):
+
+    try:
+        page = HTTP.Request(url, headers=HTTP_HEADERS, cacheTime=10).content
+    except:
+        Log.Exception(u"* Error: Cannot open '{0}' >>>".format(url))
+        raise Ex.MediaNotAvailable
+
+    if Regex(r'(404.*?Page\sNot\sFound)').search(page):
+        raise Ex.MediaExpired
+
+    st = RE_STITLE.search(url)
+    packed = RE_PACKED.search(page)
+    if packed:
+        data = get_data(Unpack(packed.group(1)))
+        if not data:
+            Log.Error(u"* Error: Packed data empty for '{0}'".format(url))
+            raise Ex.MediaExpired
+
+        return VideoClipObject(
+            title=data['title'],
+            thumb=Resource.ContentsOfURLWithFallback([data['thumbnail'], FALLBACK]),
+            source_title=st.group(1).title() if st else 'Neodrive'
+            )
+
+    raise Ex.MediaNotAvailable
+
+####################################################################################################
+def MediaObjectsForURL(url):
+
+    return [
+        MediaObject(
+            audio_channels=2,
+            optimized_for_streaming=False,
+            parts=[
+                PartObject(key=Callback(PlayVideo, url=url))
+                ]
+            )
+        ]
+
+####################################################################################################
+@indirect
+def PlayVideo(url, **kwargs):
+
+    try:
+        packed = RE_PACKED.search(HTTP.Request(url, headers=HTTP_HEADERS, cacheTime=10).content)
+    except:
+        Log.Exception(u"* Error: Cannot handle '{0}' >>>".format(url))
+        raise Ex.MediaNotAvailable
+
+    if packed:
+        data = get_data(Unpack(packed.group(1)))
+        if data:
+            vurl = data['url'].replace('http:', 'https:')
+            Log.Debug(u"* PlayVideo URL = {0}".format(vurl))
+            return IndirectResponse(VideoClipObject, key=vurl, user_agent=USER_AGENT)
+
+    raise Ex.MediaNotAvailable
+
+####################################################################################################
+def get_data(page):
+    data = dict()
+    for k in ['title', 'thumbnail', 'url']:
+        r = Regex(r'var\s*?v{0}\s*?\=\s*?[\"\']([^\'\"]+)[\"\']'.format(k)).search(page)
+        if r:
+            data[k] = r.group(1)
+    return data

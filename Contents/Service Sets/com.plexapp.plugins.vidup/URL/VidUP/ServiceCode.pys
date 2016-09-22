@@ -1,0 +1,89 @@
+#!/usr/bin/env python
+
+"""VidUP.me Service Code"""
+
+from unpacker import unpack as Unpack
+
+RE_PACKED = Regex(r"<script type=.text\/javascript.>(eval\(function\(p,a,c,k,e,.+\|file\|.+\.split\('\|'\).*?\)\))")
+RE_NORM = Regex(r'(https?:\/\/(?:www\.|beta\.)?\w+\.\w+)(?:\/embed\-|\/)(\w+)')
+RE_TITLE = Regex(r'title\s*?\:\s*?\'(.+)\'')
+RE_THUMB = Regex(r'image\s*?\:\s*?[\'\"](http[^\'\"]+)[\'\"]')
+RE_SUM = Regex(r'description\s*?\:\s*?\'(.+)\'')
+RE_DUR = Regex(r'duration\s*?\:\s*?[\'\"](\d+)[\'\"]')
+RE_SOURCES = Regex(r'sources\s*?\:\s*?(\[\{.+\}\])\,')
+FALLBACK = 'http://i.imgur.com/75YO83o.jpg'
+
+####################################################################################################
+def NormalizeURL(url):
+
+    r = RE_NORM.search(url)
+    return r.group(1) + '/embed-' + r.group(2) + '.html' if r else url
+
+####################################################################################################
+def MetadataObjectForURL(url):
+
+    try:
+        page = HTTP.Request(url, cacheTime=10).content
+    except:
+        Log.Exception(u"* Error: Cannot open '{0}' >>>".format(url))
+        raise Ex.MediaNotAvailable
+
+    rt = RE_TITLE.search(page)
+    title = rt.group(1).strip() if rt else None
+    if not title:
+        raise Ex.MediaExpired
+
+    rth = RE_THUMB.search(page)
+    rs = RE_SUM.search(page)
+    rd = RE_DUR.search(page)
+
+    thumb = rth.group(1) if rth else FALLBACK
+
+    return VideoClipObject(
+        title=title,
+        summary=rs.group(1) if rs else None,
+        duration=int(rd.group(1))*1000 if rd else None,
+        thumb=Resource.ContentsOfURLWithFallback([thumb, FALLBACK]),
+        source_title='VidUP'
+        )
+
+####################################################################################################
+@deferred
+def MediaObjectsForURL(url):
+
+    fmt_list = source_dict(url)
+    if not fmt_list:
+        raise Ex.MediaNotAvailable
+
+    return [
+        MediaObject(
+            video_resolution=item['label'][:-1],
+            audio_channels=2,
+            optimized_for_streaming=False,
+            parts=[
+                PartObject(key=item['file'])
+                ],
+            ) for item in reversed(Util.ListSortedByKey(fmt_list, 'label'))
+        ]
+
+####################################################################################################
+def source_dict(url):
+
+    try:
+        page = HTTP.Request(url, cacheTime=10).content
+    except:
+        Log.Exception(u"* Error: Cannot open '{0}' >>>".format(url))
+        raise Ex.MediaNotAvailable
+
+    packed = RE_PACKED.search(page)
+    if packed:
+        page = Unpack(packed.group(1)).replace('\\', '')
+
+    sources = RE_SOURCES.search(page)
+    if not sources:
+        raise Ex.MediaExpired
+
+    s = sources.group(1)
+    s = s.replace('\'', '\"').replace('label', '\"label\"').replace('file', '\"file\"')
+
+    return JSON.ObjectFromString(s)

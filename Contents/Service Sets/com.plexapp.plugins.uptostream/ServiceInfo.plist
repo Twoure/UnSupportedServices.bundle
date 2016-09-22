@@ -4,12 +4,11 @@
   <dict>
     <key>URL</key>
     <dict>
-      <key>WatchVideo</key>
+      <key>Up2stream</key>
       <dict>
         <key>URLPatterns</key>
         <array>
-          <string>^https?\:\/\/(?:www\.)?watchvideo\.\w+\/.+</string>
-          <string>^https?\:\/\/(?:www\.)?watchvideo\d+\.\w+\/.+</string>
+          <string>^https?\:\/\/(www\.)?up2stream\.(?:[^\/]+\/).+</string>
         </array>
       </dict>
     </dict>

@@ -1,0 +1,105 @@
+#!/usr/bin/env python
+
+"""AllVid.ch Service Code"""
+
+from unpacker import unpack as Unpack
+
+USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36'
+RE_NORM = Regex(r'(https?\:\/\/(?:www\.)?\w+\.\w+)(?:\/embed\-|\/)(\w+)')
+RE_PACKED = Regex(r"<script type=.text\/javascript.>(eval\(function\(p,a,c,k,e,.+\|file\|.+\.split\('\|'\).*?\)\))")
+RE_THUMB = Regex(r'[\"\']?image[\"\']?\s*?\:\s*?[\"\'](http[^\"\']+)[\"\']')
+RE_DUR = Regex(r'[\"\']?duration[\"\']?\s*?\:\s*?[\"\'](\d+)[\"\']')
+RE_FILE = Regex(r'[\"\']?file[\"\']?\s*?\:\s*?[\"\'](http[^\"\'\?]+(?<!m3u8|smil))[\"\']')
+FALLBACK = 'http://i.imgur.com/75YO83o.jpg'
+
+####################################################################################################
+def NormalizeURL(url):
+
+    r = RE_NORM.search(url)
+    return r.group(1) + '/embed-' + r.group(2) + '.html' if r else url
+
+####################################################################################################
+def MetadataObjectForURL(url):
+
+    nurl = url.replace('/embed-', '/') if '/embed-' in url else url
+    try:
+        html = HTML.ElementFromURL(nurl, headers={'User-Agent': USER_AGENT}, cacheTime=10)
+    except:
+        Log.Exception(u"* Error: Cannot open '{0}' >>>".format(nurl))
+        raise Ex.MediaNotAvailable
+
+    title = html.xpath('//h3/text()')
+    if not title:
+        raise Ex.MediaExpired
+
+    page = get_embed_page(url)
+    if not page:
+        raise Ex.MediaNotAvailable
+
+    rt = RE_THUMB.search(page)
+    rd = RE_DUR.search(page)
+
+    thumb = rt.group(1) if rt else FALLBACK
+
+    return VideoClipObject(
+        title=title[0].strip(),
+        duration=int(rd.group(1)) * 1000 if rd else None,
+        thumb=Resource.ContentsOfURLWithFallback([thumb, FALLBACK]),
+        source_title='AllVid'
+        )
+
+####################################################################################################
+def MediaObjectsForURL(url):
+
+    return [
+        MediaObject(
+            audio_channels=2,
+            optimized_for_streaming=False,
+            parts=[
+                PartObject(key=Callback(PlayVideo, url=url))
+                ]
+            )
+        ]
+
+####################################################################################################
+@indirect
+def PlayVideo(url, **kwargs):
+
+    page = get_embed_page(url)
+    r = RE_FILE.search(page) if page else None
+    if r:
+        Log.Debug(u'* PlayVideo URL = {0}'.format(r.group(1)))
+        return IndirectResponse(VideoClipObject, key=r.group(1), user_agent=USER_AGENT)
+
+    raise Ex.MediaNotAvailable
+
+####################################################################################################
+def get_embed_page(url):
+    http_headers = {
+        'User-Agent': USER_AGENT,
+        'Referer': url.replace('/embed-', '/') if '/embed-' in url else url
+        }
+
+    try:
+        html = HTML.ElementFromURL(url, headers=http_headers, cacheTime=10)
+    except:
+        Log.Exception(u"* Error: Cannot open '{0}' >>>".format(url))
+        raise Ex.MediaNotAvailable
+
+    eurl = html.xpath('//iframe/@src')
+    if not eurl:
+        Log.Error(u"* Error: Cannot find 'iframe/@src' in '{0}'".format(url))
+        raise Ex.MediaNotAvailable
+
+    try:
+        http_headers['Referer'] = url
+        page = HTTP.Request(eurl[0], headers=http_headers).content
+    except:
+        Log.Exception(u"* Error: Cannot open '{0}' >>>".format(eurl[0]))
+        raise Ex.MediaNotAvailable
+
+    packed = RE_PACKED.search(page)
+    if packed:
+        return Unpack(packed.group(1))
+
+    return False

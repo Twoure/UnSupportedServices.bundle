@@ -4,12 +4,12 @@
   <dict>
     <key>URL</key>
     <dict>
-      <key>WatchVideo</key>
+      <key>NeoDrive</key>
       <dict>
         <key>URLPatterns</key>
         <array>
-          <string>^https?\:\/\/(?:www\.)?watchvideo\.\w+\/.+</string>
-          <string>^https?\:\/\/(?:www\.)?watchvideo\d+\.\w+\/.+</string>
+          <string>^nahttps?\:\/\/(?:www\.)?neodrive\.(?:[^\/]+\/).+</string>
+          <string>^nahttps?\:\/\/(?:www\.)?cloudzilla\.(?:[^\/]+\/).+</string>
         </array>
       </dict>
     </dict>
