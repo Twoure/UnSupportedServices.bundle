@@ -1,0 +1,85 @@
+#!/usr/bin/env python
+
+"""Vid.me Service Code"""
+
+RE_NORM = Regex(r'(https?\:\/\/(?:www\.)?\w+\.\w+)(?:\/e\/|\/)(\w+)')
+FALLBACK = 'http://i.imgur.com/75YO83o.jpg'
+
+####################################################################################################
+def NormalizeURL(url):
+
+    r = RE_NORM.search(url)
+    return r.group(1) + '/' + r.group(2)
+
+####################################################################################################
+def MetadataObjectForURL(url):
+
+    html = get_html(url)
+
+    data = dict()
+    for item in ['title', 'description', 'image', 'updated_time']:
+        value = html.xpath('//meta[@property="og:{0}"]/@content'.format(item))
+        if value:
+            data[item] = value[0]
+
+    thumb = FALLBACK
+    if 'image' in data.keys() and data['image']:
+        thumb = data['image']
+        thumb = thumb if thumb.startswith('http') else 'http:' + thumb
+
+    if 'title' in data.keys() and data['title']:
+        title = data['title'].strip()
+    else:
+        title = 'Vid.me | {0}'.format(RE_NORM.search(url).group(2))
+
+    oaa = None
+    if 'updated_time' in data.keys() and data['updated_time']:
+        try:
+            oaa = Datetime.FromTimestamp(float(data['updated_time']))
+        except:
+            Log.Exception("* oaa error: unable to handle datetime >>>")
+
+    hd = html.xpath('//meta[@property="video:duration"]/@content')
+    duration = int(hd[0])*1000 if hd else None
+
+    return VideoClipObject(
+        title=title,
+        duration=duration,
+        originally_available_at=oaa,
+        year=int(oaa.year) if oaa else None,
+        thumb=Resource.ContentsOfURLWithFallback([thumb, FALLBACK]),
+        summary=data['description'].strip() if 'description' in data.keys() else None,
+        source_title='Vid.me'
+        )
+
+####################################################################################################
+@deferred
+def MediaObjectsForURL(url):
+
+    html = get_html(url)
+    flist = list()
+    for item in html.xpath('//source[@res][@src][@type]'):
+        if item.get('type') != 'video/mp4':
+            continue
+        flist.append((int(item.get('res')), item.get('src')))
+
+    return [
+        MediaObject(
+            video_resolution=str(res),
+            container=Container.MP4,
+            video_codec=VideoCodec.H264,
+            audio_codec=AudioCodec.AAC,
+            audio_channels=2,
+            optimized_for_streaming=True,
+            parts=[PartObject(key=src)],
+            ) for res, src in reversed(sorted(flist))
+        ]
+
+####################################################################################################
+def get_html(url):
+    try:
+        html = HTML.ElementFromURL(url, cacheTime=CACHE_1MINUTE)
+    except:
+        Log.Exception(u"* Error: Cannot open '{0}' >>>".format(url))
+        raise Ex.MediaNotAvailable
+    return html
