@@ -1,16 +1,7 @@
 #!/usr/bin/env python
 
-"""FileHoot.com Service Code"""
+"""MovPod.(in|net) Service Code"""
 
-"""
-StreamPlay,
-TheVideoBee, VideoNest, Vidtodo, VidPlay, ZStream
-Decided to sepearte out Vidto, because it host multiple resolutions
-"""
-
-#from unpacker import unpack as Unpack
-
-#USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36'
 RE_NORM = Regex(r'(https?://(?:www\.)?\w+\.\w+)(?:/embed-|/)(\w+)')
 RE_THUMB = Regex(r'["\']?image["\']? *?: *?["\'](http[^"\']+)["\']')
 RE_DUR = Regex(r'["\']?duration["\']? *?: *?["\'](\d+)["\']')
@@ -21,7 +12,7 @@ FALLBACK = 'http://i.imgur.com/75YO83o.jpg'
 def NormalizeURL(url):
 
     r = RE_NORM.search(url)
-    return r.group(1) + '/embed-' + r.group(2) + '.html' if r else url
+    return r.group(1) + '/embed-' + r.group(2) + '.html'
 
 ####################################################################################################
 def MetadataObjectForURL(url):
@@ -33,7 +24,18 @@ def MetadataObjectForURL(url):
     if html.xpath('//title/text()')[0] == '404 - Not Found':
         raise Ex.MediaExpired
 
-    title = html.xpath('//input[@name="fname"]/@value')
+    title = None
+    vid = RE_NORM.search(url).group(2)
+    rt1 = Regex(r'{0}[\"\']\>(.+?) *?\- *?\d+(?:\.\d+)? *?MB\<\/'.format(vid)).search(page)
+    rt2 = Regex(r'{0}\](.+?)\- *?\d+(?:\.\d+)? *?MB'.format(vid)).search(page)
+    ht = html.xpath('//input[@name="fname"]/@value')
+    if rt1:
+        title = rt1.group(1)
+    elif rt2:
+        title = rt2.group(1)
+    elif ht:
+        title = ht[0]
+
     if not title:
         raise Ex.MediaExpired
 
@@ -44,10 +46,10 @@ def MetadataObjectForURL(url):
     thumb = rt.group(1) if rt else FALLBACK
 
     return VideoClipObject(
-        title=title[0].strip(),
+        title=title.strip(),
         duration=int(rd.group(1)) * 1000 if rd else None,
         thumb=Resource.ContentsOfURLWithFallback([thumb, FALLBACK]),
-        source_title='FileHoot'
+        source_title='MovPod'
         )
 
 ####################################################################################################
@@ -55,8 +57,11 @@ def MediaObjectsForURL(url):
 
     return [
         MediaObject(
+            container=Container.FLV,
+            video_codec=VideoCodec.H264,
+            audio_codec=AudioCodec.AAC,
             audio_channels=2,
-            optimized_for_streaming=False,
+            optimized_for_streaming=True,
             parts=[
                 PartObject(key=Callback(PlayVideo, url=url))
                 ]

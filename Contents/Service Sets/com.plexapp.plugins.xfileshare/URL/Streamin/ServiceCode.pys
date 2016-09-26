@@ -1,16 +1,7 @@
 #!/usr/bin/env python
 
-"""FileHoot.com Service Code"""
+"""Streamin.to Service Code"""
 
-"""
-StreamPlay,
-TheVideoBee, VideoNest, Vidtodo, VidPlay, ZStream
-Decided to sepearte out Vidto, because it host multiple resolutions
-"""
-
-#from unpacker import unpack as Unpack
-
-#USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36'
 RE_NORM = Regex(r'(https?://(?:www\.)?\w+\.\w+)(?:/embed-|/)(\w+)')
 RE_THUMB = Regex(r'["\']?image["\']? *?: *?["\'](http[^"\']+)["\']')
 RE_DUR = Regex(r'["\']?duration["\']? *?: *?["\'](\d+)["\']')
@@ -27,8 +18,7 @@ def NormalizeURL(url):
 def MetadataObjectForURL(url):
 
     nurl = url.replace('/embed-', '/') if '/embed-' in url else url
-    page = get_page(nurl)
-    html = HTML.ElementFromString(page)
+    html = HTML.ElementFromString(get_page(nurl))
 
     if html.xpath('//title/text()')[0] == '404 - Not Found':
         raise Ex.MediaExpired
@@ -47,7 +37,7 @@ def MetadataObjectForURL(url):
         title=title[0].strip(),
         duration=int(rd.group(1)) * 1000 if rd else None,
         thumb=Resource.ContentsOfURLWithFallback([thumb, FALLBACK]),
-        source_title='FileHoot'
+        source_title='Streamin'
         )
 
 ####################################################################################################

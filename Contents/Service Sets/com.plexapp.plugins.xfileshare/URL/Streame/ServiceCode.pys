@@ -1,20 +1,15 @@
 #!/usr/bin/env python
 
-"""FileHoot.com Service Code"""
-
 """
-StreamPlay,
-TheVideoBee, VideoNest, Vidtodo, VidPlay, ZStream
-Decided to sepearte out Vidto, because it host multiple resolutions
+Streame.net Service Code
+    :slow video host, too slow for Plex Streaming
 """
 
-#from unpacker import unpack as Unpack
-
-#USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36'
 RE_NORM = Regex(r'(https?://(?:www\.)?\w+\.\w+)(?:/embed-|/)(\w+)')
 RE_THUMB = Regex(r'["\']?image["\']? *?: *?["\'](http[^"\']+)["\']')
 RE_DUR = Regex(r'["\']?duration["\']? *?: *?["\'](\d+)["\']')
-RE_FILE = Regex(r'["\']?file["\']? *?: *?["\'](http[^"\']+(?<!m3u8|smil))["\']')
+RE_SOURCES = Regex(r'sources *?\: *?(\[.*?\{[^\]]+\}.*?\]),')
+RE_FMT = Regex(r'^.*?(1080|720|480|360|240)$')
 FALLBACK = 'http://i.imgur.com/75YO83o.jpg'
 
 ####################################################################################################
@@ -27,8 +22,7 @@ def NormalizeURL(url):
 def MetadataObjectForURL(url):
 
     nurl = url.replace('/embed-', '/') if '/embed-' in url else url
-    page = get_page(nurl)
-    html = HTML.ElementFromString(page)
+    html = HTML.ElementFromString(get_page(nurl))
 
     if html.xpath('//title/text()')[0] == '404 - Not Found':
         raise Ex.MediaExpired
@@ -47,32 +41,46 @@ def MetadataObjectForURL(url):
         title=title[0].strip(),
         duration=int(rd.group(1)) * 1000 if rd else None,
         thumb=Resource.ContentsOfURLWithFallback([thumb, FALLBACK]),
-        source_title='FileHoot'
+        source_title='Streame'
         )
 
 ####################################################################################################
+@deferred
 def MediaObjectsForURL(url):
+
+    page = get_page(url)
+    r = RE_SOURCES.search(page)
+    if not r:
+        raise Ex.MediaExpired
+
+    s = r.group(1).replace("'", '"')
+    if '"file"' not in s:
+        s = s.replace('file', '"file"')
+    if '"label"' not in s:
+        s = s.replace('label', '"label"')
+
+    sources = JSON.ObjectFromString(s)
+    for s in sources:
+        if s['label'].endswith('p'):
+            label = int(s['label'][:-1])
+        elif (len(s['label']) <= 4):
+            label = int(s['label'])
+        else:
+            label = int(RE_FMT.sub(r'\1', s['label']))
+        s.update({'label': label})
+
+    Log.Debug(u"* Streame Video Sources = '{0}'".format(sources))
 
     return [
         MediaObject(
             audio_channels=2,
             optimized_for_streaming=False,
+            video_resolution=str(s['label']),
             parts=[
-                PartObject(key=Callback(PlayVideo, url=url))
+                PartObject(key=s['file'])
                 ]
-            )
+            ) for s in reversed(Util.ListSortedByKey(sources, 'label'))
         ]
-
-####################################################################################################
-@indirect
-def PlayVideo(url, **kwargs):
-
-    r = RE_FILE.search(get_page(url))
-    if r:
-        Log.Debug(u"* PlayVideo URL = {0}".format(r.group(1)))
-        return IndirectResponse(VideoClipObject, key=r.group(1))
-
-    raise Ex.MediaNotAvailable
 
 ####################################################################################################
 def get_page(url):

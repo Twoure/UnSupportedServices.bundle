@@ -18,6 +18,56 @@
           <string>^https?\:\/\/(www\.)?filehoot\.\w+\/.+</string>
         </array>
       </dict>
+      <key>GorillaVid</key>
+      <dict>
+        <key>URLPatterns</key>
+        <array>
+          <string>^(?:uss\/)?https?\:\/\/(www\.)?gorillavid\.\w+\/.+</string>
+        </array>
+      </dict>
+      <key>MovPod</key>
+      <dict>
+        <key>URLPatterns</key>
+        <array>
+          <string>^https?\:\/\/(www\.)?movpod\.\w+\/.+</string>
+        </array>
+      </dict>
+      <key>PowerWatch</key>
+      <dict>
+        <key>URLPatterns</key>
+        <array>
+          <string>^nahttps?\:\/\/(www\.)?powerwatch\.\w+\/.+</string>
+        </array>
+      </dict>
+      <key>Rapidvideo</key>
+      <dict>
+        <key>URLPatterns</key>
+        <array>
+          <string>^https?\:\/\/(www\.)?rapidvideo\.ws\/.+</string>
+          <string>^(?:uss\/)?https?\:\/\/(www\.)?faststream\.\w+\/.+</string>
+        </array>
+      </dict>
+      <key>Streame</key>
+      <dict>
+        <key>URLPatterns</key>
+        <array>
+          <string>^nahttps?\:\/\/(www\.)?streame\.\w+\/.+</string>
+        </array>
+      </dict>
+      <key>Streamin</key>
+      <dict>
+        <key>URLPatterns</key>
+        <array>
+          <string>^https?\:\/\/(www\.)?streamin\.\w+\/.+</string>
+        </array>
+      </dict>
+      <key>StreamPlay</key>
+      <dict>
+        <key>URLPatterns</key>
+        <array>
+          <string>^https?\:\/\/(www\.)?streamplay\.\w+\/.+</string>
+        </array>
+      </dict>
       <key>Vidto</key>
       <dict>
         <key>URLPatterns</key>
@@ -29,15 +79,7 @@
       <dict>
         <key>URLPatterns</key>
         <array>
-          <string>^uss\/https?\:\/\/(www\.)?faststream\.(?:[^\/]+\/).+</string>
           <string>^https?\:\/\/(www\.)?goodvideohost\.(?:[^\/]+\/).+</string>
-          <string>^uss\/https?\:\/\/(www\.)?gorillavid\.(?:[^\/]+\/).+</string>
-          <string>^https?\:\/\/(www\.)?movpod\.(?:[^\/]+\/).+</string>
-          <string>^https?\:\/\/(www\.)?powerwatch\.(?:[^\/]+\/).+</string>
-          <string>^https?\:\/\/(www\.)?rapidvideo\.ws\/.+</string>
-          <string>^https?\:\/\/(www\.)?streame\.(?:[^\/]+\/).+</string>
-          <string>^https?\:\/\/(www\.)?streamin\.(?:[^\/]+\/).+</string>
-          <string>^https?\:\/\/(www\.)?streamplay\.(?:[^\/]+\/).+</string>
           <string>^nahttps?\:\/\/(www\.)?thevideobee\.(?:[^\/]+\/).+</string>
           <string>^https?\:\/\/(www\.)?videonest\.\w+\/.+</string>
           <string>^https?\:\/\/(www\.)?vidtodo\.(?:[^\/]+\/).+</string>
