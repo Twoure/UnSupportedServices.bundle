@@ -11,6 +11,14 @@
           <string>^https?\:\/\/(www\.)?aisfile\.\w+\/.+</string>
         </array>
       </dict>
+      <key>LetWatch</key>
+      <dict>
+        <key>URLPatterns</key>
+        <array>
+          <string>^https?\:\/\/(www\.)?letwatch\.\w+\/.+</string>
+          <string>^https?\:\/\/(www\.)?vidshare\.us\/.+</string>
+        </array>
+      </dict>
       <key>Putvid</key>
       <dict>
         <key>URLPatterns</key>

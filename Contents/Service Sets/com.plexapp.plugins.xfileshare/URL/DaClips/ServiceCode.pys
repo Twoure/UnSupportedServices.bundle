@@ -1,54 +1,55 @@
 #!/usr/bin/env python
 
-"""Aisfile.com Service Code"""
+"""DaClips.(in|com) Service Code"""
 
-from unpacker import unpack as Unpack
-
-RE_PACKED = Regex(r"<script type=.text/javascript.>(eval\(function\(p,a,c,k,e,.+\|file\|.+\.split\('\|'\).*?\)\))")
-RE_FILE = Regex(r'["\']?file["\']? *?: *?["\'](http[^"\']+(?<!m3u8|smil))["\']')
-RE_NORM = Regex(r'(https?://(?:www\.)?\w+\.\w+)(?:/(?:vid)?embed-|/)(\w+)')
+RE_NORM = Regex(r'(https?://(?:www\.)?\w+\.\w+)(?:/embed-|/)(\w+)')
 RE_THUMB = Regex(r'["\']?image["\']? *?: *?["\'](http[^"\']+)["\']')
 RE_DUR = Regex(r'["\']?duration["\']? *?: *?["\'](\d+)["\']')
+RE_FILE = Regex(r'["\']?file["\']? *?: *?["\'](http[^"\']+(?<!m3u8|smil))["\']')
 FALLBACK = 'http://i.imgur.com/75YO83o.jpg'
 
 ####################################################################################################
 def NormalizeURL(url):
 
     r = RE_NORM.search(url)
-    return r.group(1) + '/' + r.group(2) if r else url
+    return r.group(1) + '/embed-' + r.group(2) + '.html'
 
 ####################################################################################################
 def MetadataObjectForURL(url):
 
-    page = get_page(url)
+    nurl = url.replace('/embed-', '/') if '/embed-' in url else url
+    page = get_page(nurl)
     html = HTML.ElementFromString(page)
 
-    title = html.xpath('//span[@class="dfilename"]/text()')
-    if html.xpath('//h3[text()="The file was removed by administrator"]') or (not title):
+    if html.xpath('//title/text()')[0] == '404 - Not Found':
         raise Ex.MediaExpired
 
-    page = get_packed_page(page)
+    title = None
+    vid = RE_NORM.search(url).group(2)
+    rt1 = Regex(r'{0}[\"\']\>(.+?) *?\- *?\d+(?:\.\d+)? *?MB\<\/'.format(vid)).search(page)
+    rt2 = Regex(r'{0}\](.+?)\- *?\d+(?:\.\d+)? *?MB'.format(vid)).search(page)
+    ht = html.xpath('//input[@name="fname"]/@value')
+    if rt1:
+        title = rt1.group(1)
+    elif rt2:
+        title = rt2.group(1)
+    elif ht:
+        title = ht[0]
+
+    if not title:
+        raise Ex.MediaExpired
+
+    page = get_page(url)
     rt = RE_THUMB.search(page)
     rd = RE_DUR.search(page)
-
-    hdate = html.xpath('//div[@class="dfile"]/div[contains(text(), "Uploaded on")]')
-    sdate = hdate[0].text_content().strip().split('Uploaded on')[1].split('by')[0].strip() if hdate else None
-    oaa = None
-    if sdate:
-        try:
-            oaa = Datetime.ParseDate(sdate)
-        except:
-            Log.Exception(u"* Error: cannot parse datetime for '{0}' >>>".format(url))
 
     thumb = rt.group(1) if rt else FALLBACK
 
     return VideoClipObject(
-        title=title[0].strip('_').strip(),
-        originally_available_at=oaa,
-        year=int(oaa.year) if oaa else None,
+        title=title.strip(),
         duration=int(rd.group(1)) * 1000 if rd else None,
         thumb=Resource.ContentsOfURLWithFallback([thumb, FALLBACK]),
-        source_title='Aisfile'
+        source_title='DaClips'
         )
 
 ####################################################################################################
@@ -71,11 +72,10 @@ def MediaObjectsForURL(url):
 @indirect
 def PlayVideo(url, **kwargs):
 
-    r = RE_FILE.search(get_packed_page(get_page(url)))
-    vurl = r.group(1).replace(' ', '%20') if r else None
-    if vurl:
-        Log.Debug(u"* PlayVideo URL = {0}".format(vurl))
-        return IndirectResponse(VideoClipObject, key=vurl)
+    r = RE_FILE.search(get_page(url))
+    if r:
+        Log.Debug(u"* PlayVideo URL = {0}".format(r.group(1)))
+        return IndirectResponse(VideoClipObject, key=r.group(1))
 
     raise Ex.MediaNotAvailable
 
@@ -87,8 +87,3 @@ def get_page(url):
         Log.Exception(u"* Error: Cannot open '{0}' >>>".format(url))
         raise Ex.MediaNotAvailable
     return page
-
-####################################################################################################
-def get_packed_page(page):
-    packed = RE_PACKED.search(page)
-    return Unpack(packed.group(1)) if packed else page
