@@ -26,6 +26,13 @@
           <string>^https?\:\/\/(www\.)?putvid\.\w+\/.+</string>
         </array>
       </dict>
+      <key>VideoNest</key>
+      <dict>
+        <key>URLPatterns</key>
+        <array>
+          <string>^https?\:\/\/(www\.)?videonest\.\w+\/.+</string>
+        </array>
+      </dict>
       <key>Weebvid</key>
       <dict>
         <key>URLPatterns</key>

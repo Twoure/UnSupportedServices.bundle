@@ -81,7 +81,6 @@
         <array>
           <string>^https?\:\/\/(www\.)?goodvideohost\.(?:[^\/]+\/).+</string>
           <string>^nahttps?\:\/\/(www\.)?thevideobee\.(?:[^\/]+\/).+</string>
-          <string>^https?\:\/\/(www\.)?videonest\.\w+\/.+</string>
           <string>^https?\:\/\/(www\.)?vidtodo\.(?:[^\/]+\/).+</string>
           <string>^https?\:\/\/(www\.)?vidplay\.(?:[^\/]+\/).+</string>
           <string>^https?\:\/\/(www\.)?yourvideohost\.(?:[^\/]+\/).+</string>
