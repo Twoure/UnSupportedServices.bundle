@@ -8,6 +8,7 @@ USER_AGENT = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Ge
 RE_NORM = Regex(r'(https?:\/\/(?:www\.)?\w+\.\w+)(?:\/embed\-|\/)(\w+)')
 RE_PTKN = Regex(r"(eval\(function\(p,a,c,k,e,.+\|(?:jwv|x3C)\|.+\.split\('\|'\).*?\)\))")
 RE_TKN = Regex(r'[\'\"\\]+?\/[\'\"\\]+?\+([^\+]+)\+.+?\\x3C\/script\>')
+RE_SOURCES = Regex(r'sources *?\: *?(\[.*?\{[^\]]+\}.*?\]),')
 RE_TITLE = Regex(r'title\s*?\:\s*?[\'\"](.*?)[\'\"]\,')
 RE_THUMB = Regex(r'image\s*?\:\s*?[\'\"]([^\'\"]+)[\'\"]')
 RE_DUR = Regex(r'duration\s*?\:\s*?[\'\"](\d+)[\'\"]')
@@ -22,11 +23,7 @@ def NormalizeURL(url):
 ####################################################################################################
 def MetadataObjectForURL(url):
 
-    try:
-        page = HTTP.Request(url, cacheTime=10).content
-    except:
-        Log.Exception(u"* Error: Cannot open '{0}' >>>".format(url))
-        raise Ex.MediaNotAvailable
+    page = get_page(url, {'User-Agent': USER_AGENT})
 
     title = RE_TITLE.search(page)
     if not title:
@@ -49,29 +46,34 @@ def MetadataObjectForURL(url):
 def MediaObjectsForURL(url):
 
     http_headers = {'User-Agent': USER_AGENT}
-    fmt_list = source_dict(url, http_headers)
-    if not fmt_list:
+    flist = source_dict(url, http_headers)
+    if not flist:
         raise Ex.MediaNotAvailable
 
     return [
         MediaObject(
-            video_resolution=item['label'][:-1],
+            video_resolution=str(s['label']),
             audio_channels=2,
             optimized_for_streaming=False,
             parts=[
-                PartObject(key=item['file'], http_headers=http_headers)
+                PartObject(key=s['file'], http_headers=http_headers)
                 ]
-            ) for item in reversed(Util.ListSortedByKey(fmt_list, 'label'))
+            ) for s in reversed(Util.ListSortedByKey(flist, 'label'))
         ]
 
 ####################################################################################################
-def source_dict(url, http_headers):
-
+def get_page(url, http_headers):
     try:
         page = HTTP.Request(url, headers=http_headers, cacheTime=10).content
     except:
         Log.Exception(u"* Error: Cannot open '{0}' >>>".format(url))
         raise Ex.MediaNotAvailable
+    return page
+
+####################################################################################################
+def source_dict(url, http_headers):
+
+    page = get_page(url, http_headers)
 
     rptkn = RE_PTKN.search(page)
     rtkn = RE_TKN.search(Unpack(rptkn.group(1))) if rptkn else None
@@ -87,18 +89,21 @@ def source_dict(url, http_headers):
         Log.Exception("* Error handling packed URL >>>")
         raise Ex.MediaNotAvailable
 
-    sources = Regex(r'sources:\s(.*),').search(page)
-    rd = Regex(r'vt\=([^\'\"]+)[\'\"]').search(Unpack(packed))
+    sources = RE_SOURCES.search(page)
+    rvt = Regex(r'vt\=([^\'\"]+)[\'\"]').search(Unpack(packed))
     if not sources:
         Log.Warn(u"* Warning: Cannot find source list within '{0}'".format(url))
         raise Ex.MediaExpired
-    elif not rd:
+    elif not rvt:
         Log.Error("* Error: Cannot find pass tokens within packed URL")
         raise Ex.MediaNotAvailable
 
     s = sources.group(1)
-    s = s.replace('\'', '\"').replace('label', '\"label\"').replace('file', '\"file\"')
+    s = s.replace("'", '"')
+    if '"file"' not in s:
+        s = s.replace('file', '"file"')
+    if '"label"' not in s:
+        s = s.replace('label', '"label"')
 
     data = JSON.ObjectFromString(s)
-    [d.update({'file': d['file'] + '?direct=false&ua=1&vt={0}'.format(rd.group(1))}) for d in data]
-    return data
+    return [{'file': d['file'] + '?direct=false&ua=1&vt={0}'.format(rvt.group(1)), 'label': int(d['label'][:-1])} for d in data]
