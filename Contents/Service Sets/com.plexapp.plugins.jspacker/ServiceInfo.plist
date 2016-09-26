@@ -4,15 +4,6 @@
   <dict>
     <key>URL</key>
     <dict>
-      <key>iDoWatch</key>
-      <dict>
-        <key>URLPatterns</key>
-        <array>
-          <string>^https?\:\/\/(www\.)?idowatch\.(?:[^\/]+\/).+</string>
-          <string>^https?\:\/\/(www\.)?letwatch\.(?:[^\/]+\/).+</string>
-          <string>^https?\:\/\/(www\.)?megamp4\.(?:[^\/]+\/).+</string>
-        </array>
-      </dict>
       <key>XFileShare</key>
       <dict>
         <key>URLPatterns</key>
@@ -34,15 +25,6 @@
           <string>^https?\:\/\/(www\.)?vidplay\.(?:[^\/]+\/).+</string>
           <string>^https?\:\/\/(www\.)?yourvideohost\.(?:[^\/]+\/).+</string>
           <string>^https?\:\/\/(www\.)?zstream\.(?:[^\/]+\/).+</string>
-        </array>
-      </dict>
-      <key>XFileSharing</key>
-      <dict>
-        <key>URLPatterns</key>
-        <array>
-          <string>^https?\:\/\/(www\.)?aisfile\.(?:[^\/]+\/).+</string>
-          <string>^https?\:\/\/(www\.)?putvid\.(?:[^\/]+\/).+</string>
-          <string>^https?\:\/\/(www\.)?weebvid\.(?:[^\/]+\/).+</string>
         </array>
       </dict>
     </dict>

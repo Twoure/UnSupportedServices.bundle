@@ -1,0 +1,87 @@
+#!/usr/bin/env python
+
+"""Putvid.com Service Code"""
+
+from unpacker import unpack as Unpack
+
+RE_PACKED = Regex(r"<script type=.text/javascript.>(eval\(function\(p,a,c,k,e,.+\|file\|.+\.split\('\|'\).*?\)\))")
+RE_FILE = Regex(r'["\']?file["\']? *?: *?["\'](http[^"\']+(?<!m3u8|smil))["\']')
+RE_NORM = Regex(r'(https?://(?:www\.)?\w+\.\w+)(?:/(?:vid)?embed-|/)(\w+)')
+RE_THUMB = Regex(r'["\']?image["\']? *?: *?["\'](http[^"\']+)["\']')
+RE_DUR = Regex(r'["\']?duration["\']? *?: *?["\'](\d+)["\']')
+FALLBACK = 'http://i.imgur.com/75YO83o.jpg'
+
+####################################################################################################
+def NormalizeURL(url):
+
+    r = RE_NORM.search(url)
+    return r.group(1) + '/embed-' + r.group(2) + '.html' if r else url
+
+####################################################################################################
+def MetadataObjectForURL(url):
+
+    nurl = url.replace('/embed-', '/') if '/embed-' in url else url
+    try:
+        html = HTML.ElementFromURL(nurl, cacheTime=10)
+    except:
+        Log.Exception(u"* Error: Cannot open '{0}' >>>".format(nurl))
+        raise Ex.MediaNotAvailable
+
+    title = html.xpath('//input[@name="fname"]/@value')
+    if not title:
+        raise Ex.MediaExpired
+
+    page = get_packed_page(get_page(url))
+    rt = RE_THUMB.search(page)
+    rd = RE_DUR.search(page)
+
+    thumb = rt.group(1) if rt else FALLBACK
+
+    return VideoClipObject(
+        title=title[0].strip(),
+        duration=int(rd.group(1)) * 1000 if rd else None,
+        thumb=Resource.ContentsOfURLWithFallback([thumb, FALLBACK]),
+        source_title='Putvid'
+        )
+
+####################################################################################################
+def MediaObjectsForURL(url):
+
+    return [
+        MediaObject(
+            container=Container.MP4,
+            video_codec=VideoCodec.H264,
+            audio_codec=AudioCodec.AAC,
+            audio_channels=2,
+            optimized_for_streaming=True,
+            parts=[
+                PartObject(key=Callback(PlayVideo, url=url))
+                ]
+            )
+        ]
+
+####################################################################################################
+@indirect
+def PlayVideo(url, **kwargs):
+
+    r = RE_FILE.search(get_packed_page(get_page(url)))
+    vurl = r.group(1).replace(' ', '%20') if r else None
+    if vurl:
+        Log.Debug(u"* PlayVideo URL = {0}".format(vurl))
+        return IndirectResponse(VideoClipObject, key=vurl)
+
+    raise Ex.MediaNotAvailable
+
+####################################################################################################
+def get_page(url):
+    try:
+        page = HTTP.Request(url, cacheTime=10).content
+    except:
+        Log.Exception(u"* Error: Cannot open '{0}' >>>".format(url))
+        raise Ex.MediaNotAvailable
+    return page
+
+####################################################################################################
+def get_packed_page(page):
+    packed = RE_PACKED.search(page)
+    return Unpack(packed.group(1)) if packed else page
