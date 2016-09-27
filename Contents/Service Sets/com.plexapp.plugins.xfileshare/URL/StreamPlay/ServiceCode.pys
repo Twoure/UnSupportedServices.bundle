@@ -62,6 +62,12 @@ def MediaObjectsForURL(url):
 def PlayVideo(url, **kwargs):
 
     page = get_packed_page(get_page(url))
+
+    r = RE_FILE.search(page)
+    if r:
+        Log.Debug(u"* PlayVideo URL = {0}".format(r.group(1)))
+        return IndirectResponse(VideoClipObject, key=r.group(1))
+
     r = RE_RTMP.search(page)
     if r:
         node = Regex(r'(.+?\/)(mp4\:.+)').search(r.group(1))
@@ -72,11 +78,6 @@ def PlayVideo(url, **kwargs):
             Log.Debug('* PlayVideo RTMP Stream')
             Log.Debug(u"* player = '{0}' | clip = '{1}'".format(player, clip))
             return IndirectResponse(VideoClipObject, key=RTMPVideoURL(url=player, clip=clip))
-
-    r = RE_FILE.search(page)
-    if r:
-        Log.Debug(u"* PlayVideo URL = {0}".format(r.group(1)))
-        return IndirectResponse(VideoClipObject, key=r.group(1))
 
     raise Ex.MediaNotAvailable
 

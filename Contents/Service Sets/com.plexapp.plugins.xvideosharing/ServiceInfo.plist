@@ -29,11 +29,32 @@
           <string>^https?\:\/\/(?:www\.)?youlol(\d|\w)?\.\w+\/.+</string>
         </array>
       </dict>
+      <key>PlayU</key>
+      <dict>
+        <key>URLPatterns</key>
+        <array>
+          <string>^https?\:\/\/(www\.)?playu\.\w+\/.+</string>
+        </array>
+      </dict>
+      <key>VidABC</key>
+      <dict>
+        <key>URLPatterns</key>
+        <array>
+          <string>^https?\:\/\/(www\.)?vidabc\.\w+\/.+</string>
+        </array>
+      </dict>
       <key>Vidshare</key>
       <dict>
         <key>URLPatterns</key>
         <array>
           <string>^https?\:\/\/(www\.)?vidshare\.(?:[^\/]+(?&lt;!us)\/).+</string>
+        </array>
+      </dict>
+      <key>VidToDo</key>
+      <dict>
+        <key>URLPatterns</key>
+        <array>
+          <string>^https?\:\/\/(www\.)?vidtodo\.\w+\/.+</string>
         </array>
       </dict>
       <key>WatchVideo</key>

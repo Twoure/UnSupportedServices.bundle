@@ -26,8 +26,8 @@ def MetadataObjectForURL(url):
 
     title = None
     vid = RE_NORM.search(url).group(2)
-    rt1 = Regex(r'{0}[\"\']\>(.+?) *?\- *?\d+(?:\.\d+)? *?MB\<\/'.format(vid)).search(page)
-    rt2 = Regex(r'{0}\](.+?)\- *?\d+(?:\.\d+)? *?MB'.format(vid)).search(page)
+    rt1 = Regex(r'{0}["\']\>(.+?) *?\- *?\d+(?:\.\d+)? *?[MG]B\<\/'.format(vid)).search(page)
+    rt2 = Regex(r'{0}\](.+?)\- *?\d+(?:\.\d+)? *?[MG]B'.format(vid)).search(page)
     ht = html.xpath('//input[@name="fname"]/@value')
     if rt1:
         title = rt1.group(1)

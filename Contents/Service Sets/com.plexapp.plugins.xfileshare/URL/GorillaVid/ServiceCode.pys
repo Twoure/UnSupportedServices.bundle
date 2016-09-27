@@ -12,13 +12,10 @@ FALLBACK = 'http://i.imgur.com/75YO83o.jpg'
 def NormalizeURL(url):
 
     r = RE_NORM.search(url)
-    return r.group(1) + '/embed-' + r.group(2) + '.html'
+    return r.group(1) + '/embed-' + r.group(2) + '.html' if r else url
 
 ####################################################################################################
 def MetadataObjectForURL(url):
-
-    # Remove 'uss/' from start of url. Work-around Official Services.bundle
-    url = url[4:] if url.startswith('uss/') else url
 
     nurl = url.replace('/embed-', '/') if '/embed-' in url else url
     page = get_page(nurl)
@@ -75,9 +72,6 @@ def MediaObjectsForURL(url):
 @indirect
 def PlayVideo(url, **kwargs):
 
-    # Remove 'uss/' from start of url. Work-around Official Services.bundle
-    url = url[4:] if url.startswith('uss/') else url
-
     r = RE_FILE.search(get_page(url))
     if r:
         Log.Debug(u"* PlayVideo URL = {0}".format(r.group(1)))
@@ -87,6 +81,9 @@ def PlayVideo(url, **kwargs):
 
 ####################################################################################################
 def get_page(url):
+    # Remove 'uss/' from start of url. Work-around Official Services.bundle
+    url = url[4:] if url.startswith('uss/') else url
+
     try:
         page = HTTP.Request(url, cacheTime=10).content
     except:
