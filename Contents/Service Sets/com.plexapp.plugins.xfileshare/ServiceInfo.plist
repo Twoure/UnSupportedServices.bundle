@@ -82,7 +82,6 @@
           <string>^https?\:\/\/(www\.)?goodvideohost\.(?:[^\/]+\/).+</string>
           <string>^nahttps?\:\/\/(www\.)?thevideobee\.(?:[^\/]+\/).+</string>
           <string>^https?\:\/\/(www\.)?yourvideohost\.(?:[^\/]+\/).+</string>
-          <string>^https?\:\/\/(www\.)?zstream\.(?:[^\/]+\/).+</string>
         </array>
       </dict>
     </dict>

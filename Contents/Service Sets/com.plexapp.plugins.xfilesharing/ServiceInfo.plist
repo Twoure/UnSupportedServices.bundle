@@ -68,6 +68,13 @@
           <string>^https?\:\/\/(www\.)?xvidstage\.\w+\/.+</string>
         </array>
       </dict>
+      <key>ZStream</key>
+      <dict>
+        <key>URLPatterns</key>
+        <array>
+          <string>^https?\:\/\/(www\.)?zstream\.\w+\/.+</string>
+        </array>
+      </dict>
     </dict>
   </dict>
 </plist>
