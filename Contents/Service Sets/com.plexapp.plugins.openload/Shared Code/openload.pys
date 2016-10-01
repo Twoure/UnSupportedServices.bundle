@@ -57,13 +57,18 @@ def OpenloadStreamFromURL(url, http_headers=None):
     if not http_headers:
         http_headers = {'User-Agnet': USER_AGENT, 'Referer': url}
 
-    base = Regex(r'(https?://\w+\.\w+)/\w+/([^/]+)(/.+)?').search(url)
+    base = Regex(r'(https?\:\/\/\w+\.\w+)\/\w+\/([^\/]+)(\/.+)?').search(url)
     eurl = base.group(1) + '/embed/' + base.group(2) + (base.group(3) if base.group(3) else '')
 
     try:
         page = HTTP.Request(eurl, encoding=('utf-8'), headers=http_headers, cacheTime=CACHE_1MINUTE).content
+    except UnicodeDecodeError, ude:
+        Log.Warn(u"* Warning: Content removed by Openload for '{0}'".format(eurl))
+        Log(str(ude))
+        return False
     except:
-        Log.Exception(u"* Cannot Open Openload URL '{}' >>>".format(eurl))
+        Log(u"* Error handling '{0}' >>>".format(eurl))
+        Log.Exception(u"* Error: Cannot Open/Decode Openload page >>>")
         return False
 
     html = HTML.ElementFromString(page)
