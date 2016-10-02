@@ -1,40 +1,44 @@
 #!/usr/bin/env python
 
 """
-ExaShare.com, s147gs.xyz, Ajihezo.info Service Code
+ExaShare.com, s147gs.xyz, oepqu4xd.xyz, Ajihezo.info Service Code
 
 This code also works for YouWatch.org | Chouhaa.info, but those require a Referer value to access
 video URLs which Plex Framework is not setup to do yet, but could since Transcoder built off of ffmpeg.
 """
 
 USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36'
+RE_FILE = Regex(r'["\']?file["\']? *?\: *?["\'](http[^"\'\?]+(?<!m3u8|smil))["\']')
+RE_NORM = Regex(r'(https?://(?:www\.)?\w+\.\w+)(?:/embed\-|/)(\w+)')
+RE_STITLE = Regex(r'https?://(?:www\.)?(\w+)\.\w+')
+FALLBACK = 'http://i.imgur.com/75YO83o.jpg'
 
 ####################################################################################################
 def NormalizeURL(url):
 
-    r = Regex(r'(https?\:\/\/(?:www\.)?\w+\.\w+\/)(?:embed\-)?(\w+)').search(url)
+    r = RE_NORM.search(url)
     # set url to exashare, even though it's redirecting to s147gs.xyz
     # ajihezo.info no longer redirects, but video hash is still valid
-    return 'http://exashare.com/' + r.group(2) if r else url
+    return 'http://exashare.com/embed-' + r.group(2) + '.html' if r else url
 
 ####################################################################################################
 def MetadataObjectForURL(url):
 
-    try:
-        html = HTML.ElementFromURL(url, cacheTime=10)
-    except:
-        Log.Exception(u"* Error: Cannot open '{0}' >>>".format(url))
-        raise Ex.MediaNotAvailable
+    nurl = url.replace('/embed-', '/') if '/embed-' in url else url
+    html = HTML.ElementFromString(get_page(nurl, {'User-Agent': USER_AGENT}))
 
-    vid = Regex(r'https?\:\/\/(?:www\.)?\w+\.\w+\/(\w+)').search(url).group(1)
+    vid = RE_NORM.search(url).group(2)
     ier = html.xpath('//input[@id="ier"]/@value')
     if not ier:
         raise Ex.MediaExpired
 
-    r = Regex(r'%s\]\[IMG\](http[^\[]+)\[\/IMG\](\[?[^\[]+)\[\/URL\]\[\d+x\d+\,\s*?([^\]]+)' %vid).search(ier[0])
-    st = Regex(r'https?\:\/\/(?:www\.)?(\w+)\.\w+').search(url)
+    r = Regex(r'{0}\]\[IMG\](http[^\[]+)\[/IMG\](\[?[^\[]+)\[/URL\]\[\d+x\d+\, *?([^\]]+)'.format(vid)).search(ier[0])
+    if not r:
+        Log.Error(u"* Error: Cannot find metadata for '{0}'".format(nurl))
+        raise Ex.MediaNotAvailable
 
-    fallback = 'http://i.imgur.com/75YO83o.jpg'
+    st = RE_STITLE.search(url)
+
     thumb1 = r.group(1).strip()
     thumb2 = Regex(r'_t\.').sub(r'_xt.', thumb1)
     thumb3 = Regex(r'_t\.').sub(r'.', thumb1)
@@ -44,7 +48,7 @@ def MetadataObjectForURL(url):
     return VideoClipObject(
         title=title,
         duration=Datetime.MillisecondsFromString(duration) if duration else None,
-        thumb=Resource.ContentsOfURLWithFallback([thumb3, thumb2, thumb1, fallback]),
+        thumb=Resource.ContentsOfURLWithFallback([thumb3, thumb2, thumb1, FALLBACK]),
         source_title=st.group(1).title() if st else 'ExaShare'
         )
 
@@ -56,7 +60,6 @@ def MediaObjectsForURL(url):
             container=Container.MP4,
             video_codec=VideoCodec.H264,
             audio_codec=AudioCodec.AAC,
-            video_resolution='sd',
             audio_channels=2,
             optimized_for_streaming=True,
             parts=[
@@ -70,16 +73,11 @@ def MediaObjectsForURL(url):
 def PlayVideo(url, **kwargs):
 
     http_headers = {'User-Agent': USER_AGENT}
-    try:
-        html = HTML.ElementFromURL(get_embed_url(url), headers=http_headers, cacheTime=10)
-    except:
-        Log.Exception(u"* Error: Cannot open '{0}' >>>".format(url))
-        raise Ex.MediaNotAvailable
+    html = HTML.ElementFromString(get_page(url, http_headers))
 
     eurl = html.xpath('//iframe/@src')
     if eurl:
-        page = HTTP.Request(eurl[0], headers=http_headers).content
-        r = Regex(r'[\"\']?file[\"\']?\s*?\:\s*?[\"\'](http[^\"\'\?]+(?<!m3u8|smil))[\"\']').search(page)
+        r = RE_FILE.search(get_page(eurl[0], http_headers))
         if r:
             Log.Debug(u"* PlayVideo URL = {0}".format(r.group(1)))
             return IndirectResponse(VideoClipObject, key=r.group(1), user_agent=USER_AGENT)
@@ -87,6 +85,10 @@ def PlayVideo(url, **kwargs):
     raise Ex.MediaNotAvailable
 
 ####################################################################################################
-def get_embed_url(url):
-    r = Regex(r'(https?\:\/\/(?:www\.)?\w+\.\w+\/)(\w+)').search(url)
-    return r.group(1) + 'embed-' + r.group(2) + '.html'
+def get_page(url, http_headers):
+    try:
+        page = HTTP.Request(url, headers=http_headers, cacheTime=10).content
+    except:
+        Log.Exception(u"* Error: Cannot open '{0}' >>>".format(url))
+        raise Ex.MediaNotAvailable
+    return page

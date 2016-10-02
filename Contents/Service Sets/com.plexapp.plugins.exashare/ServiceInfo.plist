@@ -8,9 +8,10 @@
     <dict>
       <key>URLPatterns</key>
       <array>
-        <string>^https?\:\/\/(?:www\.)?ajihezo\.(?:[^\/]+\/).+</string>
-        <string>^https?\:\/\/(?:www\.)?exashare\.(?:[^\/]+\/).+</string>
-        <string>^https?\:\/\/(?:www\.)?s147gs\.(?:[^\/]+\/).+</string>
+        <string>^https?\:\/\/(?:www\.)?ajihezo\.\w+\/.+</string>
+        <string>^https?\:\/\/(?:www\.)?exashare\.\w+\/.+</string>
+        <string>^https?\:\/\/(?:www\.)?oepqu4xd\.xyz\/.+</string>
+        <string>^https?\:\/\/(?:www\.)?s147gs\.xyz\/.+</string>
       </array>
     </dict>
   </dict>
