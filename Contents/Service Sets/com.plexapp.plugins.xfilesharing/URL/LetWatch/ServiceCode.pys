@@ -2,9 +2,9 @@
 
 """LetWatch.(us|to) Service Code"""
 
-RE_NORM = Regex(r'(https?\:\/\/(?:www\.)?\w+\.\w+)(?:\/embed\-|\/)(\w+)')
-RE_THUMB = Regex(r'[\"\']?image[\"\']?\s*?\:\s*?[\"\'](http[^\"\']+)[\"\']')
-RE_DUR = Regex(r'[\"\']?duration[\"\']?\s*?\:\s*?[\"\'](\d+)[\"\']')
+RE_NORM = Regex(r'(https?://(?:www\.)?\w+\.\w+)(?:/embed\-|/)(\w+)')
+RE_THUMB = Regex(r'["\']?image["\']? *?\: *?["\'](http[^"\']+)["\']')
+RE_DUR = Regex(r'["\']?duration["\']? *?\: *?["\'](\d+)["\']')
 RE_SOURCES = Regex(r'sources *?\: *?(\[.*?\{[^\]]+\}.*?\]),')
 FMTS = {"HD": 720, "SD": 480}
 FALLBACK = 'http://i.imgur.com/75YO83o.jpg'
@@ -57,7 +57,13 @@ def MediaObjectsForURL(url):
     if not r:
         raise Ex.MediaExpired
 
-    sources = JSON.ObjectFromString(r.group(1).replace('label', '"label"').replace('file', '"file"'))
+    s = r.group(1).replace("'", '"')
+    if '"file"' not in s:
+        s = s.replace('file', '"file"')
+    if '"label"' not in s:
+        s = s.replace('label', '"label"')
+
+    sources = JSON.ObjectFromString(s)
     [s.update({'label': FMTS.get(s['label'], 360)}) for s in sources]
     Log(u"* LetWatch Video Sources: '{0}'".format(sources))
 
