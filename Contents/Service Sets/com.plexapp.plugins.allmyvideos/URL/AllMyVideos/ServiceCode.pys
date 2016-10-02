@@ -110,13 +110,19 @@ def MediaObjectsForURL(url):
         raise Ex.MediaNotAvailable
 
     try:
-        sources = JSON.ObjectFromString(rs.group(1).replace('false', '"False"').replace('true', '"True"'))
+        s = rs.group(1).replace("'", '"')
+        if '"file"' not in s:
+            s = s.replace('file', '"file"')
+        if '"label"' not in s:
+            s = s.replace('label', '"label"')
+
+        sources = JSON.ObjectFromString(s)
     except:
         Log.Exception(u"* Error converting sources to JSON object for '{0}' >>>".format(url))
         raise Ex.MediaNotAvailable
 
-    [s.update({'label': int(RE_FMT.sub(r'\1', s['label'])), 'file': s['file']+'&direct=false&ua=true'}) for s in sources]
-    Log(sources)
+    sources = [{'label': int(RE_FMT.sub(r'\1', s['label'])), 'file': s['file']+'&direct=false&ua=true'} for s in sources]
+    Log(u"* AllMyVideos Video Sources: '{0}'".format(sources))
 
     return [
         MediaObject(

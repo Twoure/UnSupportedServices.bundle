@@ -49,12 +49,15 @@ def MediaObjectsForURL(url):
     if not rs:
         raise Ex.MediaNotAvailable
 
-    try:
-        sources = JSON.ObjectFromString(rs.group(1).replace('label', '"label"').replace('file', '"file"'))
-        [s.update({'label': int(s['label'][:-1])}) for s in sources]
-    except:
-        Log.Exception(u"* Error: Cannot handle source list within '{0}' >>>".format(url))
-        raise Ex.MediaNotAvailable
+    s = rs.group(1).replace("'", '"')
+    if '"file"' not in s:
+        s = s.replace('file', '"file"')
+    if '"label"' not in s:
+        s = s.replace('label', '"label"')
+
+    sources = JSON.ObjectFromString(s)
+    [s.update({'label': int(s['label'][:-1])}) for s in sources]
+    Log(u"* ABVideo Video Sources: '{0}'".format(sources))
 
     return [
         MediaObject(
