@@ -21,7 +21,6 @@ def Search(query):
         count += 1
         duration = Datetime.MillisecondsFromString(node.xpath('.//div[@class="duration"]/text()')[0])
 
-        href = node.xpath('.//span/a/@href')[0]
         thumb = node.xpath('.//img/@src')[0]
         url = node.xpath('.//a/@href')[0]
 

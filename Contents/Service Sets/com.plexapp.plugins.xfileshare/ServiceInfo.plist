@@ -32,26 +32,12 @@
           <string>^https?\:\/\/(www\.)?movpod\.\w+\/.+</string>
         </array>
       </dict>
-      <key>PowerWatch</key>
-      <dict>
-        <key>URLPatterns</key>
-        <array>
-          <string>^nahttps?\:\/\/(www\.)?powerwatch\.\w+\/.+</string>
-        </array>
-      </dict>
       <key>Rapidvideo</key>
       <dict>
         <key>URLPatterns</key>
         <array>
           <string>^https?\:\/\/(www\.)?rapidvideo\.ws\/.+</string>
           <string>^(?:uss\/)?https?\:\/\/(www\.)?faststream\.\w+\/.+</string>
-        </array>
-      </dict>
-      <key>Streame</key>
-      <dict>
-        <key>URLPatterns</key>
-        <array>
-          <string>^nahttps?\:\/\/(www\.)?streame\.\w+\/.+</string>
         </array>
       </dict>
       <key>Streamin</key>
@@ -80,7 +66,6 @@
         <key>URLPatterns</key>
         <array>
           <string>^https?\:\/\/(www\.)?goodvideohost\.(?:[^\/]+\/).+</string>
-          <string>^nahttps?\:\/\/(www\.)?thevideobee\.(?:[^\/]+\/).+</string>
           <string>^https?\:\/\/(www\.)?yourvideohost\.(?:[^\/]+\/).+</string>
         </array>
       </dict>
