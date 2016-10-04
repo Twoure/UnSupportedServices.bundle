@@ -16,6 +16,13 @@
           <string>^https?\:\/\/(www\.)?aisfile\.\w+\/.+</string>
         </array>
       </dict>
+      <key>BDUpload</key>
+      <dict>
+        <key>URLPatterns</key>
+        <array>
+          <string>^https?\:\/\/(www\.)?bdupload\.\w+\/.+</string>
+        </array>
+      </dict>
       <key>LetWatch</key>
       <dict>
         <key>URLPatterns</key>

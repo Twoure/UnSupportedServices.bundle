@@ -1,10 +1,8 @@
 #!/usr/bin/env python
 
 """
-IndiShare.me Service Code
+BDUpload.info Service Code
     :Can have ~5 sec POST wait time
-    :Video Host can be slow, and will timeout Plex Web Client when transcoding
-    :May need to remove host, because can be too slow for Plex Streaming
 """
 
 from time import sleep
@@ -28,7 +26,7 @@ def MetadataObjectForURL(url):
     return VideoClipObject(
         title=title,
         thumb='http://i.imgur.com/75YO83o.jpg',
-        source_title='IndiShare'
+        source_title='BDUpload'
         )
 
 ####################################################################################################

@@ -25,10 +25,15 @@ def MetadataObjectForURL(url):
 
 ####################################################################################################
 def MediaObjectsForURL(url):
+    """
+    Final Play URL Supports direct play, but filerev host many video types,
+    mainly MKV which does not support direct playback within most Plex Clients.
+
+    For now leaving off codec and container info to force transcoding for all clients.
+    """
 
     return [
         MediaObject(
-            video_resolution='sd',
             audio_channels=2,
             optimized_for_streaming=False,
             parts=[
@@ -50,23 +55,28 @@ def PlayVideo(url, **kwargs):
 
     data = dict()
     for item in html1.xpath('//input'):
-        data.update({item.get('name'): item.get('value')})
+        data[item.get('name')] = item.get('value')
 
     if data:
-        http_headers.update({'Referer': url})
+        http_headers['Referer'] = url
         html2 = HTML.ElementFromString(HTTP.Request(url, headers=http_headers, values=data).content)
         data.clear()
 
     for item in html2.xpath('//input'):
-        data.update({item.get('name'): item.get('value')})
+        data[item.get('name')] = item.get('value')
 
     if data:
         try:
             page = HTTP.Request(url, values=data, headers=http_headers, follow_redirects=False).content
             Log.Warn(u"* Warning: cannot find video URL for '{0}'".format(url))
         except Ex.RedirectError, e:
+            vurl = None
             if 'Location' in e.headers:
                 vurl = e.headers['Location']
+            elif 'location' in e.headers:
+                vurl = e.headers['location']
+
+            if vurl:
                 Log.Debug(u"* PlayVideo URL = {0}".format(vurl))
                 return IndirectResponse(VideoClipObject, key=vurl)
 

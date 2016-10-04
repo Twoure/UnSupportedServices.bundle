@@ -1,41 +1,44 @@
 #!/usr/bin/env python
 
-"""Playedto.me Service Code"""
+"""
+Playedto.me Service Code
+    :pull all info from embed page
+    :host offline during test, will test later
+"""
+
+RE_NORM = Regex(r'(https?://(?:www\.)?\w+\.\w+)(?:/embed\-|/)(\w+)')
+RE_TITLE = Regex(r'["\']?title["\']? *?\: *?["\']([^"\']+)["\']')
+RE_THUMB = Regex(r'["\']?image["\']? *?\: *?["\'](http[^"\']+)["\']')
+RE_DUR = Regex(r'["\']?duration["\']? *?\: *?["\'](\d+)["\']')
+Regex(r'["\']?file["\']? *?\: *?["\'](http[^"\']+(?<!m3u8|smil))["\']')
+FALLBACK = 'http://i.imgur.com/75YO83o.jpg'
 
 ####################################################################################################
 def NormalizeURL(url):
-    if '/embed-' not in url:
-        r = Regex(r'(https?\:\/\/(?:www\.)?\w+\.\w+)(?:\/embed\-|\/)(\w+)').search(url)
-        url = r.group(1) + '/embed-' + r.group(2) + '.html' if r else url
-    return url
+
+    r = RE_NORM.search(url)
+    return r.group(1) + '/embed-' + r.group(2) + '.html' if r else url
 
 ####################################################################################################
 def MetadataObjectForURL(url):
 
-    try:
-        page = HTTP.Request(url, cacheTime=10).content
-    except:
-        Log.Exception(u"* Error: Cannot open '{0}' >>>".format(url))
-        raise Ex.MediaNotAvailable
-
+    page = get_page(url)
     if Regex(r'(File was deleted)').search(page):
         raise Ex.MediaExpired
 
-    rt = Regex(r'[\"\']?title[\"\']?\s*?\:\s*?[\"\']([^\"\']+)[\"\']').search(page)
-    rth = Regex(r'[\"\']?image[\"\']?\s*?\:\s*?[\"\'](http[^\"\']+)[\"\']').search(page)
-    rd = Regex(r'[\"\']?duration[\"\']?\s*?\:\s*?[\"\'](\d+)[\"\']').search(page)
-    st = Regex(r'https?\:\/\/(?:www\.)?(\w+)\.\w+').search(url)
+    rt = RE_TITLE.search(page)
+    rth = RE_THUMB.search(page)
+    rd = RE_DUR.search(page)
 
-    fallback = 'http://i.imgur.com/75YO83o.jpg'
-    thumb = rth.group(1) if rth else fallback
+    thumb = rth.group(1) if rth else FALLBACK
     duration = int(rd.group(1)) * 1000 if rd else None
     title = rt.group(1).strip() if rt else u"Playedto | {0}".format(Regex(r'embed\-(\w+)').search(url).group(1))
 
     return VideoClipObject(
         title=title,
         duration=duration,
-        thumb=Resource.ContentsOfURLWithFallback([thumb, fallback]),
-        source_title=st.group(1).title() if st else 'Playedto'
+        thumb=Resource.ContentsOfURLWithFallback([thumb, FALLBACK]),
+        source_title='Playedto'
         )
 
 ####################################################################################################
@@ -54,15 +57,18 @@ def MediaObjectsForURL(url):
 @indirect
 def PlayVideo(url, **kwargs):
 
-    try:
-        page = HTTP.Request(url, cacheTime=10).content
-    except:
-        Log.Exception(u"* Error: Cannot open '{0}' >>>".format(url))
-        raise Ex.MediaNotAvailable
-
-    r = Regex(r'[\"\']?file[\"\']?\s*?\:\s*?[\"\'](http[^\"\']+(?<!m3u8|smil))[\"\']').search(page)
+    r = RE_FILE.search(get_page(url))
     if r:
         Log.Debug(u"* PlayVideo URL = {0}".format(r.group(1)))
         return IndirectResponse(VideoClipObject, key=r.group(1))
 
     raise Ex.MediaNotAvailable
+
+####################################################################################################
+def get_page(url):
+    try:
+        page = HTTP.Request(url, cacheTime=10).content
+    except:
+        Log.Exception(u"* Error: Cannot open '{0}' >>>".format(url))
+        raise Ex.MediaNotAvailable
+    return page

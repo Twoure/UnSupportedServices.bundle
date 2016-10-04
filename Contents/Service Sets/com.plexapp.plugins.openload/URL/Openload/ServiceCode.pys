@@ -5,15 +5,14 @@
 from openload import OpenloadStreamFromURL
 
 USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36'
+RE_NORM = Regex(r'(https?://\w+\.\w+)/\w+/(\w+)(/.+)?')
+FALLBACK = 'http://i.imgur.com/75YO83o.jpg'
 
 ####################################################################################################
 def NormalizeURL(url):
 
-    if not '/embed/' in url:
-        base = Regex(r'(https?:\/\/\w+\.\w+)\/\w+\/([^\/]+)(\/.+)?').search(url)
-        url = base.group(1) + '/embed/' + base.group(2) + (base.group(3) if base.group(3) else '')
-
-    return url
+    r = RE_NORM.search(url)
+    return r.group(1) + '/embed/' + r.group(2) + (r.group(3) if r.group(3) else '') if r else url
 
 ####################################################################################################
 def MetadataObjectForURL(url):
@@ -25,23 +24,18 @@ def MetadataObjectForURL(url):
         raise Ex.MediaNotAvailable
 
     title = html.xpath('//meta[@name="og:title"]/@content')
-    if title:
-        title = title[0]
-    else:
+    if not title:
         title = html.xpath('//span[@class="title"]/text()')
-        if title:
-            title = title[0]
-        else:
+        if not title:
             Log.Error(u"* Error: Cannot find title within '{0}'".format(url))
-            raise Ex.MediaNotAvailable
+            raise Ex.MediaExpired
 
-    fallback = 'http://i.imgur.com/75YO83o.jpg'
     nthumb = html.xpath('//meta[@name="og:image"]/@content')
-    thumb = nthumb[0] if nthumb else fallback
+    thumb = nthumb[0] if nthumb else FALLBACK
 
     return VideoClipObject(
-        title=title.strip(),
-        thumb=Resource.ContentsOfURLWithFallback([thumb, fallback]),
+        title=title[0].strip(),
+        thumb=Resource.ContentsOfURLWithFallback([thumb, FALLBACK]),
         source_title='Openload'
         )
 
@@ -64,14 +58,17 @@ def PlayVideo(url, **kwargs):
 
     http_headers = {'User-Agent': USER_AGENT, 'Referer': url}
     ourl = OpenloadStreamFromURL(url, http_headers=http_headers)
-    vurl = None
     if ourl:
+        vurl = None
         try:
             page = HTTP.Request(ourl, headers=http_headers, follow_redirects=False, method='HEAD').content
             vurl = ourl
         except Ex.RedirectError, e:
             if 'Location' in e.headers:
                 vurl = e.headers['Location']
+            elif 'location' in e.headers:
+                vurl = e.headers['location']
+
         if vurl:
             Log.Debug(u"* PlayVideo URL  = {0}".format(vurl))
             return IndirectResponse(VideoClipObject, key=vurl)
