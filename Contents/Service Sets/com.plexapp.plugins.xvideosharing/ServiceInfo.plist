@@ -4,6 +4,13 @@
   <dict>
     <key>URL</key>
     <dict>
+      <key>HDViD</key>
+      <dict>
+        <key>URLPatterns</key>
+        <array>
+          <string>^https?\:\/\/(www\.)?hdvid\.\w+\/.+</string>
+        </array>
+      </dict>
       <key>iDoWatch</key>
       <dict>
         <key>URLPatterns</key>
