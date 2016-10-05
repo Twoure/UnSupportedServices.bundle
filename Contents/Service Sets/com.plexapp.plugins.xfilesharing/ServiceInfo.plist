@@ -47,6 +47,20 @@
           <string>^https?\:\/\/(www\.)?putvid\.\w+\/.+</string>
         </array>
       </dict>
+      <key>SaveFile</key>
+      <dict>
+        <key>URLPatterns</key>
+        <array>
+          <string>^https?\:\/\/(www\.)?savefile\.\w+\/.+</string>
+        </array>
+      </dict>
+      <key>SendMyWay</key>
+      <dict>
+        <key>URLPatterns</key>
+        <array>
+          <string>^https?\:\/\/(www\.)?sendmyway\.\w+\/.+</string>
+        </array>
+      </dict>
       <key>VideoNest</key>
       <dict>
         <key>URLPatterns</key>
