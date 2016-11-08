@@ -4,13 +4,13 @@
 
 from unpacker import unpack as Unpack
 
-RE_PACKED = Regex(r"<script type=.text\/javascript.>(eval\(function\(p,a,c,k,e,.+\|file\|.+\.split\('\|'\).*?\)\))")
-RE_NORM = Regex(r'(https?:\/\/(?:www\.|beta\.)?\w+\.\w+)(?:\/embed\-|\/)(\w+)')
-RE_TITLE = Regex(r'title\s*?\:\s*?\'(.+)\'')
-RE_THUMB = Regex(r'image\s*?\:\s*?[\'\"](http[^\'\"]+)[\'\"]')
-RE_SUM = Regex(r'description\s*?\:\s*?\'(.+)\'')
-RE_DUR = Regex(r'duration\s*?\:\s*?[\'\"](\d+)[\'\"]')
-RE_SOURCES = Regex(r'sources\s*?\:\s*?(\[\{.+\}\])\,')
+RE_PACKED = Regex(r"<script type=.text/javascript.>(eval\(function\(p,a,c,k,e,.+\|file\|.+\.split\('\|'\).*?\)\))")
+RE_NORM = Regex(r'(https?://(?:www\.|beta\.)?\w+\.\w+)(?:/embed\-|/)(\w+)')
+RE_TITLE = Regex(r"title *?\: *?'(.+)'")
+RE_THUMB = Regex(r'image *?\: *?["\'](http[^"\']+)["\']')
+RE_SUM = Regex(r"description *?\: *?'(.+)'")
+RE_DUR = Regex(r'duration *?\: *?["\'](\d+)["\']')
+RE_SOURCES = Regex(r'sources *?\: *?(\[\{.+\}\])\,')
 FALLBACK = 'http://i.imgur.com/75YO83o.jpg'
 
 ####################################################################################################
@@ -55,6 +55,7 @@ def MediaObjectsForURL(url):
     if not fmt_list:
         raise Ex.MediaNotAvailable
 
+    Log(u"* VidUp Video Sources: '{0}'".format(fmt_list))
     return [
         MediaObject(
             video_resolution=item['label'][:-1],
@@ -83,7 +84,10 @@ def source_dict(url):
     if not sources:
         raise Ex.MediaExpired
 
-    s = sources.group(1)
-    s = s.replace('\'', '\"').replace('label', '\"label\"').replace('file', '\"file\"')
+    s = sources.group(1).replace("'", '"')
+    if '"file"' not in s:
+        s = s.replace('file', '"file"')
+    if '"label"' not in s:
+        s = s.replace('label', '"label"')
 
     return JSON.ObjectFromString(s)
