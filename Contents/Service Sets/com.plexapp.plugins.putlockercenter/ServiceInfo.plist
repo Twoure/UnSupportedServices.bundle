@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+  <dict>
+    <key>URL</key>
+    <dict>
+      <key>PutLockerCenter</key>
+      <dict>
+        <key>URLPatterns</key>
+        <array>
+          <string>^https?\:\/\/(?:www\.)?bestream\.tv\/.+</string>
+          <string>^https?\:\/\/(?:www\.)?fileshow\.tv\/.+</string>
+          <string>^https?\:\/\/(?:www\.)?picstream\.tv\/.+</string>
+          <string>^https?\:\/\/(?:www\.)?putlocker\.center\/.+</string>
+          <string>^https?\:\/\/(?:www\.)?streaming\.watch\/.+</string>
+          <string>^https?\:\/\/(?:www\.)?touchfile\.tv\/.+</string>
+          <string>^https?\:\/\/(?:www\.)?webmfile\.tv\/.+</string>
+        </array>
+      </dict>
+    </dict>
+  </dict>
+</plist>
