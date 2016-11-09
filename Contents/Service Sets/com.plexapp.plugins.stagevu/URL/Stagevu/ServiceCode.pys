@@ -10,11 +10,7 @@ def NormalizeURL(url):
 ####################################################################################################
 def MetadataObjectForURL(url):
 
-    try:
-        html = HTML.ElementFromURL(url, cacheTime=10)
-    except:
-        Log.Exception(u"* Error: Cannot open '{0}' >>>".format(url))
-        raise Ex.MediaNotAvailable
+    html = get_html(url)
 
     embed_node = html.xpath('//embed[@type="video/divx"]')
     if not embed_node:
@@ -70,15 +66,19 @@ def MediaObjectsForURL(url):
 @indirect
 def PlayVideo(url, **kwargs):
 
-    try:
-        html = HTML.ElementFromURL(url, cacheTime=10)
-    except:
-        Log.Exception(u"* Error: Cannot open '{0}' >>>".format(url))
-        raise Ex.MediaNotAvailable
-
+    html = get_html(url)
     vurl = html.xpath('//embed[@type="video/divx"]/@src')
     if vurl:
         Log.Debug(u"* PlayVideo URL = {0}".format(vurl[0]))
         return IndirectResponse(VideoClipObject, key=vurl[0])
 
     raise Ex.MediaNotAvailable
+
+####################################################################################################
+def get_html(url):
+    try:
+        html = HTML.ElementFromURL(url, cacheTime=10)
+    except:
+        Log.Exception(u"* Error: Cannot open '{0}' >>>".format(url))
+        raise Ex.MediaNotAvailable
+    return html

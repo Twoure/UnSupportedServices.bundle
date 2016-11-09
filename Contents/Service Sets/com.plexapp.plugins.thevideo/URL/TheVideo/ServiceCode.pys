@@ -5,13 +5,13 @@
 from unpacker import unpack as Unpack
 
 USER_AGENT = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/52.0.2743.116 Safari/537.36"
-RE_NORM = Regex(r'(https?:\/\/(?:www\.)?\w+\.\w+)(?:\/embed\-|\/)(\w+)')
+RE_NORM = Regex(r'(https?://(?:www\.)?\w+\.\w+)(?:/embed\-|/)(\w+)')
 RE_PTKN = Regex(r"(eval\(function\(p,a,c,k,e,.+\|(?:jwv|x3C)\|.+\.split\('\|'\).*?\)\))")
-RE_TKN = Regex(r'[\'\"\\]+?\/[\'\"\\]+?\+([^\+]+)\+.+?\\x3C\/script\>')
+RE_TKN = Regex(r'["\'\\]+?/["\'\\]+?\+([^\+]+)\+.+?\\x3C/script\>')
 RE_SOURCES = Regex(r'sources *?\: *?(\[.*?\{[^\]]+\}.*?\]),')
-RE_TITLE = Regex(r'title\s*?\:\s*?[\'\"](.*?)[\'\"]\,')
-RE_THUMB = Regex(r'image\s*?\:\s*?[\'\"]([^\'\"]+)[\'\"]')
-RE_DUR = Regex(r'duration\s*?\:\s*?[\'\"](\d+)[\'\"]')
+RE_TITLE = Regex(r'title *?\: *?["\'](.*?)["\']\,')
+RE_THUMB = Regex(r'image *?\: *?["\']([^"\']+)["\']')
+RE_DUR = Regex(r'duration *?\: *?["\'](\d+)["\']')
 FALLBACK = 'http://i.imgur.com/75YO83o.jpg'
 
 ####################################################################################################
@@ -50,6 +50,7 @@ def MediaObjectsForURL(url):
     if not flist:
         raise Ex.MediaNotAvailable
 
+    Log(u"* TheVideo Video Sources: '{0}'".format(flist))
     return [
         MediaObject(
             video_resolution=str(s['label']),
@@ -77,7 +78,7 @@ def source_dict(url, http_headers):
 
     rptkn = RE_PTKN.search(page)
     rtkn = RE_TKN.search(Unpack(rptkn.group(1))) if rptkn else None
-    rtoken = Regex(r'var\s*?{0}\=[\'\"]([^\'\"]+)[\'\"]'.format(rtkn.group(1))).search(page) if rtkn else None
+    rtoken = Regex(r'var *?{0}\=["\']([^"\']+)["\']'.format(rtkn.group(1))).search(page) if rtkn else None
     if not rtoken:
         Log.Error("* Error: Cannot find packer token")
         raise Ex.MediaNotAvailable
@@ -90,7 +91,7 @@ def source_dict(url, http_headers):
         raise Ex.MediaNotAvailable
 
     sources = RE_SOURCES.search(page)
-    rvt = Regex(r'vt\=([^\'\"]+)[\'\"]').search(Unpack(packed))
+    rvt = Regex(r'vt\=([^"\']+)["\']').search(Unpack(packed))
     if not sources:
         Log.Warn(u"* Warning: Cannot find source list within '{0}'".format(url))
         raise Ex.MediaExpired

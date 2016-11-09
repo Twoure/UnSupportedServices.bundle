@@ -3,21 +3,18 @@
 """BDRIP.ws Service Code"""
 
 USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/53.0.2785.92 Safari/537.36'
+RE_NORM = Regex(r'(https?://(?:www\.)?\w+\.\w+/)(?:\w+/|[^\=]+\=)(\w+)')
+RE_FILE = Regex(r'["\']?file["\']? *?\, *?["\']([^"\']+)["\']')
 
 ####################################################################################################
 def NormalizeURL(url):
-    r = Regex(r'(https?\:\/\/(?:www\.)?\w+\.\w+\/)(?:\w+\/|[^\=]+\=)(\w+)').search(url)
+    r = RE_NORM.search(url)
     return r.group(1) + 'rc.php?Id=' + r.group(2) if r else url
 
 ####################################################################################################
 def MetadataObjectForURL(url):
 
-    try:
-        html = HTML.ElementFromURL(url, cacheTime=CACHE_1MINUTE, headers={'User-Agent': USER_AGENT})
-    except:
-        Log.Exception(u"* Error: Cannot open '{0}' >>>".format(url))
-        raise Ex.MediaNotAvailable
-
+    html = HTML.ElementFromString(get_page(url))
     if html.xpath('//h2[text()="404 video"]'):
         raise Ex.MediaExpired
 
@@ -44,13 +41,7 @@ def MediaObjectsForURL(url):
 @indirect
 def PlayVideo(url, **kwargs):
 
-    try:
-        page = HTTP.Request(url, cacheTime=CACHE_1MINUTE, headers={'User-Agent': USER_AGENT}).content
-    except:
-        Log.Exception(u"* Error: Cannot open '{0}' >>>".format(url))
-        raise Ex.MediaNotAvailable
-
-    r = Regex(r'[\'\"]?file[\'\"]?\s*?\,\s*?[\'\"]([^\'\"]+)[\'\"]').search(page)
+    r = RE_FILE.search(get_page(url))
     if r:
         Log.Debug(u'* PlayVideo SWF Clip = {0}'.format(r.group(1)))
         player = String.Base64Decode('cnRtcDovLzkzLjExNS44Ny4xMDM6MTkzNS92b2Qv')
@@ -58,3 +49,12 @@ def PlayVideo(url, **kwargs):
         return IndirectResponse(VideoClipObject, key=RTMPVideoURL(url=player, clip=clip))
 
     raise Ex.MediaNotAvailable
+
+####################################################################################################
+def get_page(url):
+    try:
+        page = HTTP.Request(url, cacheTime=CACHE_1MINUTE, headers={'User-Agent': USER_AGENT}).content
+    except:
+        Log.Exception(u"* Error: Cannot open '{0}' >>>".format(url))
+        raise Ex.MediaNotAvailable
+    return page

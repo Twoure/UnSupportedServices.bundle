@@ -2,23 +2,21 @@
 
 """Stream.moe Service Code"""
 
+RE_NORM = Regex(r'(https?://(?:www\.)?\w+\.\w+)(?:/embed\-|/embed/|/)(\w+)')
+RE_ATOB = Regex(r'contents *?\= *?atob\(["\']([^"\']+)')
+FALLBACK = 'http://i.imgur.com/75YO83o.jpg'
+
 ####################################################################################################
 def NormalizeURL(url):
 
-    if '/embed' not in url:
-        r = Regex(r'(?i)(https?:\/\/(?:www\.)?\w+\.\w+\/)(\w+)').search(url)
-        url = r.group(1) + 'embed/' + r.group(2)
-    return url
+    r = RE_NORM.search(url)
+    return r.group(1) + '/embed/' + r.group(2)
 
 ####################################################################################################
 def MetadataObjectForURL(url):
 
-    try:
-        page = HTTP.Request(url, cacheTime=10).content
-        html = HTML.ElementFromString(page)
-    except:
-        Log.Exception(u"* Error: Cannot open '{0}' >>>".format(url))
-        raise Ex.MediaNotAvailable
+    page = get_page(url)
+    html = HTML.ElementFromString(page)
 
     title = html.xpath('//title/text()')
     if not title:
@@ -26,13 +24,12 @@ def MetadataObjectForURL(url):
 
     atob_html = atob(page)
     if (atob_html is not None):
-        fallback = 'http://i.imgur.com/75YO83o.jpg'
         poster = atob_html.xpath('//video/@poster')
-        thumb = poster[0] if poster else fallback
+        thumb = poster[0] if poster else FALLBACK
 
         return VideoClipObject(
             title=title[0].split(' - Stream.moe')[0].strip(),
-            thumb=Resource.ContentsOfURLWithFallback([thumb, fallback]),
+            thumb=Resource.ContentsOfURLWithFallback([thumb, FALLBACK]),
             source_title='StreamMoe'
             )
 
@@ -55,13 +52,7 @@ def MediaObjectsForURL(url):
 @indirect
 def PlayVideo(url, **kwargs):
 
-    try:
-        page = HTTP.Request(url, cacheTime=10).content
-    except:
-        Log.Exception(u"* Error: Cannot open '{0}' >>>".format(url))
-        raise Ex.MediaNotAvailable
-
-    html = atob(page)
+    html = atob(get_page(url))
     if (html is not None):
         vurl = html.xpath('//source/@src')
         if vurl:
@@ -71,12 +62,19 @@ def PlayVideo(url, **kwargs):
     raise Ex.MediaNotAvailable
 
 ####################################################################################################
+def get_page(url):
+    try:
+        page = HTTP.Request(url, cacheTime=10).content
+    except:
+        Log.Exception(u"* Error: Cannot open '{0}' >>>".format(url))
+        raise Ex.MediaNotAvailable
+    return page
+
+####################################################################################################
 def atob(page):
-    r = Regex(r'contents\s*?\=\s*?atob\([\'\"]([^\'\"]+)').search(page)
-    if r:
-        try:
-            htext = String.Base64Decode(r.group(1))
-            return HTML.ElementFromString(htext)
-        except:
-            Log.Exception(u"* Error: Cannot decode atob within '{0}' >>>".format(url))
+    r = RE_ATOB.search(page)
+    try:
+        return HTML.ElementFromString(String.Base64Decode(r.group(1))) if r else False
+    except:
+        Log.Exception(u"* Error: Cannot decode atob within '{0}' >>>".format(url))
     return False
