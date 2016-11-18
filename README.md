@@ -17,7 +17,7 @@ I plan to make a few channels that will require this UnSupported Services channe
 - [Download](https://github.com/Twoure/UnSupportedServices.bundle/archive/master.zip) the channel and install it by following the Plex [instructions](https://support.plex.tv/hc/en-us/articles/201187656-How-do-I-manually-install-a-channel-) or the instructions below.
   - Unzip and rename the folder to **UnSupportedServices.bundle**
   - Copy **UnSupportedServices.bundle** into the PMS [Plug-ins](https://support.plex.tv/hc/en-us/articles/201106098-How-do-I-find-the-Plug-Ins-folder-) directory
-  - Unix based platforms need to `chown plex:plex -R KissNetwork.bundle` after moving it into the Plug-ins directory _(`user:group` may differ by platform)_
+  - Unix based platforms need to `chown plex:plex -R UnSupportedServices.bundle` after moving it into the Plug-ins directory _(`user:group` may differ by platform)_
   - **Restart PMS**
 
 ## Upgrade
