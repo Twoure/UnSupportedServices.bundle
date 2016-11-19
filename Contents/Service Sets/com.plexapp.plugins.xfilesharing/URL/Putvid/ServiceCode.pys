@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 
-"""Putvid.com Service Code"""
+"""
+Putvid.com Service Code
+    site is currently a white page
+"""
 
 from unpacker import unpack as Unpack
 

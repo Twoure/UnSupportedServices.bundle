@@ -2,9 +2,9 @@
 
 """ZStream.to Service Code"""
 
-RE_NORM = Regex(r'(https?\:\/\/(?:www\.)?\w+\.\w+)(?:\/embed\-|\/)(\w+)')
-RE_THUMB = Regex(r'[\"\']?image[\"\']?\s*?\:\s*?[\"\'](http[^\"\']+)[\"\']')
-RE_DUR = Regex(r'[\"\']?duration[\"\']?\s*?\:\s*?[\"\'](\d+)[\"\']')
+RE_NORM = Regex(r'(https?://(?:www\.)?\w+\.\w+)(?:/embed\-|/)(\w+)')
+RE_THUMB = Regex(r'["\']?image["\']? *?\:*?["\'](http[^"\']+)["\']')
+RE_DUR = Regex(r'["\']?duration["\']? *?\: *?["\'](\d+)["\']')
 RE_SOURCES = Regex(r'sources *?\: *?(\[.*?\{[^\]]+\}.*?\]),')
 FMTS = {"HD": 720, "SD": 480}
 FALLBACK = 'http://i.imgur.com/75YO83o.jpg'

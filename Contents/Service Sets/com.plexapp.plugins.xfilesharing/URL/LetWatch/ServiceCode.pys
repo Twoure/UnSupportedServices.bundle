@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-"""LetWatch.(us|to) Service Code"""
+"""LetWatch.(us|to) & VidShare.us Service Code"""
 
 RE_NORM = Regex(r'(https?://(?:www\.)?\w+\.\w+)(?:/embed\-|/)(\w+)')
 RE_THUMB = Regex(r'["\']?image["\']? *?\: *?["\'](http[^"\']+)["\']')
