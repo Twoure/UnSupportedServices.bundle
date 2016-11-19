@@ -41,7 +41,7 @@ def MetadataObjectForURL(url):
     elif thumb2:
         thumb = thumb2[0]
     else:
-        FALLBACK
+        thumb = FALLBACK
 
     return VideoClipObject(
         title=title[0].strip(),
