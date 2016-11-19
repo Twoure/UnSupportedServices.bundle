@@ -50,6 +50,13 @@
           <string>^https?\:\/\/(www\.)?vidabc\.\w+\/.+</string>
         </array>
       </dict>
+      <key>Videorev</key>
+      <dict>
+        <key>URLPatterns</key>
+        <array>
+          <string>^https?\:\/\/(www\.)?videorev\.\w+\/.+</string>
+        </array>
+      </dict>
       <key>Vidshare</key>
       <dict>
         <key>URLPatterns</key>
@@ -62,6 +69,13 @@
         <key>URLPatterns</key>
         <array>
           <string>^https?\:\/\/(www\.)?vidtodo\.\w+\/.+</string>
+        </array>
+      </dict>
+      <key>VODlock</key>
+      <dict>
+        <key>URLPatterns</key>
+        <array>
+          <string>^https?\:\/\/(www\.)?vodlock\.\w+\/.+</string>
         </array>
       </dict>
       <key>WatchVideo</key>

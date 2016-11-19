@@ -5,7 +5,7 @@ VODlock.co Service Code
     :Pull all info from embed page
 """
 
-RE_FILE = Regex(r'["\']?file["\']? *?\: *?["\'](http[^"\']+(?<!m3u8|smil))["\']')
+RE_SOURCES = Regex(r'sources *?\: *?(\[.*?\{[^\]]+\}.*?\]),')
 RE_NORM = Regex(r'(https?://(?:www\.)?\w+\.\w+)(?:/embed\-|/)(\w+)')
 RE_TITLE = Regex(r'["\']?title["\']? *?\: *?["\']([^"\']+)["\']')
 RE_THUMB = Regex(r'["\']?image["\']? *?\: *?["\'](http[^"\']+)["\']')
@@ -22,7 +22,7 @@ def NormalizeURL(url):
 def MetadataObjectForURL(url):
 
     page = get_page(url)
-    if not RE_FILE.search(page):
+    if not RE_SOURCES.search(page):
         Log.Warn(u"* Warning: File missing for '{0}'".format(url))
         raise Ex.MediaExpired
 
@@ -47,28 +47,33 @@ def MetadataObjectForURL(url):
         )
 
 ####################################################################################################
+@deferred
 def MediaObjectsForURL(url):
+
+    rs = RE_SOURCES.search(get_page(url))
+    if not rs:
+        raise Ex.MediaNotAvailable
+
+    s = rs.group(1).replace("'", '"')
+    if '"file"' not in s:
+        s = s.replace('file', '"file"')
+    if '"label"' not in s:
+        s = s.replace('label', '"label"')
+
+    sources = JSON.ObjectFromString(s)
+    sources = [{'label': int(s['label']), 'file': s['file']} for s in sources]
+    Log(u"* VODlock Video Sources: '{0}'".format(sources))
 
     return [
         MediaObject(
             audio_channels=2,
+            video_resolution=str(item['label']),
             optimized_for_streaming=False,
             parts=[
-                PartObject(key=Callback(PlayVideo, url=url))
+                PartObject(key=item['file'])
                 ]
-            )
+            ) for item in reversed(Util.ListSortedByKey(sources, 'label'))
         ]
-
-####################################################################################################
-@indirect
-def PlayVideo(url, **kwargs):
-
-    r = RE_FILE.search(get_page(url))
-    if r:
-        Log.Debug(u"* PlayVideo URL = {0}".format(r.group(1)))
-        return IndirectResponse(VideoClipObject, key=r.group(1))
-
-    raise Ex.MediaNotAvailable
 
 ####################################################################################################
 def get_page(url):
