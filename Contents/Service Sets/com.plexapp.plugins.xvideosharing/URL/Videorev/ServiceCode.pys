@@ -15,7 +15,7 @@ FALLBACK = 'http://i.imgur.com/75YO83o.jpg'
 def NormalizeURL(url):
 
     r = RE_NORM.search(url)
-    return r.group(1) + '/' + r.group(2) + '.html' if r else url
+    return r.group(1) + '/' + r.group(2) if r else url
 
 ####################################################################################################
 def MetadataObjectForURL(url):

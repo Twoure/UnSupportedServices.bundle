@@ -2,70 +2,89 @@
 
 """WatchVideo.us Service Code"""
 
+from unpacker import unpack as Unpack
+
 USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36'
+RE_PACKED = Regex(r"<script type=.text/javascript.>(eval\(function\(p,a,c,k,e,.+\|file\|.+\.split\('\|'\).*?\)\))")
+RE_NORM = Regex(r'(https?://(?:www\.)?\w+\.\w+)(?:/embed\-|/)(\w+)')
+RE_TITLE = Regex(r'\[/IMG\](\]?[^\[]+)\[/URL\]')
+RE_TITLE2 = Regex(r'title\>[^\<]+\</title')
+RE_CTITLE = Regex(r'^[Ww]atch +?(.+?)$')
+RE_THUMB = Regex(r'["\']?image["\']? *?\: *?["\'](http[^"\']+)["\']')
+RE_DUR = Regex(r'["\']?duration["\']? *?\: *?["\'](\d+)["\']')
+RE_HLS = Regex(r'["\']?file["\']? *?\: *?["\'](http[^"\']+\.m3u8)["\']')
+RE_SOURCES = Regex(r'(?is)bandwidth\=(\d+).*?resolution\=\d+x(\d+).*?(http.+?\.m3u8)')
+FALLBACK = 'http://i.imgur.com/75YO83o.jpg'
 
 ####################################################################################################
 def NormalizeURL(url):
-    if '/embed-' in url:
-        url = url.replace('/embed-', '/').split('-')[0]
-    return url
+
+    r = RE_NORM.search(url)
+    return r.group(1) + '/' + r.group(2) if r else url
 
 ####################################################################################################
 def MetadataObjectForURL(url):
 
-    try:
-        page = HTTP.Request(url).content
-    except:
-        raise Ex.MediaNotAvailable
+    page = get_page(url)
 
-    t1 = Regex(r'\[\/IMG\](\]?[^\[]+)\[\/URL\]').search(page)
-    t2 = Regex(r'title\>[^\<]+\<\/title').search(page)
-
+    t1 = RE_TITLE.search(page)
+    t2 = RE_TITLE2.search(page)
     if t1:
         title = t1.group(1)
     elif t2:
-        title = Regex(r'^[Ww]atch\s+?(.+?)$').sub(r'\1', t2.group(1).strip())
+        title = RE_CTITLE.sub(r'\1', t2.group(1).strip())
     else:
         raise Ex.MediaExpired
 
-    rt = Regex(r'[\"\']?image[\"\']?\s*?\:\s*?[\"\'](http[^\"\']+)[\"\']').search(page)
-    rd = Regex(r'[\"\']?duration[\"\']?\s*?\:\s*?[\"\'](\d+)[\"\']').search(page)
+    page = get_packed_page(page)
+    rt = RE_THUMB.search(page)
+    rd = RE_DUR.search(page)
 
-    fallback = 'http://i.imgur.com/75YO83o.jpg'
-    thumb = rt.group(1) if rt else fallback
-    duration = int(rd.group(1)) * 1000 if rd else None
+    thumb = rt.group(1) if rt else FALLBACK
 
     return VideoClipObject(
         title=title.strip(),
-        duration=duration,
-        thumb=Resource.ContentsOfURLWithFallback([thumb, fallback]),
+        duration=int(rd.group(1)) * 1000 if rd else None,
+        thumb=Resource.ContentsOfURLWithFallback([thumb, FALLBACK]),
         source_title='WatchVideo'
         )
 
 ####################################################################################################
+@deferred
 def MediaObjectsForURL(url):
+
+    hls = RE_HLS.search(get_packed_page(get_page(url)))
+    if not hls:
+        raise Ex.MediaExpired
+
+    sources = RE_SOURCES.findall(get_page(hls.group(1)))
+    if not sources:
+        raise Ex.MediaNotAvailable
+
+    sources = [(int(r), int(b)/1000, u) for (b, r, u) in sources]
+    Log(u"* WatchVideo Video Sources: '{0}'".format(sources))
 
     return [
         MediaObject(
-            parts=[PartObject(
-                key=HTTPLiveStreamURL(Callback(PlayVideo, url=url))
-                )]
-            )
+            video_resolution=str(res),
+            bitrate=bit,
+            audio_channels=2,
+            optimized_for_streaming=True,
+            parts=[
+                PartObject(key=HTTPLiveStreamURL(src))
+                ],
+            ) for res, bit, src in reversed(sorted(sources))
         ]
 
 ####################################################################################################
-@indirect
-def PlayVideo(url, **kwargs):
-
-    http_headers = {'User-Agent': USER_AGENT}
+def get_page(url):
     try:
-        page = HTTP.Request(url, headers=http_headers).content
+        page = HTTP.Request(url, headers={'User-Agent': USER_AGENT}, cacheTime=10).content
     except:
         raise Ex.MediaNotAvailable
+    return page
 
-    r = Regex(r'[\"\']?file[\"\']?\s*?\:\s*?[\"\'](http[^\"\']+\.m3u8)[\"\']').search(page)
-    if r:
-        Log.Debug('* PlayVideo ULR = %s' %r.group(1))
-        return IndirectResponse(VideoClipObject, key=r.group(1))
-
-    raise Ex.MediaNotAvailable
+####################################################################################################
+def get_packed_page(page):
+    packed = RE_PACKED.search(page)
+    return Unpack(packed.group(1)) if packed else page

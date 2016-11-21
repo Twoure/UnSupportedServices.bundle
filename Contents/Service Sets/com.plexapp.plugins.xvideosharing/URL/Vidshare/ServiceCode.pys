@@ -50,20 +50,25 @@ def MetadataObjectForURL(url):
 ####################################################################################################
 def MediaObjectsForURL(url):
 
-    page = get_page(url)
-    r = RE_SOURCES.search(page)
-    if not r:
-        raise Ex.MediaExpired
+    rs = RE_SOURCES.search(get_page(url))
+    if not rs:
+        raise Ex.MediaNotAvailable
 
-    sources = JSON.ObjectFromString(r.group(1).replace('label', '"label"').replace('file', '"file"'))
-    sources = [{'label': int(s['label']), 'file': s['file']} for s in sources if 'label' in s]
+    s = rs.group(1).replace("'", '"')
+    if '"file"' not in s:
+        s = s.replace('file', '"file"')
+    if '"label"' not in s:
+        s = s.replace('label', '"label"')
+
+    sources = JSON.ObjectFromString(s)
+    sources = [{'label': int(s['label']), 'file': s['file']} for s in sources if 'label' in s.keys()]
     Log(u"* Vidshare Video Sources: '{0}'".format(sources))
 
     return [
         MediaObject(
             audio_channels=2,
-            optimized_for_streaming=False,
             video_resolution=str(s['label']),
+            optimized_for_streaming=False,
             parts=[
                 PartObject(key=s['file'])
                 ]

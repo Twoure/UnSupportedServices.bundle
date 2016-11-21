@@ -37,8 +37,8 @@
       <dict>
         <key>URLPatterns</key>
         <array>
-          <string>^https?\:\/\/(?:www\.)?fastplay\.(?:[^\/]+\/).+</string>
-          <string>^https?\:\/\/(?:www\.)?mystream\.(?:[^\/]+\/).+</string>
+          <string>^https?\:\/\/(?:www\.)?fastplay\.\w+\/.+</string>
+          <string>^https?\:\/\/(?:www\.)?mystream\.\w+\/.+</string>
         </array>
       </dict>
       <key>PlayU</key>

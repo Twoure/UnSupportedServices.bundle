@@ -1,14 +1,17 @@
 #!/usr/bin/env python
 
-"""iDoWatch.net Service Code"""
+"""
+iDoWatch.net Service Code
+    host can be too slow for Plex streaming at times
+"""
 
 from unpacker import unpack as Unpack
 
-RE_PACKED = Regex(r"<script type=.text\/javascript.>(eval\(function\(p,a,c,k,e,.+\|file\|.+\.split\('\|'\).*?\)\))")
-RE_NORM = Regex(r'(https?\:\/\/(?:www\.)?\w+\.\w+)(?:\/embed\-|\/)(\w+)')
-RE_THUMB = Regex(r'[\"\']?image[\"\']?\s*?\:\s*?[\"\'](http[^\"\']+)[\"\']')
-RE_DUR = Regex(r'[\"\']?duration[\"\']?\s*?\:\s*?[\"\'](\d+)[\"\']')
-RE_FILE = Regex(r'[\"\']?file[\"\']?\s*?\:\s*?[\"\'](http[^\"\'\?]+(?<!m3u8)(?<!smil)(?<!vtt))[\"\']')
+RE_PACKED = Regex(r"<script type=.text/javascript.>(eval\(function\(p,a,c,k,e,.+\|file\|.+\.split\('\|'\).*?\)\))")
+RE_NORM = Regex(r'(https?://(?:www\.)?\w+\.\w+)(?:/embed\-|/)(\w+)')
+RE_THUMB = Regex(r'["\']?image["\']? *?\: *?["\'](http[^"\']+)["\']')
+RE_DUR = Regex(r'["\']?duration["\']? *?\: *?["\'](\d+)["\']')
+RE_FILE = Regex(r'["\']?file["\']? *?\: *?["\'](http[^"\'\?]+(?<!m3u8)(?<!smil)(?<!vtt))["\']')
 FALLBACK = 'http://i.imgur.com/75YO83o.jpg'
 
 ####################################################################################################
