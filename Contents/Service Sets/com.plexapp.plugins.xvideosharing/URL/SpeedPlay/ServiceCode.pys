@@ -2,17 +2,13 @@
 
 """
 Service Code for:
-    MyStream.la,
-    FastPlay.(cc|sx)
+    SpeedPlay(1|2).(site|pw), SpeedPlay3.pw, SpeedPlay.us,
 """
 
-RE_NORM = Regex(r'(https?://(?:www\.)?\w+\.\w+)(?:/external/|/embed\-|/flash\-|/)(\w+)')
+RE_NORM = Regex(r'(https?://(?:www\.)?\w+\.\w+)(?:/embed\-|/)(\w+)')
 RE_FNF = Regex(r'([Ff]ile [Nn]ot [Ff]ound)')
-RE_TITLE = Regex(r'\<title\>([^\<]+)\</title\>')
-RE_TITLE2 = Regex(r'\[/IMG\] *?(\]?[^\[]+)\[/URL\]')
 RE_THUMB = Regex(r'["\']?image["\']? *?\: *?["\'](http[^"\']+)["\']')
 RE_DUR = Regex(r'["\']?duration["\']? *?\: *?["\'](\d+)["\']')
-RE_STITLE = Regex(r'https?://(?:www\.)?(\w+)\.\w+')
 RE_SOURCES = Regex(r'(?s)["\']?sources["\']? *?\: *?(\[.*?\{[^\]]+\}.*?\])\,')
 FALLBACK = 'http://i.imgur.com/75YO83o.jpg'
 
@@ -20,24 +16,30 @@ FALLBACK = 'http://i.imgur.com/75YO83o.jpg'
 def NormalizeURL(url):
 
     r = RE_NORM.search(url)
-    return r.group(1) + '/' + r.group(2) if r else url
+    return r.group(1) + '/embed-' + r.group(2) + '.html' if r else url
 
 ####################################################################################################
 def MetadataObjectForURL(url):
 
-    page = get_page(url)
+    nurl = url.replace('/embed-', '/') if '/embed-' in url else url
+    page = get_page(nurl)
     if RE_FNF.search(page):
         raise Ex.MediaExpired
 
-    t1 = RE_TITLE.search(page)
-    t2 = RE_TITLE2.search(page)
+    html = HTML.ElementFromString(page)
+    t1 = html.xpath('//input[@id="fname"]/@value')
+    t2 = html.xpath('//h2/text()')
+    t3 = html.xpath('//title/text()')
     if t1:
-        title = Regex(r'Watch\s(.+)$').sub(r'\1', t1.group(1))
+        title = t1[0].strip()
     elif t2:
-        title = t2.group(1).strip('_-\s\r\n\t')
+        title = Regex(r'Watch\s(.+)$').sub(r'\1', t2[0].strip())
+    elif t3:
+        title = t3[0].strip()
     else:
         raise Ex.MediaExpired
 
+    page = get_page(url)
     rt = RE_THUMB.search(page)
     rd = RE_DUR.search(page)
 
@@ -47,7 +49,7 @@ def MetadataObjectForURL(url):
         title=title,
         duration=int(rd.group(1)) * 1000 if rd else None,
         thumb=Resource.ContentsOfURLWithFallback([thumb, FALLBACK]),
-        source_title=get_source_title(url)
+        source_title='SpeedPlay'
         )
 
 ####################################################################################################
@@ -63,17 +65,10 @@ def MediaObjectsForURL(url):
         s = s.replace('file', '"file"')
     if '"label"' not in s:
         s = s.replace('label', '"label"')
-    if '"default"' not in s:
-        s = s.replace('default', '"default"')
 
     sources = JSON.ObjectFromString(s)
-    for src in sources:
-        if src['label'].endswith('p'):
-            src['label'] = int(src['label'][:-1])
-        else:
-            src['label'] = int(src['label'])
-
-    Log(u"* {0} Video Sources: '{1}'".format(get_source_title(url), sources))
+    sources = [{'label': int(s['label']), 'file': s['file']} for s in sources]
+    Log(u"* SpeedPlay Video Sources: '{0}'".format(sources))
 
     return [
         MediaObject(
@@ -85,11 +80,6 @@ def MediaObjectsForURL(url):
                 ],
             ) for item in reversed(Util.ListSortedByKey(sources, 'label'))
         ]
-
-####################################################################################################
-def get_source_title(url):
-    st = RE_STITLE.search(url)
-    return st.group(1).title() if st else 'MyStream'
 
 ####################################################################################################
 def get_page(url):
