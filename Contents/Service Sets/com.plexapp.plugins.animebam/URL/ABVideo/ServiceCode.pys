@@ -55,9 +55,8 @@ def MediaObjectsForURL(url):
     if '"label"' not in s:
         s = s.replace('label', '"label"')
 
-    src_list = JSON.ObjectFromString(s)
     sources = list()
-    for src in src_list:
+    for src in JSON.ObjectFromString(s):
         src['label'] = int(src['label'][:-1])
         if src['file'].startswith('/'):
             src['file'] = RE_NORM.search(url).group(1) + src['file']
