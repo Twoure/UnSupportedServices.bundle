@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-"""AllVid.ch Service Code"""
+"""AllVid.ch & coo5shaine.com Service Code"""
 
 from unpacker import unpack as Unpack
 
