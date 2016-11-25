@@ -2,15 +2,15 @@
 
 """AnimeBam.net Service Code"""
 
-RE_NORM = Regex(r'(https?\:\/\/(?:www\.)?\w+\.\w+\/embed\/)(\w+)')
-RE_SOURCES = Regex(r'sources *?\: *?(\[.*?\{[^\]]+\}.*?\])')
+RE_NORM = Regex(r'(https?://(?:www\.)?\w+\.\w+)/embed/(\w+)')
+RE_SOURCES = Regex(r'(?i)sources *?(?:\:|\=) *?(\[.*?\{[^\]]+\}.*?\])')
 FALLBACK = 'http://i.imgur.com/75YO83o.jpg'
 
 ####################################################################################################
 def NormalizeURL(url):
 
     r = RE_NORM.search(url)
-    return r.group(1) + r.group(2)
+    return r.group(1) + '/embed/' + r.group(2) if r else url
 
 ####################################################################################################
 def MetadataObjectForURL(url):
@@ -55,8 +55,14 @@ def MediaObjectsForURL(url):
     if '"label"' not in s:
         s = s.replace('label', '"label"')
 
-    sources = JSON.ObjectFromString(s)
-    [s.update({'label': int(s['label'][:-1])}) for s in sources]
+    src_list = JSON.ObjectFromString(s)
+    sources = list()
+    for src in src_list:
+        src['label'] = int(src['label'][:-1])
+        if src['file'].startswith('/'):
+            src['file'] = RE_NORM.search(url).group(1) + src['file']
+        sources.append(src)
+
     Log(u"* ABVideo Video Sources: '{0}'".format(sources))
 
     return [
@@ -74,15 +80,21 @@ def MediaObjectsForURL(url):
         ]
 
 ####################################################################################################
-def RedirectVideo(url, eurl):
+def RedirectVideo(url, eurl, count=0):
+    if (count >= 3):
+        Log.Error("* RedirectVideo Error: Tried {} times to find the final video stream but failed.".format(count))
+        raise Ex.MediaNotAvailable
+    count += 1
+
     try:
         HTTP.Request(url, headers={'Referer': eurl}, cacheTime=10, method='HEAD', follow_redirects=False, immediate=True)
+        Log(u"* RedirectVideo URL = {0}".format(url))
         return Redirect(url)
     except Ex.RedirectError, e:
         if 'Location' in e.headers:
-            return Redirect(e.headers['Location'])
+            return RedirectVideo(e.headers['Location'], eurl, count)
         elif 'location' in e.headers:
-            return Redirect(e.headers['location'])
+            return RedirectVideo(e.headers['location'], eurl, count)
     except:
         Log.Exception(u"* Error: Cannot handle '{0}' >>>".format(url))
 
