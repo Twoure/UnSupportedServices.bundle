@@ -2,8 +2,8 @@
 
 """
 FilesUpload.org Service Code
-
-Most direct video URLs are removed within a few days of creation, not a good streaming host
+    Most direct video URLs are removed within a few days of creation, not a good streaming host
+    URLError: <urlopen error [SSL: TLSV1_ALERT_INTERNAL_ERROR] tlsv1 alert internal error (_ssl.c:590)>
 """
 
 RE_NORM1 = Regex(r'(https?://(?:www\.)?\w+\.\w+/)[^/]+/(.+)')
