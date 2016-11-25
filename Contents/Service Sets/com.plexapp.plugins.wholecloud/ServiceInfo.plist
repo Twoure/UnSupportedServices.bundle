@@ -21,18 +21,18 @@
       <dict>
         <key>URLPatterns</key>
         <array>
-          <string>^https?\:\/\/(?:www\.|embed\.)?auroravid\.(?:[^\/]+\/).+</string>
-          <string>^https?\:\/\/(?:www\.|embed\.)?bitvid\.(?:[^\/]+\/).+</string>
-          <string>^https?\:\/\/(?:www\.|embed\.)?cloudtime\.(?:[^\/]+\/).+</string>
-          <string>^https?\:\/\/(?:www\.|embed\.)?cloudy\.(?:[^\/]+\/).+</string>
-          <string>^https?\:\/\/(?:www\.|embed\.)?divxstage\.(?:[^\/]+\/).+</string>
-          <string>^https?\:\/\/(?:www\.|embed\.)?movshare\.(?:[^\/]+\/).+</string>
-          <string>^https?\:\/\/(?:www\.|embed\.)?novamov\.(?:[^\/]+\/).+</string>
-          <string>^https?\:\/\/(?:www\.|embed\.)?nowvideo\.(?:[^\/]+\/).+</string>
-          <string>^https?\:\/\/(?:www\.|embed\.)?videoraj\.(?:[^\/]+\/).+</string>
-          <string>^https?\:\/\/(?:www\.|embed\.)?videoweed\.(?:[^\/]+\/).+</string>
+          <string>^https?\:\/\/(?:www\.|embed\.)?auroravid\.\w+\/.+</string>
+          <string>^https?\:\/\/(?:www\.|embed\.)?bitvid\.\w+\/.+</string>
+          <string>^https?\:\/\/(?:www\.|embed\.)?cloudtime\.\w+\/.+</string>
+          <string>^https?\:\/\/(?:www\.|embed\.)?cloudy\.\w+\/.+</string>
+          <string>^https?\:\/\/(?:www\.|embed\.)?divxstage\.\w+\/.+</string>
+          <string>^https?\:\/\/(?:www\.|embed\.)?movshare\.\w+\/.+</string>
+          <string>^https?\:\/\/(?:www\.|embed\.)?novamov\.\w+\/.+</string>
+          <string>^https?\:\/\/(?:www\.|embed\.)?nowvideo\.\w+\/.+</string>
+          <string>^https?\:\/\/(?:www\.|embed\.)?videoraj\.\w+\/.+</string>
+          <string>^https?\:\/\/(?:www\.|embed\.)?videoweed\.\w+\/.+</string>
           <string>^https?\:\/\/(?:www\.|embed\.)?vid(?:gg\.\w+|\.gg)\/.+</string>
-          <string>^https?\:\/\/(?:www\.|embed\.)?wholecloud\.(?:[^\/]+\/).+</string>
+          <string>^https?\:\/\/(?:www\.|embed\.)?wholecloud\.\w+\/.+</string>
         </array>
       </dict>
     </dict>
