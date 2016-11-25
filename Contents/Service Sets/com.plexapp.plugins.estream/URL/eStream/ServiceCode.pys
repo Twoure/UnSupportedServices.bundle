@@ -32,7 +32,7 @@ def MetadataObjectForURL(url):
     rd = RE_DUR.search(page)
 
     thumb = rth.group(1) if rth else FALLBACK
-    title = rt.group(1).strip() if rt else u"eStream | {0}".format(Regex(r'embed\-(\w+)').search(url).group(1))
+    title = rt.group(1).strip() if rt else u"eStream | {0}".format(RE_NORM.search(url).group(2))
 
     return VideoClipObject(
         title=title,
