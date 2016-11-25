@@ -4,10 +4,10 @@
 
 from unpacker import unpack as Unpack
 
-USER_AGENT = 'Mozilla/5.0 (iPhone; CPU iPhone OS 9_1 like Mac OS X) AppleWebKit/601.1.46 (KHTML, like Gecko) Version/9.0 Mobile/13B143 Safari/601.1'
+USER_AGENT = 'Mozilla/5.0 (Linux; Android 5.1.1; Nexus 6 Build/LYZ28E) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/48.0.2564.23 Mobile Safari/537.36'
 RE_PACKED = Regex(r"<script type=.text\/javascript.>(eval\(function\(p,a,c,k,e,.+\|file\|.+\.split\('\|'\).*?\)\))")
 RE_FILE = Regex(r'["\']?file["\']? *?\: *?["\'](http[^"\']+(?<!m3u8|smil))["\']')
-RE_NORM = Regex(r'(https?://(?:www\.)?\w+\.\w+)(?:/embed\-|/)(\w+)')
+RE_NORM = Regex(r'(https?://(?:www\.)?\w+\.\w+)(?:/embed\-|/play(?:this|it|vid)\-|/embed.php\?c\=|/)(\w+)')
 FALLBACK = 'http://i.imgur.com/75YO83o.jpg'
 
 ####################################################################################################
@@ -56,7 +56,7 @@ def MediaObjectsForURL(url):
 def PlayVideo(url, **kwargs):
     http_headers = {'User-Agent': USER_AGENT, 'Referer': url}
     try:
-        html = HTML.ElementFromURL(url, sleep=5, headers=http_headers)
+        html = HTML.ElementFromURL(url, sleep=7, headers=http_headers)
     except:
         Log.Exception(u"* Error loading '{0}' >>>".format(url))
         raise Ex.MediaNotAvailable
@@ -65,14 +65,19 @@ def PlayVideo(url, **kwargs):
     action_url = html.xpath('//form[@method="POST"]/@action')
     if not action_url:
         raise Ex.MediaExpired
+    elif action_url[0].startswith('//'):
+        aurl = 'http:' + action_url[0]
+    else:
+        aurl = action_url[0]
 
+    http_headers['Cookie'] = HTTP.CookiesForURL(url)
     for item in html.xpath('//form[@method="POST"]/input'):
         post_values[item.get('name')] = item.get('value')
 
     try:
-        page = HTTP.Request(action_url[0], encoding='utf8', errors='ignore', values=post_values, headers=http_headers).content
+        page = HTTP.Request(aurl, encoding='utf8', errors='ignore', values=post_values, headers=http_headers).content
     except:
-        Log.Exception(u"* Error handling '{0}' >>>".format(action_url[0]))
+        Log.Exception(u"* Error handling '{0}' >>>".format(aurl))
         raise Ex.MediaNotAvailable
 
     packed = RE_PACKED.search(page)
