@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 
 """
-ExaShare.com, s147gs.xyz, oepqu4xd.xyz, Ajihezo.info Service Code
+Service Code for:
+    ExaShare.com, s147gs.xyz, ohbuegh3ev.com,
+    oepqu4xd.xyz, Ajihezo.info
 
 This code also works for YouWatch.org | Chouhaa.info, but those require a Referer value to access
 video URLs which Plex Framework is not setup to do yet, but could since Transcoder built off of ffmpeg.
