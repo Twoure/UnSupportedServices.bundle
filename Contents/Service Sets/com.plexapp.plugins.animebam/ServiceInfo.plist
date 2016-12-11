@@ -9,6 +9,7 @@
         <key>URLPatterns</key>
         <array>
           <string>^https?\:\/\/(?:www\.)?animebam\.\w+\/embed\/.+</string>
+          <string>^https?\:\/\/(?:www\.)?burstanime\.\w+\/embed\/.+</string>
         </array>
       </dict>
     </dict>
