@@ -7,7 +7,7 @@ from unpacker import unpack as Unpack
 USER_AGENT = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/52.0.2743.116 Safari/537.36"
 RE_NORM = Regex(r'(https?://(?:www\.)?\w+\.\w+)(?:/embed\-|/)(\w+)')
 RE_PTKN = Regex(r"(eval\(function\(p,a,c,k,e,.+\|(?:jwv|x3C)\|.+\.split\('\|'\).*?\)\))")
-RE_TKN = Regex(r'["\'\\]+?/["\'\\]+?\+([^\+]+)\+.+?\\x3C/script\>')
+RE_TKN = Regex(r'["\'\\]+?/["\'\\]+? ?\+ ?([^\+]+)\+.+?\\x3C/script\>')
 RE_SOURCES = Regex(r'sources *?\: *?(\[.*?\{[^\]]+\}.*?\]),')
 RE_TITLE = Regex(r'title *?\: *?["\'](.*?)["\']\,')
 RE_THUMB = Regex(r'image *?\: *?["\']([^"\']+)["\']')
@@ -65,7 +65,7 @@ def MediaObjectsForURL(url):
 ####################################################################################################
 def get_page(url, http_headers):
     try:
-        page = HTTP.Request(url, headers=http_headers, cacheTime=10).content
+        page = HTTP.Request(url, headers=http_headers, cacheTime=10, encoding='utf-8', errors='replace').content
     except:
         Log.Exception(u"* Error: Cannot open '{0}' >>>".format(url))
         raise Ex.MediaNotAvailable
@@ -77,15 +77,15 @@ def source_dict(url, http_headers):
     page = get_page(url, http_headers)
 
     rptkn = RE_PTKN.search(page)
-    rtkn = RE_TKN.search(Unpack(rptkn.group(1))) if rptkn else None
-    rtoken = Regex(r'var *?{0}\=["\']([^"\']+)["\']'.format(rtkn.group(1))).search(page) if rtkn else None
+    rtkn = RE_TKN.search(Unpack(rptkn.group(1))) if rptkn else RE_TKN.search(page)
+    rtoken = Regex(r'var *?{0}\=["\']([^"\']+)["\']'.format(rtkn.group(1).strip())).search(page) if rtkn else None
     if not rtoken:
         Log.Error("* Error: Cannot find packer token")
         raise Ex.MediaNotAvailable
 
     http_headers['Referer'] = url
     try:
-        packed = HTTP.Request('http://thevideo.me/jwv/{0}'.format(rtoken.group(1)), headers=http_headers, cacheTime=10).content.strip()
+        packed = HTTP.Request('https://thevideo.me/vsign/player/{0}'.format(rtoken.group(1)), headers=http_headers, cacheTime=10).content.strip()
     except:
         Log.Exception("* Error handling packed URL >>>")
         raise Ex.MediaNotAvailable
