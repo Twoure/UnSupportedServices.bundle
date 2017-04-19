@@ -25,7 +25,6 @@ def NormalizeURL(url):
 def MetadataObjectForURL(url):
 
     try:
-        url = correct_url(url)
         page = HTTP.Request(url).content
         html = HTML.ElementFromString(page)
     except Exception as e:
@@ -106,7 +105,7 @@ def MediaObjectsForURL(url):
 @indirect
 def PlayVideo(url, **kwargs):
 
-    url = get_embed_url(correct_url(url))
+    url = get_embed_url(url)
     http_headers = {'User-Agent': USER_AGENT}
 
     page = HTTP.Request(url, headers=http_headers).content
@@ -129,12 +128,6 @@ def get_packed_data(page):
 def get_embed_url(url, norm=False):
     r = Regex(r'(?i)(.*?https?:\/\/(?:www\.)?\w+\.\w+\/)(?:embed\-|\w+\/)?([a-z0-9]+)').search(url)
     return r if norm else r.group(1) + 'embed-' + r.group(2) + '.html'
-
-####################################################################################################
-def correct_url(url):
-    url_list = ['vodlocker', 'gorillavid', 'faststream']
-    test = [url[4:] for u in url_list if Regex(r'(?:\.|\/)(%s)\.' %u).search(url)]
-    return test[0] if test else url
 
 ####################################################################################################
 def get_video_url(url, page):

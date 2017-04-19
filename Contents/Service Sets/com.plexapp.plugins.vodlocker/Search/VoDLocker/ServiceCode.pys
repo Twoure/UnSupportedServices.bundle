@@ -30,7 +30,7 @@ def Search(query):
             thumb=Resource.ContentsOfURLWithFallback([thumb, 'http://i.imgur.com/75YO83o.jpg']),
             duration=duration,
             source_title='VoDLocker',
-            url='uss/' + anode[0].get('href')
+            url=anode[0].get('href')
             ))
 
     return oc

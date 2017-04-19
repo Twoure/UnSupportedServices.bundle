@@ -2,7 +2,7 @@
 
 """VoDLocker.com Service Code"""
 
-RE_NORM = Regex(r'((?:uss/)?https?://(?:www\.)?\w+\.\w+)(?:/embed\-|/)(\w+)')
+RE_NORM = Regex(r'(https?://(?:www\.)?\w+\.\w+)(?:/embed\-|/)(\w+)')
 RE_THUMB = Regex(r'["\']?image["\']? *?\: *?["\'](http[^"\']+)["\']')
 RE_DUR = Regex(r'["\']?duration["\']? *?\: *?["\'](\d+)["\']')
 RE_FILE = Regex(r'["\']?file["\']? *?\: *?["\'](http[^"\'\?]+(?<!m3u8|smil))["\']')
@@ -17,10 +17,7 @@ def NormalizeURL(url):
 ####################################################################################################
 def MetadataObjectForURL(url):
 
-    # Remove 'uss/' from start of url. Work-around Official Services.bundle
-    url = url[4:] if url.startswith('uss/') else url
     nurl = url.replace('/embed-', '/') if '/embed-' in url else url
-
     html = HTML.ElementFromString(get_page(nurl))
 
     if html.xpath('//title/text()')[0] == '404 - Not Found':
@@ -63,9 +60,6 @@ def MediaObjectsForURL(url):
 ####################################################################################################
 @indirect
 def PlayVideo(url, **kwargs):
-
-    # Remove 'uss/' from start of url. Work-around Official Services.bundle
-    url = url[4:] if url.startswith('uss/') else url
 
     r = RE_FILE.search(get_page(url))
     if r:
