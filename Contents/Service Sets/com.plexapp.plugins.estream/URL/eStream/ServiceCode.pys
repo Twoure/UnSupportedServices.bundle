@@ -11,8 +11,8 @@ RE_PACKED = Regex(r"<script type=.text/javascript.>(eval\(function\(p,a,c,k,e,.+
 RE_SOURCES = Regex(r'sources *?\: *?(\[.*?\{[^\]]+\}.*?\]),')
 RE_FMT = Regex(r'^.*?(1080|720|480|360|240)$')
 RE_NORM = Regex(r'(https?://(?:www\.)?\w+\.\w+)(?:/embed\-|/)(\w+)')
-RE_TITLE = Regex(r'["\']?title["\']? *?\: *?["\']([^"\']+)["\']')
-RE_THUMB = Regex(r'["\']?image["\']? *?\: *?["\'](http[^"\']+)["\']')
+RE_TITLE = Regex(r'["\']?title["\']? *?(?:\:|\=) *?["\']([^"\']+)["\']')
+RE_THUMB = Regex(r'["\']?image["\']? *?\: *?(?:url\()?["\'](http[^"\']+)["\']')
 RE_DUR = Regex(r'["\']?duration["\']? *?\: *?["\'](\d+)["\']')
 FALLBACK = 'http://i.imgur.com/75YO83o.jpg'
 
@@ -35,7 +35,7 @@ def MetadataObjectForURL(url):
     title = rt.group(1).strip() if rt else u"eStream | {0}".format(RE_NORM.search(url).group(2))
 
     return VideoClipObject(
-        title=title,
+        title=String.DecodeHTMLEntities(title) if (';' in title and '&' in title) else title,
         duration=int(rd.group(1)) * 1000 if rd else None,
         thumb=Resource.ContentsOfURLWithFallback([thumb, FALLBACK]),
         source_title='eStream'
@@ -45,29 +45,34 @@ def MetadataObjectForURL(url):
 @deferred
 def MediaObjectsForURL(url):
 
-    r = RE_SOURCES.search(get_page(url))
-    if not r:
-        raise Ex.MediaExpired
-
-    s = r.group(1).replace("'", '"')
-    if '"file"' not in s:
-        s = s.replace('file', '"file"')
-    if '"label"' not in s:
-        s = s.replace('label', '"label"')
-
     sources = list()
-    for src in JSON.ObjectFromString(s):
-        if 'label' not in src.keys():
-            continue
-        if src['label'].endswith('p'):
-            label = int(src['label'][:-1])
-        elif (len(src['label']) <= 4):
-            label = int(src['label'])
-        else:
-            label = int(RE_FMT.sub(r'\1', src['label']))
-        sources.append({'file': src['file'], 'label': label})
+    page = get_page(url)
+    r = RE_SOURCES.search(page)
+    if r:
+
+        s = r.group(1).replace("'", '"')
+        if '"file"' not in s:
+            s = s.replace('file', '"file"')
+        if '"label"' not in s:
+            s = s.replace('label', '"label"')
+
+        for src in JSON.ObjectFromString(s):
+            if 'label' not in src.keys():
+                continue
+            if src['label'].endswith('p'):
+                label = int(src['label'][:-1])
+            elif (len(src['label']) <= 4):
+                label = int(src['label'])
+            else:
+                label = int(RE_FMT.sub(r'\1', src['label']))
+            sources.append({'file': src['file'], 'label': label})
+    else:
+        html = HTML.ElementFromString(page)
+        vs = html.xpath("//video/source[@type='video/mp4']")
+        sources = [{'file': n.get('src'), 'label': int(n.get('res').split('x')[-1])} for n in vs]
 
     if not sources:
+        Log.Error(u"* eStream[Error]: Cannot find video source for '{}'".format(url))
         raise Ex.MediaExpired
 
     Log(u"* eStream Video Sources: '{0}'".format(sources))
