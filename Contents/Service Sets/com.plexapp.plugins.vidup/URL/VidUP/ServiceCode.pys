@@ -4,13 +4,15 @@
 
 from unpacker import unpack as Unpack
 
-RE_PACKED = Regex(r"<script type=.text/javascript.>(eval\(function\(p,a,c,k,e,.+\|file\|.+\.split\('\|'\).*?\)\))")
+USER_AGENT = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/52.0.2743.116 Safari/537.36"
 RE_NORM = Regex(r'(https?://(?:www\.|beta\.)?\w+\.\w+)(?:/embed\-|/)(\w+)')
+RE_PTKN = Regex(r"(eval\(function\(p,a,c,k,e,.+\|(?:jwv|x3C)\|.+\.split\('\|'\).*?\)\))")
+RE_TKN = Regex(r'["\'\\]+?/["\'\\]+? ?\+ ?([^\+]+)\+.+?\\x3C/script\>')
+RE_SOURCES = Regex(r'sources *?\: *?(\[.*?\{[^\]]+\}.*?\]),')
 RE_TITLE = Regex(r"title *?\: *?'(.+)'")
 RE_THUMB = Regex(r'image *?\: *?["\'](http[^"\']+)["\']')
 RE_SUM = Regex(r"description *?\: *?'(.+)'")
 RE_DUR = Regex(r'duration *?\: *?["\'](\d+)["\']')
-RE_SOURCES = Regex(r'sources *?\: *?(\[\{.+\}\])\,')
 FALLBACK = 'http://i.imgur.com/75YO83o.jpg'
 
 ####################################################################################################
@@ -22,7 +24,7 @@ def NormalizeURL(url):
 ####################################################################################################
 def MetadataObjectForURL(url):
 
-    page = get_page(url)
+    page = get_page(url, {'User-Agent': USER_AGENT})
 
     rt = RE_TITLE.search(page)
     title = rt.group(1).strip() if rt else None
@@ -47,42 +49,59 @@ def MetadataObjectForURL(url):
 @deferred
 def MediaObjectsForURL(url):
 
-    fmt_list = source_dict(url)
-    if not fmt_list:
+    http_headers = {'User-Agent': USER_AGENT}
+    flist = source_dict(url, http_headers)
+    if not flist:
         raise Ex.MediaNotAvailable
 
-    Log(u"* VidUp Video Sources: '{0}'".format(fmt_list))
+    Log(u"* VidUp Video Sources: '{0}'".format(flist))
     return [
         MediaObject(
-            video_resolution=item['label'][:-1],
+            video_resolution=str(s['label']),
             audio_channels=2,
             optimized_for_streaming=False,
             parts=[
-                PartObject(key=item['file'])
+                PartObject(key=s['file'], http_headers=http_headers)
                 ],
-            ) for item in reversed(Util.ListSortedByKey(fmt_list, 'label'))
+            ) for s in reversed(Util.ListSortedByKey(flist, 'label'))
         ]
 
 ####################################################################################################
-def get_page(url):
+def get_page(url, http_headers):
     try:
-        page = HTTP.Request(url, cacheTime=10).content
+        page = HTTP.Request(url, headers=http_headers, cacheTime=10, encoding='utf-8', errors='replace').content
     except:
         Log.Exception(u"* Error: Cannot open '{0}' >>>".format(url))
         raise Ex.MediaNotAvailable
     return page
 
 ####################################################################################################
-def source_dict(url):
+def source_dict(url, http_headers):
 
-    page = get_page(url)
-    packed = RE_PACKED.search(page)
-    if packed:
-        page = Unpack(packed.group(1)).replace('\\', '')
+    page = get_page(url, http_headers)
+    rptkn = RE_PTKN.search(page)
+    rtkn = RE_TKN.search(Unpack(rptkn.group(1))) if rptkn else RE_TKN.search(page)
+    rtoken = Regex(r'var *?{0}\=["\']([^"\']+)["\']'.format(rtkn.group(1).strip())).search(page) if rtkn else None
+    if not rtoken:
+        Log.Error("* Error: Cannot find packer token")
+        raise Ex.MediaNotAvailable
+
+    http_headers['Referer'] = url
+    try:
+        base_url = RE_NORM.search(url).group(1)
+        packed = HTTP.Request('{}/jwv/{}'.format(base_url, rtoken.group(1)), headers=http_headers, cacheTime=10).content.strip()
+    except:
+        Log.Exception("* Error handling packed URL >>>")
+        raise Ex.MediaNotAvailable
 
     sources = RE_SOURCES.search(page)
+    rvt = Regex(r'vt\=([^"\']+)["\']').search(Unpack(packed))
     if not sources:
+        Log.Warn(u"* Warning: Cannot find source list within '{0}'".format(url))
         raise Ex.MediaExpired
+    elif not rvt:
+        Log.Error("* Error: Cannot find pass tokens within packed URL")
+        raise Ex.MediaNotAvailable
 
     s = sources.group(1).replace("'", '"')
     if '"file"' not in s:
@@ -90,4 +109,5 @@ def source_dict(url):
     if '"label"' not in s:
         s = s.replace('label', '"label"')
 
-    return JSON.ObjectFromString(s)
+    data = JSON.ObjectFromString(s)
+    return [{'file': d['file'] + '?direct=false&ua=1&vt={0}'.format(rvt.group(1)), 'label': int(d['label'][:-1])} for d in data]
