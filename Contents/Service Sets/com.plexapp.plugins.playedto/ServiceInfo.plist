@@ -8,7 +8,7 @@
     <dict>
       <key>URLPatterns</key>
       <array>
-        <string>^https?\:\/\/(?:www\.)?playedto\.(?:[^\/]+\/).+</string>
+        <string>^nahttps?\:\/\/(?:www\.)?playedto\.(?:[^\/]+\/).+</string>
       </array>
     </dict>
   </dict>
