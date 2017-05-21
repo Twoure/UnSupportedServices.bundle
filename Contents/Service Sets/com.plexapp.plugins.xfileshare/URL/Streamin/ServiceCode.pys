@@ -2,6 +2,9 @@
 
 """Streamin.to Service Code"""
 
+from unpacker import unpack as Unpack
+
+RE_PACKED = Regex(r"<script type=.text/javascript.>(eval\(function\(p,a,c,k,e,.+\|file\|.+\.split\('\|'\).*?\)\))")
 RE_NORM = Regex(r'(https?://(?:www\.)?\w+\.\w+)(?:/embed-|/)(\w+)')
 RE_THUMB = Regex(r'["\']?image["\']? *?: *?["\'](http[^"\']+)["\']')
 RE_DUR = Regex(r'["\']?duration["\']? *?: *?["\'](\d+)["\']')
@@ -27,7 +30,7 @@ def MetadataObjectForURL(url):
     if not title:
         raise Ex.MediaExpired
 
-    page = get_page(url)
+    page = get_packed(get_page(url))
     rt = RE_THUMB.search(page)
     rd = RE_DUR.search(page)
 
@@ -57,12 +60,19 @@ def MediaObjectsForURL(url):
 @indirect
 def PlayVideo(url, **kwargs):
 
-    r = RE_FILE.search(get_page(url))
+    r = RE_FILE.search(get_packed(get_page(url)))
     if r:
         Log.Debug(u"* PlayVideo URL = {0}".format(r.group(1)))
         return IndirectResponse(VideoClipObject, key=r.group(1))
 
     raise Ex.MediaNotAvailable
+
+####################################################################################################
+def get_packed(page):
+    packed = RE_PACKED.search(page)
+    if packed:
+        page = Unpack(packed.group(1))
+    return page
 
 ####################################################################################################
 def get_page(url):
