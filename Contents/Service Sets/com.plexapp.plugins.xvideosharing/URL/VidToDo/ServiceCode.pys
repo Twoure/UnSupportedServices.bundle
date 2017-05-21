@@ -1,11 +1,9 @@
 #!/usr/bin/env python
 
-"""
-VidToDo.com Service Code
-    :Pull all info from embed page
-"""
+"""VidToDo.com Service Code"""
 
 from unpacker import unpack as Unpack
+from time import sleep
 
 RE_PACKED = Regex(r"<script type=.text/javascript.>(eval\(function\(p,a,c,k,e,.+\|file\|.+\.split\('\|'\).*?\)\))")
 RE_FILE = Regex(r'["\']?file["\']? *?\: *?["\'](http[^"\']+(?<!m3u8|smil))["\']')
@@ -19,12 +17,12 @@ FALLBACK = 'http://i.imgur.com/75YO83o.jpg'
 def NormalizeURL(url):
 
     r = RE_NORM.search(url)
-    return r.group(1) + '/embed-' + r.group(2) + '.html' if r else url
+    return r.group(1) + '/' + r.group(2) if r else url
 
 ####################################################################################################
 def MetadataObjectForURL(url):
 
-    page = get_packed_page(get_page(url))
+    page = get_packed_page(get_post_page(url))
 
     if not RE_FILE.search(page):
         Log.Warn(u"* Warning: File missing for '{0}'".format(url))
@@ -68,7 +66,7 @@ def MediaObjectsForURL(url):
 @indirect
 def PlayVideo(url, **kwargs):
 
-    r = RE_FILE.search(get_packed_page(get_page(url)))
+    r = RE_FILE.search(get_packed_page(get_post_page(url)))
     if r:
         Log.Debug(u"* PlayVideo URL = {0}".format(r.group(1)))
         return IndirectResponse(VideoClipObject, key=r.group(1))
@@ -88,3 +86,27 @@ def get_page(url):
         Log.Exception(u"* Error: Cannot access '{0}' >>>".format(url))
         raise Ex.MediaNotAvailable
     return page
+
+####################################################################################################
+def get_post_page(url):
+    html = HTML.ElementFromString(get_page(url))
+    wait_time = html.xpath('//span[@id="cxc"]/text()')
+    if wait_time:
+        Log(u"* POST Wait time = {0}".format(wait_time[0].strip()))
+        sleep(int(wait_time[0].strip()))
+
+    values = dict()
+    action_url = html.xpath('//form[@method="POST"]/@action')
+    for item in html.xpath('//input'):
+        values[item.get('name')] = item.get('value')
+
+    if not values or not action_url:
+        Log.Error("* Cannot find POST values or POST URL")
+        raise Ex.MediaExpired
+
+    try:
+        page = HTTP.Request(action_url[0], values=values).content
+        return page
+    except:
+        Log.Exception(u"* Error: Cannot handle '{0}' >>>".format(action_url[0]))
+    raise Ex.MediaNotAvailable
