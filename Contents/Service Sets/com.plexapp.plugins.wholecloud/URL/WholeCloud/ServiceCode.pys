@@ -19,7 +19,8 @@ Issues:
     - vid(gg.to|.gg) -- stream host is too slow for Plex at times, YMMV
 """
 
-USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36'
+USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36'
+USER_AGENT_M = 'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.81 Mobile Safari/537.36'
 RE_NORM = Regex(r'(https?://(?:www\.)?\w+\.\w+)/(?:\w+/|embed\.php)?(?:\?\w+\=)?(\w+)')
 RE_EMBED = Regex(r'(https?://(?:www\.)?(\w+)\.\w+)/\w+/(?:\?\w+\=)?(\w+)')
 RE_STITLE = Regex(r'https?://(?:www\.)?(\w+)\.\w+')
@@ -130,7 +131,7 @@ def setup_playvideo(url, force=False):
     vurl = html.xpath('//video/source/@src')
     if vurl:
         if (vurl[1:] != vurl[:-1]):
-            Log(u"* Not all video URL's the same. -> '{0}'".format(vurl))
+            Log.Warn(u"* Not all video URL's the same. -> '{0}'".format(vurl))
         return vurl[0]
     elif RE_VIDGG.search(url) and not force:
         return setup_playvideo(url, True)
