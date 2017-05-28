@@ -2,11 +2,18 @@
 
 """Vidlox.tv Service Code"""
 
+import https_fix as HTTPS
+import ast
+
 RE_NORM = Regex(r'(https?://(?:www\.)?\w+\.\w+)(?:/embed-|/)(\w+)')
-RE_THUMB = Regex(r'["\']?image["\']? *?\: *?["\'](http[^"\']+)["\']')
+INFO1 = r'(?s){0}\]\[IMG\](https?[^\[]+)\[/IMG\](\[?[^\[]+)\[/URL\].?\[\d+x\d+\, *?([^\]]+)'
+INFO2 = r'(?s){0}["\']><img src\=["\'](https?[^"\']+)[^\>]+\>(?:[^\>]+\>)?([^\<]+)[^\[]+\[[^ ]+ ([^\]]+)'
+RE_THUMB = Regex(r'["\']?(?:image|poster)["\']? *?\: *?["\'](http[^"\']+)["\']')
 RE_DUR = Regex(r'["\']?duration["\']? *?\: *?["\'](\d+)["\']')
-RE_HLS = Regex(r'["\']?file["\']? *?\: *?["\'](http[^"\']+\.m3u8)["\']')
-RE_SOURCES = Regex(r'(?is)bandwidth\=(\d+).*?resolution\=\d+x(\d+).*?(http.+?\.m3u8)')
+RE_RES = Regex(r'["\']?height["\']? *?\: *?["\'](\d+)["\']')
+RE_SOURCES = Regex(r'sources *?\: *?(\[[^\]]+\]),')
+RE_HLS = Regex(r'["\'](https?[^"\']+\.m3u8)["\']')
+RE_HLS_SOURCES = Regex(r'(?is)bandwidth\=(\d+).*?resolution\=\d+x(\d+).*?(http.+?\.m3u8)')
 FALLBACK = 'http://i.imgur.com/75YO83o.jpg'
 
 ####################################################################################################
@@ -25,15 +32,26 @@ def MetadataObjectForURL(url):
     if not title:
         raise Ex.MediaExpired
 
+    e = RE_NORM.search(url)
+    eid = e.group(2)
+
     rt = RE_THUMB.search(page)
     rd = RE_DUR.search(page)
 
-    thumb = rt.group(1) if rt else FALLBACK
+    r = Regex(INFO1.format(eid)).search(page)
+    r = r if r else Regex(INFO2.format(eid)).search(page)
+
+    thumb = rt.group(1) if rt else (r.group(1) if r else FALLBACK)
+    thumb1 = thumb.strip()
+    thumb2 = Regex(r'_t\.').sub(r'_xt.', thumb1)
+    thumb3 = Regex(r'_t\.').sub(r'.', thumb1)
+
+    duration = int(rd.group(1))*1000 if rd else (Datetime.MillisecondsFromString(r.group(3)) if r else None)
 
     return VideoClipObject(
         title=title[0].strip(),
-        duration=int(rd.group(1))*1000 if rd else None,
-        thumb=Resource.ContentsOfURLWithFallback([thumb, FALLBACK]),
+        duration=duration,
+        thumb=Resource.ContentsOfURLWithFallback([thumb2, thumb3, thumb1, FALLBACK]),
         source_title='Vidlox'
         )
 
@@ -41,34 +59,60 @@ def MetadataObjectForURL(url):
 @deferred
 def MediaObjectsForURL(url):
 
-    hls = RE_HLS.search(get_page(url))
-    if not hls:
+    page = get_page(url)
+    sources = RE_SOURCES.search(page)
+    if not sources:
         raise Ex.MediaExpired
 
-    sources = RE_SOURCES.findall(get_page(hls.group(1)))
-    if not sources:
-        raise Ex.MediaNotAvailable
+    hls_sources = list()
+    sl = [ s.strip() for s in ast.literal_eval(sources.group(1)) ]
+    if [ s for s in sl if ('.m3u8' in s) ]:
+        hls = [ u for u in sl if '.m3u8' in u ][0]
+        hlss = RE_HLS_SOURCES.findall(get_page(hls))
+        if not hlss:
+            raise Ex.MediaNotAvailable
+        hls_sources = [ (int(r), int(b)/1000, u) for (b, r, u) in hlss ]
+    elif sl:
+        rb = [(1080, 2300), (720, 1150), (480, 630), (360, 350)]
+        rh = RE_RES.search(page)
+        rb = [ (r, b) for (r, b) in rb if ((int(rh.group(1)) if rh else 360) <= r) ]
+        sl = [s for s in sl if ('.m3u8' not in s)]
+        rb = rb[len(rb)-len(sl):]
+        if not rb:
+            raise Ex.MediaNotAvailable
+        hls_sources = [ (rb[i][0], rb[i][1], u) for (i, u) in enumerate(sl) ]
 
-    sources = [(int(r), int(b)/1000, u) for (b, r, u) in sources]
-    Log(u"* Vidlox Video Sources: '{0}'".format(sources))
+    if not hls_sources:
+        raise Ex.MediaExpired
+
+    Log(u"* Vidlox Video Sources: '{0}'".format(hls_sources))
 
     return [
         MediaObject(
             video_resolution=str(res),
             bitrate=bit,
             audio_channels=2,
-            optimized_for_streaming=True,
+            optimized_for_streaming='.m3u8' in src,
             parts=[
-                PartObject(key=HTTPLiveStreamURL(src))
+                PartObject(key=HTTPLiveStreamURL(src) if '.m3u8' in src else src)
                 ],
-            ) for res, bit, src in reversed(sorted(sources))
+            ) for res, bit, src in reversed(sorted(hls_sources))
         ]
 
 ####################################################################################################
 def get_page(url):
+    page = None
     try:
         page = HTTP.Request(url, cacheTime=10).content
+    except Ex.URLError as e:
+        if 'SSLError' in str(e.args):
+            try:
+                page = HTTPS.Request(url)
+            except:
+                Log.Exception(u"* SSL Error: Cannot open '{0}' >>>".format(url))
     except:
         Log.Exception(u"* Error: Cannot open '{0}' >>>".format(url))
+
+    if not page:
         raise Ex.MediaNotAvailable
     return page
