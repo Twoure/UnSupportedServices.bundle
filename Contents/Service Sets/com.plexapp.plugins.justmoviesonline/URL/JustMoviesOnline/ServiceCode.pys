@@ -1,0 +1,94 @@
+#!/usr/bin/env python
+
+"""JustMoviesOnline.com Service Code"""
+
+RE_NORM = Regex(r'(https?://(?:www\.)?\w+\.\w+)(?:/.+?id\=|/)(\w+)')
+RE_ATOB = Regex(r'atob\(["\']([^"\']+)["\']')
+RE_THUMB = Regex(r'["\']?(?:image|poster)["\']? *?\: *?["\'](https?[^"\']+)["\']')
+RE_DUR = Regex(r'["\']?duration["\']? *?\: *?["\'](\d+)["\']')
+RE_SOURCES = Regex(r'(?s)["\']?sources["\']? *?\: *?(\[.*?\{[^\]]+\}.*?\])\,')
+FALLBACK = 'http://i.imgur.com/75YO83o.jpg'
+
+####################################################################################################
+def NormalizeURL(url):
+
+    r = RE_NORM.search(url)
+    return r.group(1) + '/play.php?id=' + r.group(2) if r else url
+
+####################################################################################################
+def MetadataObjectForURL(url):
+
+    page = get_page(url)
+    if not RE_ATOB.search(page):
+        raise Ex.MediaExpired
+
+    e = RE_NORM.search(url)
+    eid = e.group(2) if e else None
+
+    rt = RE_THUMB.search(page)
+    rd = RE_DUR.search(page)
+
+    thumb = rt.group(1) if rt else FALLBACK
+
+    return VideoClipObject(
+        title="Just Movies Online: {}".format(eid),
+        duration=int(rd.group(1))*1000 if rd else None,
+        thumb=Resource.ContentsOfURLWithFallback([thumb, FALLBACK]),
+        source_title='JustMoviesOnline'
+        )
+
+####################################################################################################
+@deferred
+def MediaObjectsForURL(url):
+
+    sources = list()
+    page = get_page(url)
+    atob = RE_ATOB.search(page)
+    if atob:
+        page = String.Base64Decode(atob.group(1))
+
+    r = RE_SOURCES.search(page)
+    if not r:
+        raise Ex.MediaExpired
+
+    s = r.group(1).replace("'", '"')
+    if '"file"' not in s:
+        s = s.replace('file', '"file"')
+    if '"label"' not in s:
+        s = s.replace('label', '"label"')
+
+    for src in JSON.ObjectFromString(s):
+        if 'label' not in src.keys():
+            continue
+        if str(src['label']).endswith('p'):
+            label = int(src['label'][:-1])
+        else:
+            label = int(src['label'])
+        sources.append({'file': src['file'], 'label': label})
+
+    if not sources:
+        raise Ex.MediaExpired
+
+    Log(u"* JustMoviesOnline Video Sources: '{}'".format(sources))
+    return [
+        MediaObject(
+            container=Container.MP4,
+            video_codec=VideoCodec.H264,
+            audio_codec=AudioCodec.AAC,
+            audio_channels=2,
+            optimized_for_streaming=True,
+            video_resolution=str(item['label']),
+            parts=[
+                PartObject(key=item['file'])
+                ],
+            ) for item in reversed(Util.ListSortedByKey(sources, 'label'))
+        ]
+
+####################################################################################################
+def get_page(url):
+    try:
+        page = HTTP.Request(url, cacheTime=10).content
+    except:
+        Log.Exception(u"* Error: Cannot open '{0}' >>>".format(url))
+        raise Ex.MediaNotAvailable
+    return page
