@@ -2,16 +2,17 @@
 
 """
 Speedvid.net Service Code
-    :Pull all info from embed page.
+    :Pull almost info from embed page.
+    :Title from main URL
 """
 
 from unpacker import unpack as Unpack
 
-RE_PACKED = Regex(r"<script type=.text\/javascript.>(eval\(function\(p,a,c,k,e,.+\|file\|.+\.split\('\|'\).*?\)\))")
+RE_PACKED = Regex(r"(?s)<script type=.text\/javascript.>(eval\(function\(p,a,c,k,e,.+?\|file\|.+?\.split\('\|'\).*?\)\)).?</script>")
 RE_NORM = Regex(r'(https?://(?:www\.)?\w+\.\w+)(?:/embed\-|/)(\w+)')
-RE_THUMB = Regex(r'\\?["\']?image\\?["\']? *?\: *?\\?["\'](http[^"\'\\]+)\\?["\']')
+RE_THUMB = Regex(r'\\?["\']?image\\?["\']? *?\: *?\\?["\'](https?[^"\'\\]+)\\?["\']')
 RE_DUR = Regex(r'\\?["\']?duration\\?["\']? *?\: *?\\?["\'](\d+)\\?["\']')
-RE_FILE = Regex(r'\\?["\']?file\\?["\']? *?\: *?\\?["\'](http[^"\'\?\\]+(?<!m3u8|smil))\\?["\']')
+RE_FILE = Regex(r'\\?["\']?file\\?["\']? *?\: *?\\?["\'](https?[^"\'\?\\]+(?<!m3u8|smil))\\?["\']')
 FALLBACK = 'http://i.imgur.com/75YO83o.jpg'
 
 ####################################################################################################
@@ -23,21 +24,15 @@ def NormalizeURL(url):
 ####################################################################################################
 def MetadataObjectForURL(url):
 
-    page = get_page(url)
-    html = HTML.ElementFromString(page)
+    nurl = url.replace('/embed-', '/').split('.htm')[0]
+    html = HTML.ElementFromString(get_page(nurl))
 
-    title = html.xpath('//title/text()')
-
-    if Regex(r'(File was deleted)').search(page):
-        Log.Warn(u"* Warning: File missing for '{0}'".format(url))
-        raise Ex.MediaExpired
-    elif not title:
+    title = html.xpath('//div[@class="dltitre"]/text()')
+    if not title:
         Log.Warn(u"* Warning: Ttile missing, assuming File missing for '{0}'".format(url))
         raise Ex.MediaExpired
 
-    packed = RE_PACKED.search(page)
-    if packed:
-        page = Unpack(packed.group(1))
+    page = get_ppage(url, get_page(url))
 
     rt = RE_THUMB.search(page)
     rd = RE_DUR.search(page)
@@ -45,7 +40,7 @@ def MetadataObjectForURL(url):
     thumb = rt.group(1) if rt else FALLBACK
 
     return VideoClipObject(
-        title=title[0].split(' - Speedvid')[0],
+        title=title[0].split(' - Speedvid')[0].strip(),
         duration=int(rd.group(1)) * 1000 if rd else None,
         thumb=Resource.ContentsOfURLWithFallback([thumb, FALLBACK]),
         source_title='SpeedVid'
@@ -71,11 +66,7 @@ def MediaObjectsForURL(url):
 @indirect
 def PlayVideo(url, **kwargs):
 
-    page = get_page(url)
-    packed = RE_PACKED.search(page)
-    if packed:
-        page = Unpack(packed.group(1))
-
+    page = get_ppage(url, get_page(url))
     r = RE_FILE.search(page)
     if r:
         Log.Debug(u"* PlayVideo URL = {0}".format(r.group(1)))
@@ -88,6 +79,15 @@ def PlayVideo(url, **kwargs):
         return IndirectResponse(VideoClipObject, key=r2[0])
 
     raise Ex.MediaNotAvailable
+
+####################################################################################################
+def get_ppage(url, page):
+    norm = RE_NORM.search(url)
+    for p in RE_PACKED.findall(page):
+        if norm.group(2) not in Unpack(p):
+            continue
+        return Unpack(p)
+    return page
 
 ####################################################################################################
 def get_page(url):
