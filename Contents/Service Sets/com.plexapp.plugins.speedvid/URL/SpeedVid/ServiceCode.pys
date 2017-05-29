@@ -29,7 +29,7 @@ def MetadataObjectForURL(url):
 
     title = html.xpath('//div[@class="dltitre"]/text()')
     if not title:
-        Log.Warn(u"* Warning: Ttile missing, assuming File missing for '{0}'".format(url))
+        Log.Warn(u"* Warning: Title missing, assuming File missing for '{0}'".format(url))
         raise Ex.MediaExpired
 
     page = get_ppage(url, get_page(url))
