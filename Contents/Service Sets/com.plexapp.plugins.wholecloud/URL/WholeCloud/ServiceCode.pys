@@ -148,11 +148,20 @@ def setup_playvideo(url, force=False):
     page = get_page(url if (RE_VIDGG.search(url) and (not force)) else get_embed_url(url))
     html = HTML.ElementFromString(page)
 
-    vurl = html.xpath('//video/source/@src')
+    vurl = html.xpath('//source[starts-with(@type, "video")]/@src')
     if vurl:
+        rvurl = vurl[0]
         if (vurl[1:] != vurl[:-1]):
             Log.Warn(u"* Not all video URL's the same. -> '{0}'".format(vurl))
-        return vurl[0]
+            for v in vurl:
+                try:
+                    # test video url, many are offline, so need to find live URL
+                    HTTP.Request(v, headers={'User-Agent': USER_AGENT}, method='HEAD', cacheTime=10).load()
+                    rvurl = v
+                    break
+                except Exception as e:
+                    Log.Warn(u"* Offline '{}' >>> {}".format(v, e))
+        return rvurl
     elif RE_VIDGG.search(url) and not force:
         return setup_playvideo(url, True)
 
