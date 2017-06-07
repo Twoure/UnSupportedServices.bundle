@@ -5,33 +5,34 @@
 from unpacker import unpack as Unpack
 
 RE_PACKED = Regex(r"<script type=.text/javascript.>(eval\(function\(p,a,c,k,e,.+\|file\|.+\.split\('\|'\).*?\)\))")
-RE_NORM = Regex(r'(https?://(?:www\.)?\w+\.\w+)(?:/embed-|/)(\w+)')
+RE_NORM = Regex(r'(https?://(?:www\.)?\w+\.\w+)(?:/embed-|/player-|/)(\w+)')
 RE_THUMB = Regex(r'["\']?image["\']? *?: *?["\'](http[^"\']+)["\']')
 RE_DUR = Regex(r'["\']?duration["\']? *?: *?["\'](\d+)["\']')
 RE_FILE = Regex(r'["\']?file["\']? *?: *?["\'](http[^"\']+(?<!m3u8|smil))["\']')
 RE_RTMP = Regex(r'["\']?file["\']? *?: *?["\'](rtmp[^"\']+)["\']')
+RE_HLS = Regex(r'["\']?file["\']? *?: *?["\'](http[^"\']+m3u8)["\']')
+RE_DEC = Regex(r'([A-z0-9\_\-]{40,})')
 FALLBACK = 'http://i.imgur.com/75YO83o.jpg'
 
 ####################################################################################################
 def NormalizeURL(url):
 
     r = RE_NORM.search(url)
-    return r.group(1) + '/embed-' + r.group(2) + '.html' if r else url
+    return r.group(1) + '/player-' + r.group(2) + '.html' if r else url
 
 ####################################################################################################
 def MetadataObjectForURL(url):
 
-    nurl = url.replace('/embed-', '/') if '/embed-' in url else url
-    html = HTML.ElementFromString(get_page(nurl))
+    page = get_page(url)
+    html = HTML.ElementFromString(page)
 
-    if html.xpath('//title/text()')[0] == '404 - Not Found':
-        raise Ex.MediaExpired
-
-    title = html.xpath('//input[@name="fname"]/@value')
+    title = html.xpath('//title/text()')
     if not title:
+        raise Ex.MediaNotAvailable
+    elif (title[0] == '404 - Not Found'):
         raise Ex.MediaExpired
 
-    page = get_packed_page(get_page(url))
+    page = get_packed_page(page)
     rt = RE_THUMB.search(page)
     rd = RE_DUR.search(page)
 
@@ -63,22 +64,28 @@ def PlayVideo(url, **kwargs):
 
     page = get_packed_page(get_page(url))
 
-    r = RE_FILE.search(page)
+    r = RE_FILE.search(page)  #mp4
     if r:
-        vurl = Regex(r'/(\w+)/v').sub(lambda x: '/'+x.group(1)[::-1]+'/v', r.group(1))
+        vurl = RE_DEC.sub(lambda x: decrypt(x.group(1)), r.group(1))
         Log.Debug(u"* PlayVideo URL = {0}".format(vurl))
         return IndirectResponse(VideoClipObject, key=vurl)
 
-    r = RE_RTMP.search(page)
+    r = RE_RTMP.search(page)  #rtmp
     if r:
         node = Regex(r'(.+?\/)(mp4\:.+)').search(r.group(1))
         player = node.group(1) if node else None
-        clip = Regex(r'\?h=(\w+)$').sub(lambda x: '?h='+x.group(1)[::-1], node.group(2)) if node else None
+        clip = RE_DEC.sub(lambda x: decrypt(x.group(1)), node.group(2)) if node else None
 
         if player and clip:
             Log.Debug('* PlayVideo RTMP Stream')
             Log.Debug(u"* player = '{0}' | clip = '{1}'".format(player, clip))
             return IndirectResponse(VideoClipObject, key=RTMPVideoURL(url=player, clip=clip))
+
+    r = RE_HLS.search(page)  #m3u8
+    if r:
+        vurl = RE_DEC.sub(lambda x: decrypt(x.group(1)), r.group(1))
+        Log.Debug(u"* PlayVideo M3U8 URL = {0}".format(vurl))
+        return IndirectResponse(VideoClipObject, key=HTTPLiveStreamURL(vurl))
 
     raise Ex.MediaNotAvailable
 
@@ -95,3 +102,110 @@ def get_page(url):
         Log.Exception(u"* Error: Cannot open '{0}' >>>".format(url))
         raise Ex.MediaNotAvailable
     return page
+
+####################################################################################################
+def decrypt(h):
+    """
+    06/06/17
+    static:     https://github.com/tvalacarta/pelisalacarta/blob/1c5631e8794db7887d18c2a45913946ac7d0fe8f/python/main-classic/servers/streamplay.py
+    dynamic:    https://github.com/tvalacarta/pelisalacarta/blob/develop/python/main-classic/servers/streamplay.py
+    """
+
+    if len(h) % 4:
+        h += "="*(4-len(h) % 4)
+    sig = []
+    h = String.Base64Decode(h.replace("-", "+").replace("_", "/"))
+    for c in range(len(h)):
+        sig += [ord(h[c])]
+
+    k = "streamplayembeds"
+    sec = []
+    for c in range(len(k)):
+        sec += [ord(k[c])]
+
+    dig = range(256)
+    g = 0
+    v = 128
+    for b in range(len(sec)):
+        a = (v + (sec[b] & 15)) % 256
+        c = dig[(g)]
+        dig[g] = dig[a]
+        dig[a] = c
+        g += 1
+
+        a = (v + (sec[b] >> 4 & 15)) % 256
+        c = dig[g]
+        dig[g] = dig[a]
+        dig[a] = c
+        g += 1
+
+    k = 0
+    q = 1
+    p = 0
+    n = 0
+    for b in range(512):
+        k = (k + q) % 256
+        n = (p + dig[(n + dig[k]) % 256]) % 256
+        p = (k + p + dig[n]) % 256
+        c = dig[k]
+        dig[k] = dig[n]
+        dig[n] = c
+
+    q = 3
+    for a in range(v):
+        b = 255 - a
+        if dig[a] > dig[b]:
+            c = dig[a]
+            dig[a] = dig[b]
+            dig[b] = c
+
+    k = 0
+    for b in range(512):
+        k = (k + q) % 256
+        n = (p + dig[(n + dig[k]) % 256]) % 256
+        p = (k + p + dig[n]) % 256
+        c = dig[k]
+        dig[k] = dig[n]
+        dig[n] = c
+
+    q = 5
+    for a in range(v):
+        b = 255 - a
+        if dig[a] > dig[b]:
+            c = dig[a]
+            dig[a] = dig[b]
+            dig[b] = c
+
+    k = 0
+    for b in range(512):
+        k = (k + q) % 256
+        n = (p + dig[(n + dig[k]) % 256]) % 256
+        p = (k + p + dig[n]) % 256
+        c = dig[k]
+        dig[k] = dig[n]
+        dig[n] = c
+
+    q = 7
+    k = 0
+    u = 0
+    d = []
+    for b in range(len(dig)):
+        k = (k + q) % 256
+        n = (p + dig[(n + dig[k]) % 256]) % 256
+        p = (k + p + dig[n]) % 256
+        c = dig[k]
+        dig[k] = dig[n]
+        dig[n] = c
+        u = dig[(n + dig[(k + dig[(u + p) % 256]) % 256]) % 256]
+        d += [u]
+
+    c = []
+    for f in range(len(d)):
+        try: c += [(256 + (sig[f] - d[f])) % 256]
+        except: break
+
+    h = ""
+    for s in c:
+      h += chr(s)
+
+    return h
