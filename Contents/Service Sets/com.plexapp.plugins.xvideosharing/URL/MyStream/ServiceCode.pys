@@ -6,10 +6,14 @@ Service Code for:
     FastPlay.(cc|sx)
 """
 
+from unpacker import unpack as Unpack
+
+RE_PACKED = Regex(r"<script type=.text/javascript.>(eval\(function\(p,a,c,k,e,.+\|file\|.+\.split\('\|'\).*?\)\))")
 RE_NORM = Regex(r'(https?://(?:www\.)?\w+\.\w+)(?:/external/|/embed\-|/flash\-|/)(\w+)')
 RE_FNF = Regex(r'([Ff]ile [Nn]ot [Ff]ound)')
 RE_TITLE = Regex(r'\<title\>([^\<]+)\</title\>')
 RE_TITLE2 = Regex(r'\[/IMG\] *?(\]?[^\[]+)\[/URL\]')
+RE_TITLE3 = Regex(r'title *?\: *?"(.+?)"')
 RE_THUMB = Regex(r'["\']?image["\']? *?\: *?["\'](http[^"\']+)["\']')
 RE_DUR = Regex(r'["\']?duration["\']? *?\: *?["\'](\d+)["\']')
 RE_STITLE = Regex(r'https?://(?:www\.)?(\w+)\.\w+')
@@ -20,6 +24,8 @@ FALLBACK = 'http://i.imgur.com/75YO83o.jpg'
 def NormalizeURL(url):
 
     r = RE_NORM.search(url)
+    if r and ('mystream' in r.group(1)):
+        return r.group(1) + '/embed-' + r.group(2) + '.html'
     return r.group(1) + '/' + r.group(2) if r else url
 
 ####################################################################################################
@@ -31,13 +37,17 @@ def MetadataObjectForURL(url):
 
     t1 = RE_TITLE.search(page)
     t2 = RE_TITLE2.search(page)
+    t3 = RE_TITLE3.search(page)
     if t1:
         title = Regex(r'Watch\s(.+)$').sub(r'\1', t1.group(1))
     elif t2:
         title = t2.group(1).strip('_-\s\r\n\t')
+    elif t3:
+        title = t3.group(1).strip()
     else:
         raise Ex.MediaExpired
 
+    page = get_packed_page(page)
     rt = RE_THUMB.search(page)
     rd = RE_DUR.search(page)
 
@@ -54,7 +64,7 @@ def MetadataObjectForURL(url):
 @deferred
 def MediaObjectsForURL(url):
 
-    rs = RE_SOURCES.search(get_page(url))
+    rs = RE_SOURCES.search(get_packed_page(get_page(url)))
     if not rs:
         raise Ex.MediaNotAvailable
 
@@ -90,6 +100,11 @@ def MediaObjectsForURL(url):
 def get_source_title(url):
     st = RE_STITLE.search(url)
     return st.group(1).title() if st else 'MyStream'
+
+####################################################################################################
+def get_packed_page(page):
+    r = RE_PACKED.search(page)
+    return Unpack(r.group(1)) if r else page
 
 ####################################################################################################
 def get_page(url):
