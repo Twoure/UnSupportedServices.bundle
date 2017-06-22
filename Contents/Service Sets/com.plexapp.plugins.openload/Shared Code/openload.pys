@@ -5,7 +5,7 @@
 #   streamondemand: https://github.com/streamondemand/plugin.video.streamondemand/blob/master/servers/openload.py
 #
 # Edited by:    Twoure
-# Edit Date:    05/17/17
+# Edit Date:    06/21/17
 
 from operator import ixor
 
